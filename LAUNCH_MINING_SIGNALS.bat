@@ -3,7 +3,6 @@ setlocal enabledelayedexpansion
 title Mining Signals
 cd /d "%~dp0"
 
-:: Same Python search order as LAUNCH.bat. Opens Mining Signals only.
 set "PY="
 
 if exist "%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe" (
@@ -94,11 +93,15 @@ if !errorlevel! neq 0 set "NEED_INSTALL=1"
 if !errorlevel! neq 0 set "NEED_INSTALL=1"
 "%PY%" -c "import PIL" >nul 2>&1
 if !errorlevel! neq 0 set "NEED_INSTALL=1"
+"%PY%" -c "import numpy" >nul 2>&1
+if !errorlevel! neq 0 set "NEED_INSTALL=1"
+"%PY%" -c "import onnxruntime" >nul 2>&1
+if !errorlevel! neq 0 set "NEED_INSTALL=1"
 
 if "!NEED_INSTALL!"=="1" (
     echo  Dependencies missing. Installing from requirements.txt...
     "%PY%" -m pip install -r "%~dp0requirements.txt"
-    "%PY%" -c "import PySide6" >nul 2>&1
+    "%PY%" -c "import numpy" >nul 2>&1
     if !errorlevel! neq 0 (
         echo  Dependencies could not be installed. Run INSTALL_AND_LAUNCH.bat first.
         pause
