@@ -1,9 +1,8 @@
 """
 SCWindow – holographic HUD-style window.
 
-Translucent dark background with glowing cyan border lines, corner brackets,
-and scan-line texture.  Looks like a projected MobiGlas interface floating
-over the game.
+Dark background with glowing cyan border lines, corner brackets,
+and scan-line texture.
 """
 
 from __future__ import annotations
@@ -23,16 +22,6 @@ from shared.qt.theme import P
 
 log = logging.getLogger(__name__)
 
-# ── Per-window geometry persistence ──────────────────────────────────────────
-# Each SCWindow saves its geometry (x, y, w, h, opacity) to a small JSON file
-# in the project's logs/ directory when it closes.  The launcher reads this
-# file on the next launch so the user's position, size, and opacity are
-# restored automatically.
-#
-# Key convention: os.path.splitext(os.path.basename(sys.argv[0]))[0]
-#   launcher  → "skill_launcher"
-#   market_finder → "market_finder_app"   (matches skill.script basename)
-#
 _STATE_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "logs",
@@ -40,7 +29,6 @@ _STATE_DIR = os.path.join(
 
 
 def load_window_state(script_stem: str) -> dict:
-    """Return the last saved geometry dict for *script_stem*, or ``{}``."""
     path = os.path.join(_STATE_DIR, f"{script_stem}_window.json")
     try:
         if os.path.isfile(path):
@@ -52,7 +40,6 @@ def load_window_state(script_stem: str) -> dict:
 
 
 def _save_window_state(window: QMainWindow) -> None:
-    """Write *window*'s current geometry to the per-script state file."""
     key = os.path.splitext(os.path.basename(sys.argv[0]))[0]
     try:
         geom = window.get_geometry_dict()  # type: ignore[attr-defined]
@@ -65,18 +52,11 @@ def _save_window_state(window: QMainWindow) -> None:
     except (OSError, AttributeError):
         pass
 
-_GRIP = 14         # resize grab zone for left / right / bottom edges
-_GRIP_TOP = 5      # narrower top-edge grip so it doesn't fight title-bar drag
+_GRIP = 14
+_GRIP_TOP = 5
 
-# ── Application-level edge-resize event filter ─────────────────────────────
-# Intercepts mouse events on ANY child widget inside an SCWindow and routes
-# them to the window's resize handler when the cursor is in the grip zone.
-# This lets users grab any edge/corner even when a child widget (title bar,
-# scroll area, etc.) is directly under the cursor.
 
 class _EdgeResizeFilter(QObject):
-    """Singleton app event filter for SCWindow edge resizing."""
-
     def eventFilter(self, obj, event):  # noqa: C901
         etype = event.type()
         if etype not in (
@@ -86,7 +66,6 @@ class _EdgeResizeFilter(QObject):
         ):
             return False
 
-        # Walk up to find the parent SCWindow
         win = obj
         while win is not None:
             if isinstance(win, SCWindow):
@@ -95,21 +74,12 @@ class _EdgeResizeFilter(QObject):
         if win is None:
             return False
 
-        # If the event originated in a different top-level window that
-        # merely has this SCWindow as its Qt parent (e.g. a frameless
-        # pop-out bubble created with parent=main_window for lifetime
-        # management), clicks inside that pop-out should NOT be mapped
-        # onto this window's edges — otherwise clicking the pop-out
-        # starts a resize drag on the main window.
         if isinstance(obj, QWidget):
             top = obj.window()
             if top is not None and top is not win:
-                # Still honour an in-progress resize that this window
-                # owns; just ignore unrelated top-level windows.
                 if not win._resizing:
                     return False
 
-        # While a resize drag is active, route all mouse events to the window
         if win._resizing:
             if etype == QEvent.Type.MouseMove:
                 delta = event.globalPosition().toPoint() - win._drag_pos
@@ -138,7 +108,6 @@ class _EdgeResizeFilter(QObject):
                 return True
             return False
 
-        # Map the mouse position to window coordinates
         try:
             win_pos = obj.mapTo(win, event.position().toPoint())
         except (RuntimeError, TypeError):
@@ -148,13 +117,12 @@ class _EdgeResizeFilter(QObject):
         if edge is None:
             return False
 
-        # Mouse is in the grip zone — take over the event
         if etype == QEvent.Type.MouseButtonPress and event.button() == Qt.LeftButton:
             win._resizing = True
             win._resize_edge = edge
             win._drag_pos = event.globalPosition().toPoint()
             win.setCursor(win._EDGE_CURSORS.get(edge, Qt.ArrowCursor))
-            return True  # swallow the event
+            return True
 
         if etype == QEvent.Type.MouseMove:
             win.setCursor(win._EDGE_CURSORS.get(edge, Qt.ArrowCursor))
@@ -164,18 +132,15 @@ class _EdgeResizeFilter(QObject):
 
 
 _edge_filter_installed = False
-_EDGE_W = 1            # main border line width
-_BRACKET_LEN = 18      # corner bracket arm length
-_BRACKET_W = 2         # corner bracket line width
-_GLOW_PASSES = 3       # number of glow bloom passes
-_SCANLINE_SPACING = 2  # pixels between scan lines
-_SCANLINE_ALPHA = 8    # 0-255, very subtle
+_EDGE_W = 1
+_BRACKET_LEN = 18
+_BRACKET_W = 2
+_GLOW_PASSES = 3
+_SCANLINE_SPACING = 2
+_SCANLINE_ALPHA = 8
 
 
 class _HoloSurface(QWidget):
-    """Paints the holographic HUD surface: translucent bg, glowing edges,
-    corner brackets, and scan-line texture."""
-
     def __init__(self, parent=None, accent: str = ""):
         super().__init__(parent)
         self._accent_hex = accent or P.accent
@@ -189,12 +154,10 @@ class _HoloSurface(QWidget):
         w, h = self.width(), self.height()
         r = self.rect()
 
-        # ── 1. Translucent dark fill ──
         bg = QColor(P.bg_primary)
-        bg.setAlpha(210)  # ~82% opaque — game shows through slightly
+        bg.setAlpha(255)
         painter.fillRect(r, bg)
 
-        # ── 2. Scan lines ──
         scan_color = QColor(255, 255, 255, _SCANLINE_ALPHA)
         painter.setPen(QPen(scan_color, 1))
         y = 0
@@ -202,21 +165,18 @@ class _HoloSurface(QWidget):
             painter.drawLine(0, y, w, y)
             y += _SCANLINE_SPACING
 
-        # ── 3. Glow bloom passes (outer to inner, decreasing alpha) ──
         for i in range(_GLOW_PASSES, 0, -1):
             glow = QColor(self._accent)
-            glow.setAlpha(int(12 * i))  # 36, 24, 12
+            glow.setAlpha(int(12 * i))
             painter.setPen(QPen(glow, 1))
             offset = i
             painter.drawRect(offset, offset, w - 1 - 2 * offset, h - 1 - 2 * offset)
 
-        # ── 4. Main border line ──
         edge = QColor(self._accent)
         edge.setAlpha(140)
         painter.setPen(QPen(edge, _EDGE_W))
         painter.drawRect(0, 0, w - 1, h - 1)
 
-        # ── 5. Top edge bright glow bar ──
         top_glow = QLinearGradient(0, 0, 0, 6)
         gc = QColor(self._accent)
         gc.setAlpha(50)
@@ -226,56 +186,40 @@ class _HoloSurface(QWidget):
         top_glow.setColorAt(1.0, gc2)
         painter.fillRect(1, 1, w - 2, 6, top_glow)
 
-        # ── 6. Corner brackets ──
         bracket_color = QColor(self._accent)
         bracket_color.setAlpha(220)
         pen = QPen(bracket_color, _BRACKET_W)
         painter.setPen(pen)
         bl = _BRACKET_LEN
-
-        # Top-left
         painter.drawLine(0, 0, bl, 0)
         painter.drawLine(0, 0, 0, bl)
-        # Top-right
         painter.drawLine(w - 1, 0, w - 1 - bl, 0)
         painter.drawLine(w - 1, 0, w - 1, bl)
-        # Bottom-left
         painter.drawLine(0, h - 1, bl, h - 1)
         painter.drawLine(0, h - 1, 0, h - 1 - bl)
-        # Bottom-right
         painter.drawLine(w - 1, h - 1, w - 1 - bl, h - 1)
         painter.drawLine(w - 1, h - 1, w - 1, h - 1 - bl)
 
-        # ── 7. Corner bracket glow (bloom around brackets) ──
         bglow = QColor(self._accent)
         bglow.setAlpha(30)
         painter.setPen(QPen(bglow, _BRACKET_W + 4))
-        # Top-left glow
         painter.drawLine(0, 0, bl, 0)
         painter.drawLine(0, 0, 0, bl)
-        # Top-right glow
         painter.drawLine(w - 1, 0, w - 1 - bl, 0)
         painter.drawLine(w - 1, 0, w - 1, bl)
-        # Bottom-left glow
         painter.drawLine(0, h - 1, bl, h - 1)
         painter.drawLine(0, h - 1, 0, h - 1 - bl)
-        # Bottom-right glow
         painter.drawLine(w - 1, h - 1, w - 1 - bl, h - 1)
         painter.drawLine(w - 1, h - 1, w - 1, h - 1 - bl)
 
-        # ── 8. Corner resize grip indicators (diagonal hash marks) ──
         grip_color = QColor(self._accent)
         grip_color.setAlpha(100)
         painter.setPen(QPen(grip_color, 1))
-        g = _GRIP  # indicator size matches the grip zone
+        g = _GRIP
         for dx in range(3, g, 4):
-            # Bottom-right: diagonal lines going up-left from corner
             painter.drawLine(w - 1 - dx, h - 1, w - 1, h - 1 - dx)
-            # Bottom-left
             painter.drawLine(dx, h - 1, 0, h - 1 - dx)
-            # Top-right
             painter.drawLine(w - 1 - dx, 0, w - 1, dx)
-            # Top-left
             painter.drawLine(dx, 0, 0, dx)
 
         painter.end()
@@ -283,8 +227,6 @@ class _HoloSurface(QWidget):
 
 
 class SCWindow(QMainWindow):
-    """Frameless, always-on-top holographic HUD window."""
-
     def __init__(
         self,
         title: str = "SC Toolbox",
@@ -292,7 +234,7 @@ class SCWindow(QMainWindow):
         height: int = 700,
         min_w: int = 400,
         min_h: int = 200,
-        opacity: float = 0.95,
+        opacity: float = 1.0,
         always_on_top: bool = True,
         accent: str = "",
         parent: Optional[QWidget] = None,
@@ -307,12 +249,12 @@ class SCWindow(QMainWindow):
         self.setWindowTitle(title)
         self.setMinimumSize(QSize(min_w, min_h))
         self.resize(width, height)
-        self.setWindowOpacity(max(0.3, min(1.0, opacity)))
+        self.setWindowOpacity(1.0)
 
         self._central = _HoloSurface(self, accent=accent)
         self.setCentralWidget(self._central)
         self._layout = QVBoxLayout(self._central)
-        self._layout.setContentsMargins(1, 1, 1, 1)  # 1px inside the border
+        self._layout.setContentsMargins(1, 1, 1, 1)
         self._layout.setSpacing(0)
 
         self._resizing = False
@@ -320,7 +262,6 @@ class SCWindow(QMainWindow):
         self._drag_pos = QPoint()
         self.setMouseTracking(True)
 
-        # Install the app-wide edge resize filter once
         global _edge_filter_installed
         if not _edge_filter_installed:
             app = QApplication.instance()
@@ -328,11 +269,8 @@ class SCWindow(QMainWindow):
                 app.installEventFilter(_EdgeResizeFilter(app))
                 _edge_filter_installed = True
 
-        # ── Default size (for reset layout) ──
         self._default_width = width
         self._default_height = height
-
-        # ── Collapse state ──
         self._collapsed = False
         self._expanded_height = height
         self._original_min_h = min_h
@@ -342,15 +280,13 @@ class SCWindow(QMainWindow):
         return self._layout
 
     def closeEvent(self, event) -> None:
-        """Persist geometry so it can be restored on the next launch."""
         _save_window_state(self)
         super().closeEvent(event)
 
     def set_opacity(self, value: float) -> None:
-        self.setWindowOpacity(max(0.3, min(1.0, value)))
+        self.setWindowOpacity(1.0)
 
     def reset_layout(self) -> None:
-        """Revert the window to its original default size, centred on screen."""
         self.resize(self._default_width, self._default_height)
         screen = QGuiApplication.primaryScreen()
         if screen:
@@ -360,12 +296,6 @@ class SCWindow(QMainWindow):
             self.move(x, y)
 
     def toggle_fullscreen(self) -> None:
-        """Toggle the window between normal and fullscreen state.
-
-        Frameless windows need manual normal/fullscreen handling since
-        the usual window-manager chrome isn't present. We save the
-        pre-fullscreen geometry so we can restore it precisely.
-        """
         if self.isFullScreen():
             self.showNormal()
             saved = getattr(self, "_pre_fullscreen_geom", None)
@@ -376,22 +306,12 @@ class SCWindow(QMainWindow):
             self.showFullScreen()
 
     def reset_scale(self) -> None:
-        """Reset any child QGraphicsView transforms to identity.
-
-        Covers the common tool case where a scrollable canvas (Mining
-        Signals ledger, Craft Database, etc.) has been zoomed via
-        wheel scrolling. Tools with a different notion of "scale" can
-        override this method.
-        """
         from PySide6.QtWidgets import QGraphicsView
         for view in self.findChildren(QGraphicsView):
             view.resetTransform()
 
     def toggle_collapse(self) -> None:
-        """Collapse the window to just the title bar, or expand it back."""
         self._collapsed = not self._collapsed
-        # Hide/show every widget in the content layout except the first
-        # (which is always the title bar).
         for i in range(1, self._layout.count()):
             item = self._layout.itemAt(i)
             w = item.widget() if item else None
@@ -406,12 +326,6 @@ class SCWindow(QMainWindow):
             self.resize(self.width(), self._expanded_height)
 
     def user_close(self) -> None:
-        """Called when the user clicks X on the title bar.
-
-        If the launcher's 'hide on tool active' setting is enabled (signalled
-        via the SC_TOOLBOX_EXIT_ON_CLOSE env var), quit the process so the
-        launcher can detect it and re-show itself.  Otherwise just hide.
-        """
         if os.environ.get("SC_TOOLBOX_EXIT_ON_CLOSE") == "1":
             _save_window_state(self)
             from PySide6.QtWidgets import QApplication
@@ -447,7 +361,7 @@ class SCWindow(QMainWindow):
             y = max(sg.y(), min(y, sg.bottom() - h))
         self.resize(w, h)
         self.move(x, y)
-        self.set_opacity(opacity)
+        self.set_opacity(1.0)
 
     def get_geometry_dict(self, prefix: str = "") -> dict:
         pos = self.pos()
@@ -459,8 +373,6 @@ class SCWindow(QMainWindow):
             f"{prefix}h": size.height(),
             f"{prefix}opacity": self.windowOpacity(),
         }
-
-    # ── Resize handling ──
 
     def _edge_at(self, pos: QPoint) -> Optional[str]:
         r = self.rect()
