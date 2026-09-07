@@ -18,7 +18,6 @@ if defined PYTHON_EXE goto :python_ready
 echo  [!] Python not found on this system.
 echo.
 
-:: Try winget first (available on Windows 10 1709+ and Windows 11)
 where winget >nul 2>&1
 if !errorlevel!==0 (
     echo  [*] Installing Python 3.12 via winget...
@@ -28,7 +27,6 @@ if !errorlevel!==0 (
     if !errorlevel!==0 (
         echo  [OK] Python installed via winget.
         echo.
-        :: Refresh environment so we can find the new Python
         call :refresh_path
         call :find_python
         if defined PYTHON_EXE goto :python_ready
@@ -37,17 +35,14 @@ if !errorlevel!==0 (
     echo.
 )
 
-:: Fallback: download Python installer from python.org
 echo  [*] Downloading Python 3.12.9 installer from python.org...
 set "INSTALLER=%TEMP%\python-3.12.9-amd64.exe"
 set "PYTHON_URL=https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe"
 
-:: Use curl (built into Windows 10+)
 where curl >nul 2>&1
 if !errorlevel!==0 (
     curl -L -o "%INSTALLER%" "%PYTHON_URL%"
 ) else (
-    :: Fallback to PowerShell
     powershell -Command "Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%INSTALLER%'"
 )
 
@@ -69,10 +64,8 @@ if !errorlevel! neq 0 (
     "%INSTALLER%" InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_tcltk=1
 )
 
-:: Clean up installer
 del "%INSTALLER%" >nul 2>&1
 
-:: Refresh environment and search again
 call :refresh_path
 call :find_python
 if not defined PYTHON_EXE (
@@ -86,10 +79,8 @@ if not defined PYTHON_EXE (
 :python_ready
 echo  [OK] Python: %PYTHON_EXE%
 
-:: ── Upgrade pip first ──
 "%PYTHON_EXE%" -m pip install --upgrade pip --quiet >nul 2>&1
 
-:: ── Install all dependencies from requirements.txt ──
 echo.
 echo  [*] Checking dependencies...
 
@@ -105,10 +96,14 @@ if !errorlevel! neq 0 goto :install_deps
 if !errorlevel! neq 0 goto :install_deps
 "%PYTHON_EXE%" -c "import PIL" >nul 2>&1
 if !errorlevel! neq 0 goto :install_deps
+"%PYTHON_EXE%" -c "import numpy" >nul 2>&1
+if !errorlevel! neq 0 goto :install_deps
+"%PYTHON_EXE%" -c "import onnxruntime" >nul 2>&1
+if !errorlevel! neq 0 goto :install_deps
 goto :deps_ok
 
 :install_deps
-echo  [*] Installing dependencies (PySide6, requests, pynput, mss, pytesseract, Pillow)...
+echo  [*] Installing dependencies (including numpy and onnxruntime for Mining Signals)...
 echo      This may take a few minutes on first run...
 "%PYTHON_EXE%" -m pip install -r "%~dp0requirements.txt" --quiet
 if !errorlevel! neq 0 (
@@ -116,7 +111,6 @@ if !errorlevel! neq 0 (
     "%PYTHON_EXE%" -m pip install -r "%~dp0requirements.txt"
 )
 
-:: Verify critical dependency
 "%PYTHON_EXE%" -c "import PySide6" >nul 2>&1
 if !errorlevel! neq 0 (
     echo  [!] PySide6 failed to install. Please check errors above.
@@ -130,6 +124,8 @@ echo  [OK] pynput
 echo  [OK] mss
 echo  [OK] pytesseract
 echo  [OK] Pillow
+echo  [OK] numpy
+echo  [OK] onnxruntime
 echo.
 echo  =============================================
 echo   Launching SC_Toolbox...
@@ -147,22 +143,12 @@ echo  Press any key to close this window...
 pause >nul
 exit /b
 
-:: ============================================================
-::  SUBROUTINES
-:: ============================================================
-
 :find_python
-:: Search common Python install locations on Windows
-
-:: Explicit Python 3.14 (winget pythoncore install) — preferred for SC_Toolbox.
-:: Python 3.13 may be installed separately for the OCR trainer (torch);
-:: it lacks SC_Toolbox runtime deps. Force 3.14 first.
 if exist "%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe" (
     set "PYTHON_EXE=%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe"
     exit /b
 )
 
-:: Standard Python.org user installs
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe" (
         set "PYTHON_EXE=%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe"
@@ -170,7 +156,6 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
-:: Winget / package manager installs (two levels deep)
 if exist "%LOCALAPPDATA%\Python" (
     for /d %%D in ("%LOCALAPPDATA%\Python\*") do (
         if exist "%%~D\python.exe" (
@@ -186,7 +171,6 @@ if exist "%LOCALAPPDATA%\Python" (
     )
 )
 
-:: PATH lookup (skip Windows Store stub)
 where python >nul 2>&1
 if !errorlevel!==0 (
     for /f "delims=" %%P in ('where python 2^>nul') do (
@@ -198,7 +182,6 @@ if !errorlevel!==0 (
     )
 )
 
-:: Program Files
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "%ProgramFiles%\Python\Python%%V\python.exe" (
         set "PYTHON_EXE=%ProgramFiles%\Python\Python%%V\python.exe"
@@ -210,7 +193,6 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
-:: Legacy C:\PythonXX
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "C:\Python%%V\python.exe" (
         set "PYTHON_EXE=C:\Python%%V\python.exe"
@@ -218,7 +200,6 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
-:: Python Launcher (py.exe)
 where py >nul 2>&1
 if !errorlevel!==0 (
     for /f "delims=" %%P in ('py -3 -c "import sys; print(sys.executable)" 2^>nul') do (
@@ -232,7 +213,6 @@ if !errorlevel!==0 (
 exit /b
 
 :refresh_path
-:: Reload PATH from the registry so we pick up freshly installed Python
 set "USER_PATH="
 set "SYS_PATH="
 for /f "tokens=2*" %%A in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%B"
