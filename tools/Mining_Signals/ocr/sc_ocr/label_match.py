@@ -923,17 +923,40 @@ def find_label_positions(
                         break
                 if rescue is not None:
                     alt, alt_rgb, alt_dist = rescue
-                    log.warning(
-                        "label_match: MASS top-1 DISAGREES with RGB "
-                        "(gray=%.2f at (%d,%d), nearest RGB %.1fpx away); "
-                        "swapping to candidate (gray=%.2f, rgb=%.2f, "
-                        "dist=%.1fpx) at (%d,%d)",
-                        top1["score"], top1["x"], top1["y"], top1_dist,
-                        alt["score"], alt_rgb["score"], alt_dist,
-                        alt["x"], alt["y"],
+                    _dy = int(alt["y"] - top1["y"])
+                    # MASS is the top data row. An RGB-agreeing gray
+                    # peak a full row (or more) away is almost always
+                    # RESISTANCE / INSTABILITY, not MASS. Field case
+                    # (5K2K): gray top-1 at y=190 score=0.65 (real MASS)
+                    # swapped to y=462 score=0.59 (RESISTANCE) because
+                    # RGB peaked there. Keep the higher gray peak.
+                    _refuse = (
+                        abs(_dy) > 40
+                        and float(alt["score"]) <= float(top1["score"])
                     )
-                    mass_candidates[0] = alt
-                    agreement = True
+                    if _refuse:
+                        agreement = False
+                        log.warning(
+                            "label_match: MASS top-1 DISAGREES with RGB "
+                            "(gray=%.2f at (%d,%d), nearest RGB %.1fpx "
+                            "away); refusing swap to (%d,%d) gray=%.2f "
+                            "dy=%+d (likely a lower HUD row)",
+                            top1["score"], top1["x"], top1["y"],
+                            top1_dist, alt["x"], alt["y"],
+                            alt["score"], _dy,
+                        )
+                    else:
+                        log.warning(
+                            "label_match: MASS top-1 DISAGREES with RGB "
+                            "(gray=%.2f at (%d,%d), nearest RGB %.1fpx away); "
+                            "swapping to candidate (gray=%.2f, rgb=%.2f, "
+                            "dist=%.1fpx) at (%d,%d)",
+                            top1["score"], top1["x"], top1["y"], top1_dist,
+                            alt["score"], alt_rgb["score"], alt_dist,
+                            alt["x"], alt["y"],
+                        )
+                        mass_candidates[0] = alt
+                        agreement = True
                 else:
                     # No alternative agrees -- keep top-1, mark as
                     # disagreement (lowers downstream confidence).
