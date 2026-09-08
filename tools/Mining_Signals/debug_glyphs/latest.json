@@ -131,7 +131,7 @@
     "signature_winner": {
       "field": "signature",
       "source": "winner",
-      "timestamp": 1788902254.5585356,
+      "timestamp": 1788902416.1146328,
       "joined": "111",
       "glyphs": [],
       "mean_conf": 0.7494783798853556,
@@ -143,7 +143,7 @@
       "rejection_reason": "not 4-5 digits (3)",
       "history": [
         {
-          "timestamp": 1788902247.5541098,
+          "timestamp": 1788902409.1167672,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -151,7 +151,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902248.5516353,
+          "timestamp": 1788902410.1101522,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -159,7 +159,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902249.5541573,
+          "timestamp": 1788902411.1170933,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -167,7 +167,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902250.5516195,
+          "timestamp": 1788902412.1116452,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -175,7 +175,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902251.5506015,
+          "timestamp": 1788902413.111892,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -183,7 +183,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902252.5620968,
+          "timestamp": 1788902414.1075428,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -191,7 +191,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902253.553577,
+          "timestamp": 1788902415.1201282,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -199,7 +199,7 @@
           "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788902254.5585356,
+          "timestamp": 1788902416.1146328,
           "raw_text": "111",
           "digits": "111",
           "mean_conf": 0.7494783798853556,
@@ -419,11 +419,11 @@
     "signature_crnn": {
       "field": "signature",
       "source": "crnn",
-      "timestamp": 1788902254.5577986,
+      "timestamp": 1788902416.1135764,
       "joined": "111",
       "glyphs": [],
       "mean_conf": 0.7494783798853556
     }
   },
-  "timestamp": 1788902254.5585356
+  "timestamp": 1788902416.1146328
 }
