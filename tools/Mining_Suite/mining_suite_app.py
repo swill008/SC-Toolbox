@@ -101,17 +101,17 @@ class MiningSuiteWindow(SCWindow):
         self,
         x: int = 80, y: int = 80,
         w: int = 1200, h: int = 900,
-        opacity: float = 0.95,
+        opacity: float = 1.0,
     ) -> None:
         super().__init__(
             title="Mining",
             width=w, height=h,
             min_w=800, min_h=500,
-            opacity=opacity,
+            opacity=1.0,
             always_on_top=True,
             accent=ACCENT,
         )
-        self.restore_geometry_from_args(x, y, w, h, opacity)
+        self.restore_geometry_from_args(x, y, w, h, 1.0)
 
         self._title_bar = SCTitleBar(
             self, title="Mining", accent_color=ACCENT,
@@ -125,7 +125,7 @@ class MiningSuiteWindow(SCWindow):
         self._tabs.setStyleSheet(f"""
             QTabWidget::pane {{
                 border: 1px solid {P.border};
-                background: transparent;
+                background: {P.bg_primary};
             }}
             QTabBar::tab {{
                 background: {P.bg_header};
@@ -205,7 +205,7 @@ def main() -> None:
         window = MiningSuiteWindow(
             x=parsed["x"], y=parsed["y"],
             w=parsed["w"], h=parsed["h"],
-            opacity=parsed["opacity"],
+            opacity=1.0,
         )
         window.show()
         window.raise_()
