@@ -16,7 +16,7 @@
 
 <p align="center">
   A lightweight desktop overlay suite for <strong>Star Citizen</strong>.<br>
-  Eleven gameplay tools — always on top, one hotkey away, no alt-tab required.
+  Nine gameplay tools — always on top, one hotkey away, no alt-tab required.
 </p>
 
 <p align="center">
@@ -41,25 +41,12 @@
 
 ---
 
-## What's New in v2.3.1
-
-- **Mining Signals now scans correctly on machines other than the developer's.** This is the fix most likely to matter if the scanner has been unreliable for you. HUD panels were normalised against the wrong reference height (`REF_H` 541, from an older training set) and only ever rescaled *upward*, so live 448x670 captures skipped normalisation entirely. On a different resolution, DPI or HUD scale the panel title outgrew the anchor templates, the pose solver lost lock, and values were read off a bad pose. Now calibrated to the native 670 and normalised in **both** directions. Measured on 22 real labelled panels: 2.0x rescaled went from 0% to 77% correct, native held at 100%, and the off-native band tightened from a ragged 0-86% to a steady 77-91%. Accuracy is now effectively **scale-independent**.
-- **Local signature OCR fallback** — the scanner degrades gracefully instead of failing outright when the primary reader is unavailable. (Thanks [@garrett-williams](https://github.com/garrett-williams).)
-- **The installer reports the version it is actually installing.** It had been showing `v2.2.16` while installing 2.3.x. The version is now derived from a single source at build time.
-- **Installer privacy** — the build no longer embeds the build machine's Windows username, from two independent causes (a staging scrub that had been silently failing to run, and compiler-emitted debug metadata).
-
-**Known limit, stated plainly:** the remaining Mining Signals errors are systematic rather than random. Resampling softens glyph edges and the digit model still misreads a few fragile shapes — 5 vs 6, decimal placement, thin 1s. Frame-to-frame consensus cannot fix an error that is identical in every frame, so accuracy plateaus around 75% on the hardest panels. That is the next thing being worked on.
-
-<details>
-<summary>Earlier: What's New in v2.2.8</summary>
-
+## What's New in v2.2.8
 
 - **RGB CNN voter for Mining Signals** — the SC_OCR pipeline now runs an RGB-trained CNN (plus a per-channel-inverted variant) as the primary digit reader, with the original grayscale CNN, CRNN, and Tesseract as fallback voters. Stops losing thin-stroke digits like 9s in low-contrast frames and reads faster on the high-confidence path.
 - **Glyph reviewer drag-select + augmentation cascade** — the training-data review tool (`scripts/review_glyphs.py`) now supports bounding-box drag-select for picking multiple glyphs in one sweep, and automatically moves a sample's augmented siblings (`aug_*.png`) when you re-classify the original.
 - **Stability fixes** — multi-recipe adaptive binarization for wide signature spans, equal-width splitter when blobs survive binarization, glyph-height-proportional comma masking, and a hysteresis gate on signal-value acceptance to suppress single-frame OCR jitter.
 - **Bundled-runtime fixes** — `scipy` now correctly declared in the Mining_Signals runtime requirements (was silently missing). Paddle sidecar pip uses `--only-binary=:all:` to avoid the Rust-toolchain-required `python-bidi` sdist on Python 3.13.
-
-</details>
 
 ---
 
@@ -75,8 +62,6 @@
 | Shift+6 | **Trade Hub** | Trade route calculator for single-hop & multi-leg routes | uexcorp.space |
 | Shift+7 | **Craft Database** | Crafting recipe browser with material requirements | scmdb.net |
 | Shift+8 | **Battle Buddy** | Real-time HUD overlay — tracks kills, deaths, and inventory from game logs | Star Citizen game log |
-| Shift+0 | **Mouse Blocker** | Blocks mouse input to the game window so you can use overlays without clicking through | — |
-| Shift+T | **PlayTime Calculator** | Tracks time played per session and in total, read from the game logs | Star Citizen game log |
 | — | **Mining Signals** | Live screen overlay reading signal scan %, mass, resistance, and instability from the SCAN RESULTS panel — powered by the new **SC_OCR** engine | Screen capture (SC_OCR + Tesseract) |
 
 Press **Shift + `** to toggle the launcher window.

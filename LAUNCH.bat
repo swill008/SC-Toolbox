@@ -3,13 +3,18 @@ setlocal enabledelayedexpansion
 title SC_Toolbox
 cd /d "%~dp0"
 
+:: Try to find Python (same search order as INSTALL_AND_LAUNCH.bat)
 set "PY="
 
+:: Explicit Python 3.14 (winget pythoncore install) — preferred for SC_Toolbox.
+:: Python 3.13 was installed separately for the OCR trainer (torch); it lacks
+:: the SC_Toolbox runtime deps. Force 3.14 first to use the correct env.
 if exist "%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe" (
     set "PY=%LOCALAPPDATA%\Python\pythoncore-3.14-64\python.exe"
     goto :run
 )
 
+:: Standard Python.org installs
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe" (
         set "PY=%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe"
@@ -17,6 +22,7 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
+:: Winget / package manager installs (two levels deep)
 if exist "%LOCALAPPDATA%\Python" (
     for /d %%D in ("%LOCALAPPDATA%\Python\*") do (
         if exist "%%~D\python.exe" (
@@ -32,6 +38,7 @@ if exist "%LOCALAPPDATA%\Python" (
     )
 )
 
+:: PATH lookup (skip Windows Store)
 where python >nul 2>&1
 if !errorlevel!==0 (
     for /f "delims=" %%P in ('where python 2^>nul') do (
@@ -43,6 +50,7 @@ if !errorlevel!==0 (
     )
 )
 
+:: Program Files (both nested and direct)
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "%ProgramFiles%\Python\Python%%V\python.exe" (
         set "PY=%ProgramFiles%\Python\Python%%V\python.exe"
@@ -54,6 +62,7 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
+:: Legacy C:\PythonXX
 for %%V in (314 313 312 311 310 39 38) do (
     if exist "C:\Python%%V\python.exe" (
         set "PY=C:\Python%%V\python.exe"
@@ -61,6 +70,7 @@ for %%V in (314 313 312 311 310 39 38) do (
     )
 )
 
+:: Last resort: Windows Store python if it works
 where python >nul 2>&1
 if !errorlevel!==0 (
     for /f "delims=" %%P in ('where python 2^>nul') do (
@@ -72,6 +82,7 @@ if !errorlevel!==0 (
     )
 )
 
+:: Try Python Launcher (py.exe)
 where py >nul 2>&1
 if !errorlevel!==0 (
     for /f "delims=" %%P in ('py -3 -c "import sys; print(sys.executable)" 2^>nul') do (
@@ -82,6 +93,7 @@ if !errorlevel!==0 (
     )
 )
 
+:: Not found — run full installer which can download and install Python
 echo.
 echo  Python not found. Running installer (will auto-install Python)...
 echo.
@@ -91,6 +103,7 @@ exit /b
 :run
 echo Using Python: %PY%
 echo Verifying dependencies...
+:: Verify dependencies
 set "NEED_INSTALL=0"
 echo  - PySide6
 "%PY%" -c "import PySide6"
@@ -109,12 +122,6 @@ echo  - pytesseract
 if !errorlevel! neq 0 set "NEED_INSTALL=1"
 echo  - PIL
 "%PY%" -c "import PIL"
-if !errorlevel! neq 0 set "NEED_INSTALL=1"
-echo  - numpy
-"%PY%" -c "import numpy"
-if !errorlevel! neq 0 set "NEED_INSTALL=1"
-echo  - onnxruntime
-"%PY%" -c "import onnxruntime"
 if !errorlevel! neq 0 set "NEED_INSTALL=1"
 echo Dependency check complete.
 
