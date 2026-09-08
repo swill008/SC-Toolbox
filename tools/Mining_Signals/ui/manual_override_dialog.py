@@ -654,33 +654,30 @@ class ManualOverrideDialog(QDialog):
             )
             return
 
-        # Teach title-relative multipliers so live scans track SCAN
-        # RESULTS instead of sticking at absolute pixels.
+        # Store boxes in HUD-region pixels + the capture size they
+        # were drawn on. Live OCR upscales to REF_H; placement scales
+        # these boxes by img/capture. No live title re-anchor.
         taught = False
-        if self._hud_pil is not None:
-            try:
-                from ocr.sc_ocr import scan_results_match as _srm
-                _anchor = _srm.find_scan_results_anchor(self._hud_pil)
-            except Exception as _exc:
-                log.debug("skeleton teach: title detect failed: %s", _exc)
-                _anchor = None
-            if _anchor and int(_anchor.get("title_h") or 0) >= 8:
-                try:
-                    taught = bool(calibration.teach_learned_skeleton(
-                        self._region,
-                        title_y=int(_anchor["title_y"]),
-                        title_h=int(_anchor["title_h"]),
-                        boxes=saved,
-                    ))
-                except Exception as _exc:
-                    log.warning("teach_learned_skeleton failed: %s", _exc)
-                    taught = False
+        try:
+            _cw = int(self._hud_pil.width) if self._hud_pil is not None else int((self._region or {}).get("w") or 0)
+            _ch = int(self._hud_pil.height) if self._hud_pil is not None else int((self._region or {}).get("h") or 0)
+            taught = bool(calibration.teach_learned_skeleton(
+                self._region,
+                boxes=saved,
+                capture_w=_cw,
+                capture_h=_ch,
+            ))
+        except Exception as _exc:
+            log.warning("teach_learned_skeleton failed: %s", _exc)
+            taught = False
         if taught:
-            log.info("manual override: learned skeleton from title + boxes")
-        else:
             log.info(
-                "manual override: sticky boxes only (title not taught)"
+                "manual override: stored region-pixel skeleton "
+                "capture=%sx%s fields=%s",
+                _cw, _ch, list(saved),
             )
+        else:
+            log.info("manual override: sticky boxes only (teach failed)")
 
         self.overrides_saved.emit(saved)
         self.accept()
