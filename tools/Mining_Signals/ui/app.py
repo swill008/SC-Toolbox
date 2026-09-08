@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QFrame, QPushButton, QLineEdit, QHeaderView, QStyledItemDelegate,
     QTabWidget, QFileDialog, QDialog, QSpinBox, QCheckBox,
-    QScrollArea, QSplitter,
+    QScrollArea, QSplitter, QSizePolicy,
 )
 
 from shared.qt.theme import P, apply_theme
@@ -967,12 +967,12 @@ class MiningSignalsApp(SCWindow):
             columns=[
                 ColumnDef("Resource", "name", width=95),
                 ColumnDef("Rarity", "rarity", width=70, fmt=_fmt_rarity),
-                ColumnDef("1", "1", width=52, alignment=Qt.AlignRight),
-                ColumnDef("2", "2", width=52, alignment=Qt.AlignRight),
-                ColumnDef("3", "3", width=52, alignment=Qt.AlignRight),
-                ColumnDef("4", "4", width=52, alignment=Qt.AlignRight),
-                ColumnDef("5", "5", width=52, alignment=Qt.AlignRight),
-                ColumnDef("6", "6", width=52, alignment=Qt.AlignRight),
+                ColumnDef("1", "1", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("2", "2", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("3", "3", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("4", "4", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("5", "5", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("6", "6", width=52, alignment=Qt.AlignLeft),
             ],
             parent=self,
             sortable=True,
@@ -983,24 +983,29 @@ class MiningSignalsApp(SCWindow):
         self._table.setItemDelegate(
             _RarityRowDelegate(self._table._source_model, self._table)
         )
-        # Column sizing: pack left with the other columns. Do not
-        # stretch column 6 across leftover table width.
+        # Resource column takes leftover width when the window grows.
+        # Signal columns stay packed left (do not stretch column 6).
         header = self._table.horizontalHeader()
         header.setStretchLastSection(False)
-        for i in range(8):  # Resource, Rarity, 1..6
+        header.setSectionResizeMode(0, QHeaderView.Stretch)  # Resource
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        for i in range(2, 8):  # 1..6
             header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
         header.setMinimumSectionSize(36)
+        self._table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # Double-click a row to open a detail popup with pin/close
         self._table.row_double_clicked.connect(self._open_resource_popup)
 
-        # Table | break panel. Drag the handle to give the table more
-        # (or less) of the scanner page.
+        # Table | break panel. Both panes grow with the window; drag
+        # the handle to split the space.
         self._break_panel = BreakPanel(self._scanner_page)
         self._table.setMinimumWidth(280)
         self._break_panel.setMinimumWidth(180)
+        self._break_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._table_splitter = QSplitter(Qt.Horizontal, self._scanner_page)
         self._table_splitter.setChildrenCollapsible(False)
         self._table_splitter.setHandleWidth(6)
+        self._table_splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self._table_splitter.addWidget(self._table)
         self._table_splitter.addWidget(self._break_panel)
         self._table_splitter.setStretchFactor(0, 3)
