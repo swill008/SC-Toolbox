@@ -12643,6 +12643,40 @@ def _signal_recognize_pil(img, region: Optional[dict] = None) -> Optional[int]:
     # checks fail) AND captures of HUD variants the consensus doesn't
     # cover yet.
 
+    # ── Prefer a validated digit cluster over world-model fractions ──
+    # find_digit_crop_box already locates the 4–7 glyph run (the lime
+    # overlay). world_model_region2 used to run first and replace that
+    # box with a proportional sliver inside the pill, clipping leading
+    # digits (field: cluster (0,17,62,36) vs crop (42,20,75,36) → CRNN
+    # 2520 / consensus 010). If the cluster is structurally valid, keep
+    # it and skip the world-model / icon-heuristic path.
+    if crop_box is None:
+        try:
+            from . import signal_anchor as _sa_cluster
+            _cluster_box = _sa_cluster.find_digit_crop_box(
+                gray, rgb_image=rgb,
+            )
+            if _cluster_box is not None:
+                _cm = _sa_cluster.last_crop_mode()
+                _cw = int(_cluster_box[2] - _cluster_box[0])
+                _ch = int(_cluster_box[3] - _cluster_box[1])
+                if (
+                    _cm in ("combo", "digit_only")
+                    and _cw >= 50
+                    and _ch >= 10
+                ):
+                    crop_box = _cluster_box
+                    _icon_seen_this_tick = True
+                    log.info(
+                        "sc_ocr.signal: using digit-cluster crop_box=%s "
+                        "mode=%s w=%d h=%d (skipping world_model_region2)",
+                        crop_box, _cm, _cw, _ch,
+                    )
+        except Exception as _cl_exc:
+            log.debug(
+                "sc_ocr.signal: cluster-prefer skipped: %s", _cl_exc,
+            )
+
     # ── PRIMARY: world-model-region2 proportional derivation ──
     # When BOTH the calibration file and the pill bbox are available,
     # we know exactly where the digit cluster lives inside the pill
