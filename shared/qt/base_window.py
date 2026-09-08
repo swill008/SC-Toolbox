@@ -182,6 +182,7 @@ class _HoloSurface(QWidget):
         self._accent = QColor(self._accent_hex)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setStyleSheet(f"background: {P.bg_primary};")
+        self._plain = False
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -191,6 +192,10 @@ class _HoloSurface(QWidget):
 
         # ── 1. Opaque dark fill ──
         painter.fillRect(r, QColor(P.bg_primary))
+        if getattr(self, "_plain", False):
+            painter.end()
+            super().paintEvent(event)
+            return
 
         # ── 2. Scan lines ──
         scan_color = QColor(255, 255, 255, _SCANLINE_ALPHA)
@@ -334,6 +339,15 @@ class SCWindow(QMainWindow):
         self._collapsed = False
         self._expanded_height = height
         self._original_min_h = min_h
+        self._plain_embed = False
+
+    def set_plain_embed(self, on: bool = True) -> None:
+        """Drop HUD chrome when this window is hosted inside another."""
+        self._plain_embed = bool(on)
+        central = getattr(self, "_central", None)
+        if central is not None:
+            central._plain = bool(on)
+            central.update()
 
     @property
     def content_layout(self) -> QVBoxLayout:
