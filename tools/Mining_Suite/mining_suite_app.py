@@ -29,7 +29,7 @@ bootstrap_skill(os.path.join(_SIGNALS_DIR, "mining_signals_app.py"))
 from PySide6.QtCore import Qt, QTimer  # noqa: E402
 from PySide6.QtGui import QAction, QColor, QPalette  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
-    QApplication, QLabel, QMainWindow, QTabWidget,
+    QApplication, QLabel, QMainWindow, QSizePolicy, QTabWidget,
     QVBoxLayout, QWidget,
 )
 from shared.crash_logger import init_crash_logging  # noqa: E402
@@ -98,6 +98,11 @@ def _as_tab_widget(window, parent: QWidget) -> QWidget:
         window.set_plain_embed(True)
     if hasattr(window, "setWindowOpacity"):
         window.setWindowOpacity(1.0)
+    window.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    window.setMinimumSize(0, 0)
+    central = window.centralWidget() if hasattr(window, "centralWidget") else None
+    if central is not None:
+        central.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
     _strip_inner_chrome(window)
     return window
 
@@ -172,6 +177,7 @@ class MiningSuiteWindow(QMainWindow):
 
     def _build_signals_tab(self) -> None:
         host = QWidget(self._tabs)
+        host.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         lay = QVBoxLayout(host)
         lay.setContentsMargins(0, 0, 0, 0)
         from ui.app import MiningSignalsApp
@@ -184,6 +190,7 @@ class MiningSuiteWindow(QMainWindow):
 
     def _build_loadout_tab(self) -> None:
         host = QWidget(self._tabs)
+        host.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         lay = QVBoxLayout(host)
         lay.setContentsMargins(0, 0, 0, 0)
         try:
