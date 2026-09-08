@@ -3,243 +3,427 @@
     "signature_signal_rgb": {
       "field": "signature",
       "source": "signal_rgb",
-      "timestamp": 1788832596.3881032,
-      "joined": "@@@@@",
+      "timestamp": 1788901888.9590266,
+      "joined": "7777",
       "glyphs": [
         {
           "idx": 0,
-          "char": "@",
-          "conf": 0.9998047947883606,
+          "char": "7",
+          "conf": 0.7933698296546936,
           "img": "signature_signal_rgb_0.png"
         },
         {
           "idx": 1,
-          "char": "@",
-          "conf": 0.986464262008667,
+          "char": "7",
+          "conf": 0.891592264175415,
           "img": "signature_signal_rgb_1.png"
         },
         {
           "idx": 2,
-          "char": "@",
-          "conf": 0.9973560571670532,
+          "char": "7",
+          "conf": 0.891592264175415,
           "img": "signature_signal_rgb_2.png"
         },
         {
           "idx": 3,
-          "char": "@",
-          "conf": 0.9971389770507812,
+          "char": "7",
+          "conf": 0.891592264175415,
           "img": "signature_signal_rgb_3.png"
-        },
-        {
-          "idx": 4,
-          "char": "@",
-          "conf": 0.9992735981941223,
-          "img": "signature_signal_rgb_4.png"
         }
       ]
     },
     "signature_signal_rgb_inv": {
       "field": "signature",
       "source": "signal_rgb_inv",
-      "timestamp": 1788832596.3960388,
-      "joined": "@000@",
+      "timestamp": 1788901888.965508,
+      "joined": "7777",
       "glyphs": [
         {
           "idx": 0,
-          "char": "@",
-          "conf": 0.9753477573394775,
+          "char": "7",
+          "conf": 0.9999997615814209,
           "img": "signature_signal_rgb_inv_0.png"
         },
         {
           "idx": 1,
-          "char": "0",
-          "conf": 0.8744781017303467,
+          "char": "7",
+          "conf": 0.9999990463256836,
           "img": "signature_signal_rgb_inv_1.png"
         },
         {
           "idx": 2,
-          "char": "0",
-          "conf": 0.9864338636398315,
+          "char": "7",
+          "conf": 0.9999990463256836,
           "img": "signature_signal_rgb_inv_2.png"
         },
         {
           "idx": 3,
-          "char": "0",
-          "conf": 0.9976413249969482,
+          "char": "7",
+          "conf": 0.9999990463256836,
           "img": "signature_signal_rgb_inv_3.png"
-        },
-        {
-          "idx": 4,
-          "char": "@",
-          "conf": 0.9115381240844727,
-          "img": "signature_signal_rgb_inv_4.png"
         }
       ]
     },
     "signature_primary": {
       "field": "signature",
       "source": "primary",
-      "timestamp": 1788832596.4022143,
-      "joined": "11090",
+      "timestamp": 1788901888.9709234,
+      "joined": "9999",
       "glyphs": [
         {
           "idx": 0,
-          "char": "1",
-          "conf": 0.8585920929908752,
+          "char": "9",
+          "conf": 0.816985547542572,
           "img": "signature_primary_0.png"
         },
         {
           "idx": 1,
-          "char": "1",
-          "conf": 0.9744929671287537,
+          "char": "9",
+          "conf": 0.8554094433784485,
           "img": "signature_primary_1.png"
         },
         {
           "idx": 2,
-          "char": "0",
-          "conf": 0.997099757194519,
+          "char": "9",
+          "conf": 0.8554094433784485,
           "img": "signature_primary_2.png"
         },
         {
           "idx": 3,
           "char": "9",
-          "conf": 0.6355022192001343,
+          "conf": 0.8554094433784485,
           "img": "signature_primary_3.png"
-        },
-        {
-          "idx": 4,
-          "char": "0",
-          "conf": 0.9684751033782959,
-          "img": "signature_primary_4.png"
         }
       ]
     },
     "signature_secondary": {
       "field": "signature",
       "source": "secondary",
-      "timestamp": 1788832596.407125,
-      "joined": "11171",
+      "timestamp": 1788901888.9769776,
+      "joined": "1111",
       "glyphs": [
         {
           "idx": 0,
           "char": "1",
-          "conf": 0.9804710149765015,
+          "conf": 0.9388529658317566,
           "img": "signature_secondary_0.png"
         },
         {
           "idx": 1,
           "char": "1",
-          "conf": 0.999868631362915,
+          "conf": 0.6921524405479431,
           "img": "signature_secondary_1.png"
         },
         {
           "idx": 2,
           "char": "1",
-          "conf": 0.9214703440666199,
+          "conf": 0.6921524405479431,
           "img": "signature_secondary_2.png"
         },
         {
           "idx": 3,
-          "char": "7",
-          "conf": 0.8381027579307556,
-          "img": "signature_secondary_3.png"
-        },
-        {
-          "idx": 4,
           "char": "1",
-          "conf": 0.9853165745735168,
-          "img": "signature_secondary_4.png"
+          "conf": 0.6921524405479431,
+          "img": "signature_secondary_3.png"
         }
       ]
-    },
-    "signature_crnn": {
-      "field": "signature",
-      "source": "crnn",
-      "timestamp": 1788832596.4189708,
-      "joined": "0",
-      "glyphs": [],
-      "mean_conf": 0.8225718140602112
     },
     "signature_winner": {
       "field": "signature",
       "source": "winner",
-      "timestamp": 1788832596.419582,
-      "joined": "0",
+      "timestamp": 1788902219.5515354,
+      "joined": "111",
       "glyphs": [],
-      "mean_conf": 0.8225718140602112,
+      "mean_conf": 0.7494783798853556,
       "value_crop": "signature_value_crop.png",
-      "crnn_text": "0",
-      "crnn_digits": "0",
-      "crnn_confidence": 0.8225718140602112,
+      "crnn_text": "111",
+      "crnn_digits": "111",
+      "crnn_confidence": 0.7494783798853556,
       "validated_value": null,
-      "rejection_reason": "not 4-5 digits (1)",
+      "rejection_reason": "not 4-5 digits (3)",
       "history": [
         {
-          "timestamp": 1788832589.4501252,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902212.5661533,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832590.422438,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902213.555595,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832591.4210613,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902214.5599728,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832592.4197109,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902215.5504577,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832593.5117102,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902216.5549037,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832594.42549,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902217.5581048,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832595.5095458,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902218.549241,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         },
         {
-          "timestamp": 1788832596.419582,
-          "raw_text": "0",
-          "digits": "0",
-          "mean_conf": 0.8225718140602112,
+          "timestamp": 1788902219.5515354,
+          "raw_text": "111",
+          "digits": "111",
+          "mean_conf": 0.7494783798853556,
           "validated_value": null,
-          "rejection_reason": "not 4-5 digits (1)"
+          "rejection_reason": "not 4-5 digits (3)"
         }
       ]
+    },
+    "mass_primary": {
+      "field": "mass",
+      "source": "primary",
+      "timestamp": 1788901891.458039,
+      "joined": "91",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "9",
+          "conf": 0.5011112093925476,
+          "img": "mass_primary_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "1",
+          "conf": 0.9917638301849365,
+          "img": "mass_primary_1.png"
+        }
+      ]
+    },
+    "mass_secondary": {
+      "field": "mass",
+      "source": "secondary",
+      "timestamp": 1788901891.500966,
+      "joined": "47",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "4",
+          "conf": 0.32750189304351807,
+          "img": "mass_secondary_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "7",
+          "conf": 0.4449913799762726,
+          "img": "mass_secondary_1.png"
+        }
+      ]
+    },
+    "mass_hud_rgb": {
+      "field": "mass",
+      "source": "hud_rgb",
+      "timestamp": 1788901891.4832296,
+      "joined": "00",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "0",
+          "conf": 0.9999923706054688,
+          "img": "mass_hud_rgb_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "0",
+          "conf": 0.9999871253967285,
+          "img": "mass_hud_rgb_1.png"
+        }
+      ]
+    },
+    "resistance_primary": {
+      "field": "resistance",
+      "source": "primary",
+      "timestamp": 1788901891.5393124,
+      "joined": "%",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "%",
+          "conf": 0.993104875087738,
+          "img": "resistance_primary_0.png"
+        }
+      ]
+    },
+    "resistance_secondary": {
+      "field": "resistance",
+      "source": "secondary",
+      "timestamp": 1788901891.5457911,
+      "joined": "%",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "%",
+          "conf": 0.7482469081878662,
+          "img": "resistance_secondary_0.png"
+        }
+      ]
+    },
+    "resistance_hud_rgb": {
+      "field": "resistance",
+      "source": "hud_rgb",
+      "timestamp": 1788901891.550783,
+      "joined": "%",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "%",
+          "conf": 0.9946019649505615,
+          "img": "resistance_hud_rgb_0.png"
+        }
+      ]
+    },
+    "instability_primary": {
+      "field": "instability",
+      "source": "primary",
+      "timestamp": 1788901891.6995487,
+      "joined": "3",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "3",
+          "conf": 0.49539196491241455,
+          "img": "instability_primary_0.png"
+        }
+      ]
+    },
+    "instability_secondary": {
+      "field": "instability",
+      "source": "secondary",
+      "timestamp": 1788901891.7296228,
+      "joined": ".",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": ".",
+          "conf": 0.9699596762657166,
+          "img": "instability_secondary_0.png"
+        }
+      ]
+    },
+    "instability_hud_rgb": {
+      "field": "instability",
+      "source": "hud_rgb",
+      "timestamp": 1788901891.7098267,
+      "joined": "0",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "0",
+          "conf": 0.9719713926315308,
+          "img": "instability_hud_rgb_0.png"
+        }
+      ]
+    },
+    "mineral_crnn": {
+      "field": "mineral",
+      "source": "crnn",
+      "timestamp": 1788901891.8405557,
+      "joined": "IO NPD P MIC DCMS24",
+      "glyphs": [],
+      "mean_conf": 0.5627929293795636
+    },
+    "mineral_tesseract": {
+      "field": "mineral",
+      "source": "tesseract",
+      "timestamp": 1788901891.911714,
+      "joined": "",
+      "glyphs": [],
+      "mean_conf": null
+    },
+    "mass_winner": {
+      "field": "mass",
+      "source": "winner",
+      "timestamp": 1788860950.2596958,
+      "joined": "800",
+      "glyphs": [],
+      "mean_conf": 0.9684259990851084
+    },
+    "mass_crnn": {
+      "field": "mass",
+      "source": "crnn",
+      "timestamp": 1788901891.4918385,
+      "joined": "",
+      "glyphs": [],
+      "mean_conf": 0.5931516468524933
+    },
+    "resistance_winner": {
+      "field": "resistance",
+      "source": "winner",
+      "timestamp": 1788901891.554983,
+      "joined": "%",
+      "glyphs": [],
+      "mean_conf": 0.993104875087738
+    },
+    "instability_crnn": {
+      "field": "instability",
+      "source": "crnn",
+      "timestamp": 1788901891.7229838,
+      "joined": "11111111020",
+      "glyphs": [],
+      "mean_conf": 0.4653400205648862
+    },
+    "mineral_vote": {
+      "field": "mineral",
+      "source": "vote",
+      "timestamp": 1788901889.296907,
+      "joined": "tte",
+      "glyphs": [],
+      "mean_conf": 0.6666666666666666
+    },
+    "mineral_winner": {
+      "field": "mineral",
+      "source": "winner",
+      "timestamp": 1788901889.3010619,
+      "joined": "Torite",
+      "glyphs": [],
+      "mean_conf": 0.6666666666666666
+    },
+    "signature_crnn": {
+      "field": "signature",
+      "source": "crnn",
+      "timestamp": 1788902219.5507822,
+      "joined": "111",
+      "glyphs": [],
+      "mean_conf": 0.7494783798853556
     }
   },
-  "timestamp": 1788832596.419582
+  "timestamp": 1788902219.5515354
 }
