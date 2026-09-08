@@ -2930,52 +2930,93 @@ def _log_calibration_state(region: dict, cal_result) -> None:
         )
 
 
+def _hud_region_to_img_scale(
+    region: dict,
+    img_w: int,
+    img_h: int,
+    capture_w: Optional[int] = None,
+    capture_h: Optional[int] = None,
+) -> tuple[float, float]:
+    """Scale HUD-region pixels onto the live image (REF_H upscale)."""
+    try:
+        rw = int(capture_w) if capture_w else int(region.get("w") or img_w)
+        rh = int(capture_h) if capture_h else int(region.get("h") or img_h)
+    except (TypeError, ValueError):
+        rw, rh = int(img_w), int(img_h)
+    if rw < 1:
+        rw = int(img_w)
+    if rh < 1:
+        rh = int(img_h)
+    return float(img_w) / float(rw), float(img_h) / float(rh)
+
+
+def _scale_hud_box_to_row(
+    box: dict, sx: float, sy: float, img_w: int, img_h: int,
+) -> Optional[tuple[int, int, int]]:
+    try:
+        x = int(round(int(box["x"]) * sx))
+        y = int(round(int(box["y"]) * sy))
+        h = max(1, int(round(int(box["h"]) * sy)))
+    except (KeyError, TypeError, ValueError):
+        return None
+    y1 = max(0, min(img_h, y))
+    y2 = max(0, min(img_h, y + h))
+    if y2 - y1 < 4:
+        return None
+    x = max(0, min(img_w - 1, x))
+    return (y1, y2, x)
+
+
 def _label_rows_from_learned_skeleton(
     region: dict,
     img_w: int,
     img_h: int,
-    title_box: "Optional[tuple[int, int, int, int]]",
+    title_box: "Optional[tuple[int, int, int, int]]" = None,
 ) -> dict[str, tuple[int, int, int]]:
-    """Place rows at ``title_y + title_h * taught_mult``.
+    """Place rows from HUD-region boxes scaled onto the live image.
 
-    X comes from the user's drawn boxes (same HUD region). Y tracks
-    the live SCAN RESULTS title. Returns {} if the skeleton is
-    missing or the title box is unusable.
+    Does NOT re-anchor to a live SCAN RESULTS match. ``title_box`` is
+    ignored. Boxes are the pixels the user drew on the region capture;
+    live ``api.scan_hud_onnx`` resizes that capture to REF_H=670, so
+    we apply ``img / capture`` (same factor as that resize).
     """
-    if not title_box or len(title_box) < 4:
-        return {}
+    del title_box  # placement is region-relative, not title-relative
     try:
         from .sc_ocr import calibration as _cal_sk
         sk = _cal_sk.get_learned_skeleton(region)
     except Exception:
-        return {}
-    if not sk:
-        return {}
-    try:
-        _ty = int(title_box[1])
-        _th = int(title_box[3])
-    except (TypeError, ValueError, IndexError):
-        return {}
-    if _th < 8:
-        return {}
+        sk = None
+    fields = (sk.get("fields") if isinstance(sk, dict) else None) or {}
+    sx, sy = _hud_region_to_img_scale(
+        region, img_w, img_h,
+        (sk or {}).get("capture_w") if sk else None,
+        (sk or {}).get("capture_h") if sk else None,
+    )
     out: dict[str, tuple[int, int, int]] = {}
-    fields = sk.get("fields") or {}
-    for _field, spec in fields.items():
-        if not isinstance(spec, dict):
+    for _field in ("_mineral_row", "mass", "resistance", "instability"):
+        spec = fields.get(_field) if isinstance(fields, dict) else None
+        box = None
+        if isinstance(spec, dict) and "y" in spec and "h" in spec:
+            box = spec
+        else:
+            try:
+                from .sc_ocr import calibration as _cal_box
+                box = _cal_box.get_manual_override_box(region, _field)
+            except Exception:
+                box = None
+        if not box:
             continue
-        try:
-            _mult = float(spec["mult"])
-            _hf = float(spec.get("half_h_frac") or 0.35)
-            _x = int(spec.get("x") or 0)
-        except (KeyError, TypeError, ValueError):
-            continue
-        _cy = int(round(_ty + _mult * _th))
-        _half = max(6, int(round(_hf * _th)))
-        _y1 = max(0, _cy - _half)
-        _y2 = min(img_h, _cy + _half)
-        if _y2 - _y1 < 4:
-            continue
-        out[str(_field)] = (_y1, _y2, max(0, min(img_w - 1, _x)))
+        row = _scale_hud_box_to_row(box, sx, sy, img_w, img_h)
+        if row is not None:
+            out[str(_field)] = row
+    if out:
+        log.info(
+            "hud: region-scale skeleton sx=%.3f sy=%.3f "
+            "img=%dx%d capture_region=%sx%s rows=%s",
+            sx, sy, img_w, img_h,
+            region.get("w"), region.get("h"),
+            {k: v[:2] for k, v in out.items()},
+        )
     return out
 
 
@@ -3000,22 +3041,14 @@ def _build_manual_override_label_rows(
         box = _cal_local.get_manual_override_box(region, _field)
         if box is None:
             continue
-        try:
-            _x = max(0, int(box["x"]))
-            _y = max(0, int(box["y"]))
-            _w = max(1, int(box["w"]))
-            _h = max(1, int(box["h"]))
-        except (KeyError, TypeError, ValueError):
+        row = _scale_hud_box_to_row(
+            box,
+            *_hud_region_to_img_scale(region, img_w, img_h),
+            img_w, img_h,
+        )
+        if row is None:
             continue
-        y_s = min(img_h, _y)
-        y_e = min(img_h, _y + _h)
-        if y_e - y_s < 4:
-            continue
-        # x_v_start is the x where the value crop begins. The manual
-        # box is the user-defined value rectangle, so its left edge
-        # IS the value column.
-        x_v_start = min(img_w, _x)
-        out[_field] = (y_s, y_e, x_v_start)
+        out[_field] = row
     return out
 
 
@@ -3395,7 +3428,6 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                     from .sc_ocr import calibration as _cal_sk
                     _sk_rows = _label_rows_from_learned_skeleton(
                         _region_sk, img.width, img.height,
-                        _get_cached_title_box(),
                     )
                     if (
                         _sk_rows
@@ -3403,22 +3435,24 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                         and "resistance" in _sk_rows
                     ):
                         log.info(
-                            "hud: learned-skeleton title-track "
-                            "title=%s rows=%s — skipping NCC placement",
-                            _get_cached_title_box(),
+                            "hud: learned-skeleton region-scale "
+                            "rows=%s — skipping NCC placement",
                             {k: v[:2] for k, v in _sk_rows.items()},
                         )
                         try:
                             from .sc_ocr import debug_overlay as _dbg_sk
                             _mn = _sk_rows.get("_mineral_row")
+                            _mass = _sk_rows.get("mass")
                             _dbg_sk.set_panel_finder(
-                                top_y=int(_pre_anchor["title_y"]),
+                                top_y=_mass[0] if _mass else 0,
                                 mineral_y_top=_mn[0] if _mn else None,
                                 mineral_y_bot=_mn[1] if _mn else None,
                                 mineral_center=(
                                     (_mn[0] + _mn[1]) // 2 if _mn else None
                                 ),
-                                pitch=int(_pre_anchor["title_h"] * 1.4),
+                                pitch=(
+                                    (_mass[1] - _mass[0]) if _mass else None
+                                ),
                                 bot_line_y=None,
                                 source="learned_skeleton",
                                 title_box=_get_cached_title_box(),
