@@ -967,12 +967,12 @@ class MiningSignalsApp(SCWindow):
             columns=[
                 ColumnDef("Resource", "name", width=95),
                 ColumnDef("Rarity", "rarity", width=70, fmt=_fmt_rarity),
-                ColumnDef("1", "1", width=52, alignment=Qt.AlignLeft),
-                ColumnDef("2", "2", width=52, alignment=Qt.AlignLeft),
-                ColumnDef("3", "3", width=52, alignment=Qt.AlignLeft),
-                ColumnDef("4", "4", width=52, alignment=Qt.AlignLeft),
-                ColumnDef("5", "5", width=52, alignment=Qt.AlignLeft),
-                ColumnDef("6", "6", width=52, alignment=Qt.AlignLeft),
+                ColumnDef("1", "1", width=52, alignment=Qt.AlignHCenter),
+                ColumnDef("2", "2", width=52, alignment=Qt.AlignHCenter),
+                ColumnDef("3", "3", width=52, alignment=Qt.AlignHCenter),
+                ColumnDef("4", "4", width=52, alignment=Qt.AlignHCenter),
+                ColumnDef("5", "5", width=52, alignment=Qt.AlignHCenter),
+                ColumnDef("6", "6", width=52, alignment=Qt.AlignHCenter),
             ],
             parent=self,
             sortable=True,
@@ -983,14 +983,12 @@ class MiningSignalsApp(SCWindow):
         self._table.setItemDelegate(
             _RarityRowDelegate(self._table._source_model, self._table)
         )
-        # Resource column takes leftover width when the window grows.
-        # Signal columns stay packed left (do not stretch column 6).
+        # Even column widths: every column shares leftover space so
+        # Resource is not a gap-then-clump against Rarity/1–6.
         header = self._table.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(0, QHeaderView.Stretch)  # Resource
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        for i in range(2, 8):  # 1..6
-            header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
+        for i in range(8):
+            header.setSectionResizeMode(i, QHeaderView.Stretch)
         header.setMinimumSectionSize(36)
         self._table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # Double-click a row to open a detail popup with pin/close
