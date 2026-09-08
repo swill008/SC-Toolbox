@@ -3707,9 +3707,7 @@ class MiningSignalsApp(SCWindow):
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(
                 self, "Calibration error",
-                f"Could not open calibration dialog:
-
-{exc}",
+                f"Could not open calibration dialog:\n\n{exc}",
             )
 
     def _maybe_show_first_launch_calibration_prompt(self) -> None:
