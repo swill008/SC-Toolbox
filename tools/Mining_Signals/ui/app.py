@@ -3547,6 +3547,40 @@ class MiningSignalsApp(SCWindow):
         self._config["hud_region"] = region
         _save_config(self._config)
         log.info("Mining HUD region set: %s", region)
+        # Blow up the just-drawn HUD rect and let the user place the
+        # row skeleton (Mass / Resistance / Instability). Auto then
+        # tracks those rows from SCAN RESULTS.
+        hud_pil = None
+        try:
+            hud_pil = capture_region(region)
+        except Exception as exc:
+            log.warning("HUD skeleton capture failed: %s", exc)
+            hud_pil = None
+        if hud_pil is None:
+            try:
+                QMessageBox.warning(
+                    self, "HUD region saved",
+                    "Could not capture that rectangle. Use "
+                    "Calibrate Mining Crops → Emergency Override "
+                    "to place the rows.",
+                )
+            except Exception:
+                pass
+            return
+        try:
+            from ui.manual_override_dialog import ManualOverrideDialog
+        except Exception:
+            try:
+                from .manual_override_dialog import ManualOverrideDialog
+            except Exception as exc:
+                log.error("ManualOverrideDialog import failed: %s", exc)
+                return
+        dlg = ManualOverrideDialog(
+            region=dict(region),
+            hud_pil=hud_pil,
+            parent=self,
+        )
+        dlg.exec()
 
     def _effective_game_resolution(self) -> Optional[dict]:
         """Resolved game resolution ({"w","h","source"}) for the region
