@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QFrame, QPushButton, QLineEdit, QHeaderView, QStyledItemDelegate,
     QTabWidget, QFileDialog, QDialog, QSpinBox, QCheckBox,
-    QScrollArea,
+    QScrollArea, QSplitter,
 )
 
 from shared.qt.theme import P, apply_theme
@@ -983,28 +983,31 @@ class MiningSignalsApp(SCWindow):
         self._table.setItemDelegate(
             _RarityRowDelegate(self._table._source_model, self._table)
         )
-        # Column sizing: every column hugs its content and nothing
-        # stretches, so there are no gaps between Resource / Rarity
-        # and the six signal-value columns regardless of how wide the
-        # window is.  Any leftover horizontal space on the right is
-        # just empty scroll-area background — not a column gap.
+        # Column sizing: Interactive so the user can drag column
+        # widths. Last section stretches to fill whatever width the
+        # splitter gives the table — no empty gutter inside the grid.
         header = self._table.horizontalHeader()
-        header.setStretchLastSection(False)
+        header.setStretchLastSection(True)
         for i in range(8):  # Resource, Rarity, 1..6
-            header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(i, QHeaderView.Interactive)
+        header.setMinimumSectionSize(36)
         # Double-click a row to open a detail popup with pin/close
         self._table.row_double_clicked.connect(self._open_resource_popup)
 
-        # Wrap the table in a horizontal row so a permanent break
-        # calculator side panel can live to its right — that's what
-        # fills the empty whitespace that used to sit past column 6.
+        # Table | break panel. Drag the handle to give the table more
+        # (or less) of the scanner page.
         self._break_panel = BreakPanel(self._scanner_page)
-        table_row = QHBoxLayout()
-        table_row.setContentsMargins(0, 0, 0, 0)
-        table_row.setSpacing(0)
-        table_row.addWidget(self._table, 0)
-        table_row.addWidget(self._break_panel, 1)
-        layout.addLayout(table_row, 1)
+        self._table.setMinimumWidth(280)
+        self._break_panel.setMinimumWidth(180)
+        self._table_splitter = QSplitter(Qt.Horizontal, self._scanner_page)
+        self._table_splitter.setChildrenCollapsible(False)
+        self._table_splitter.setHandleWidth(6)
+        self._table_splitter.addWidget(self._table)
+        self._table_splitter.addWidget(self._break_panel)
+        self._table_splitter.setStretchFactor(0, 3)
+        self._table_splitter.setStretchFactor(1, 2)
+        self._table_splitter.setSizes([700, 500])
+        layout.addWidget(self._table_splitter, 1)
 
         # Widgets to hide when scan is active
         # (keep Set Region, scan toggle, and hotkey hint visible)
