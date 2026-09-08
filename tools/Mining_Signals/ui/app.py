@@ -983,13 +983,12 @@ class MiningSignalsApp(SCWindow):
         self._table.setItemDelegate(
             _RarityRowDelegate(self._table._source_model, self._table)
         )
-        # Column sizing: Interactive so the user can drag column
-        # widths. Last section stretches to fill whatever width the
-        # splitter gives the table — no empty gutter inside the grid.
+        # Column sizing: pack left with the other columns. Do not
+        # stretch column 6 across leftover table width.
         header = self._table.horizontalHeader()
-        header.setStretchLastSection(True)
+        header.setStretchLastSection(False)
         for i in range(8):  # Resource, Rarity, 1..6
-            header.setSectionResizeMode(i, QHeaderView.Interactive)
+            header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
         header.setMinimumSectionSize(36)
         # Double-click a row to open a detail popup with pin/close
         self._table.row_double_clicked.connect(self._open_resource_popup)
