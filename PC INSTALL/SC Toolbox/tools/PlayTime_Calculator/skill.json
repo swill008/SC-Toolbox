@@ -1,0 +1,10 @@
+{
+  "id": "playtime",
+  "name": "PlayTime",
+  "icon": "⏱",
+  "color": "#44ccff",
+  "folder": "PlayTime_Calculator",
+  "script": "playtime_app.py",
+  "hotkey": "<shift>+t",
+  "settings_key": "hotkey_playtime"
+}

@@ -1,0 +1,245 @@
+{
+  "fields": {
+    "signature_signal_rgb": {
+      "field": "signature",
+      "source": "signal_rgb",
+      "timestamp": 1788832596.3881032,
+      "joined": "@@@@@",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "@",
+          "conf": 0.9998047947883606,
+          "img": "signature_signal_rgb_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "@",
+          "conf": 0.986464262008667,
+          "img": "signature_signal_rgb_1.png"
+        },
+        {
+          "idx": 2,
+          "char": "@",
+          "conf": 0.9973560571670532,
+          "img": "signature_signal_rgb_2.png"
+        },
+        {
+          "idx": 3,
+          "char": "@",
+          "conf": 0.9971389770507812,
+          "img": "signature_signal_rgb_3.png"
+        },
+        {
+          "idx": 4,
+          "char": "@",
+          "conf": 0.9992735981941223,
+          "img": "signature_signal_rgb_4.png"
+        }
+      ]
+    },
+    "signature_signal_rgb_inv": {
+      "field": "signature",
+      "source": "signal_rgb_inv",
+      "timestamp": 1788832596.3960388,
+      "joined": "@000@",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "@",
+          "conf": 0.9753477573394775,
+          "img": "signature_signal_rgb_inv_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "0",
+          "conf": 0.8744781017303467,
+          "img": "signature_signal_rgb_inv_1.png"
+        },
+        {
+          "idx": 2,
+          "char": "0",
+          "conf": 0.9864338636398315,
+          "img": "signature_signal_rgb_inv_2.png"
+        },
+        {
+          "idx": 3,
+          "char": "0",
+          "conf": 0.9976413249969482,
+          "img": "signature_signal_rgb_inv_3.png"
+        },
+        {
+          "idx": 4,
+          "char": "@",
+          "conf": 0.9115381240844727,
+          "img": "signature_signal_rgb_inv_4.png"
+        }
+      ]
+    },
+    "signature_primary": {
+      "field": "signature",
+      "source": "primary",
+      "timestamp": 1788832596.4022143,
+      "joined": "11090",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "1",
+          "conf": 0.8585920929908752,
+          "img": "signature_primary_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "1",
+          "conf": 0.9744929671287537,
+          "img": "signature_primary_1.png"
+        },
+        {
+          "idx": 2,
+          "char": "0",
+          "conf": 0.997099757194519,
+          "img": "signature_primary_2.png"
+        },
+        {
+          "idx": 3,
+          "char": "9",
+          "conf": 0.6355022192001343,
+          "img": "signature_primary_3.png"
+        },
+        {
+          "idx": 4,
+          "char": "0",
+          "conf": 0.9684751033782959,
+          "img": "signature_primary_4.png"
+        }
+      ]
+    },
+    "signature_secondary": {
+      "field": "signature",
+      "source": "secondary",
+      "timestamp": 1788832596.407125,
+      "joined": "11171",
+      "glyphs": [
+        {
+          "idx": 0,
+          "char": "1",
+          "conf": 0.9804710149765015,
+          "img": "signature_secondary_0.png"
+        },
+        {
+          "idx": 1,
+          "char": "1",
+          "conf": 0.999868631362915,
+          "img": "signature_secondary_1.png"
+        },
+        {
+          "idx": 2,
+          "char": "1",
+          "conf": 0.9214703440666199,
+          "img": "signature_secondary_2.png"
+        },
+        {
+          "idx": 3,
+          "char": "7",
+          "conf": 0.8381027579307556,
+          "img": "signature_secondary_3.png"
+        },
+        {
+          "idx": 4,
+          "char": "1",
+          "conf": 0.9853165745735168,
+          "img": "signature_secondary_4.png"
+        }
+      ]
+    },
+    "signature_crnn": {
+      "field": "signature",
+      "source": "crnn",
+      "timestamp": 1788832596.4189708,
+      "joined": "0",
+      "glyphs": [],
+      "mean_conf": 0.8225718140602112
+    },
+    "signature_winner": {
+      "field": "signature",
+      "source": "winner",
+      "timestamp": 1788832596.419582,
+      "joined": "0",
+      "glyphs": [],
+      "mean_conf": 0.8225718140602112,
+      "value_crop": "signature_value_crop.png",
+      "crnn_text": "0",
+      "crnn_digits": "0",
+      "crnn_confidence": 0.8225718140602112,
+      "validated_value": null,
+      "rejection_reason": "not 4-5 digits (1)",
+      "history": [
+        {
+          "timestamp": 1788832589.4501252,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832590.422438,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832591.4210613,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832592.4197109,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832593.5117102,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832594.42549,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832595.5095458,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        },
+        {
+          "timestamp": 1788832596.419582,
+          "raw_text": "0",
+          "digits": "0",
+          "mean_conf": 0.8225718140602112,
+          "validated_value": null,
+          "rejection_reason": "not 4-5 digits (1)"
+        }
+      ]
+    }
+  },
+  "timestamp": 1788832596.419582
+}

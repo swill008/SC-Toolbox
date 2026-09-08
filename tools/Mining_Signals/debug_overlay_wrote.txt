@@ -1,0 +1,3 @@
+write() called at 1788832597.1992683
+state_keys=['image', 'expected_rows', 'panel_finder', 'panel_pose', 'label_rows']
+image_set=True

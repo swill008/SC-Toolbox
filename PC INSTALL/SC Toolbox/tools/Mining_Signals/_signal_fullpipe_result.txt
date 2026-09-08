@@ -1,0 +1,18 @@
+FULL-PIPELINE LIVE SIM (multi-frame, 8 frames/panel); panels=106 held-out=18
+  mode          all-106       held-out      FIX/REG vs OFF
+  OFF           85/106        14/18        (baseline)
+  UNIFIED+LEAD  89/106 (+4)   15/18 (+1)   +4/-0 (held +1/-0)
+  BLOC+LEAD     86/106 (+1)   14/18 (+0)   +1/-0 (held +0/-0)
+
+=== UNIFIED+LEAD vs OFF ===
+  FIXES: 4
+    cap_20260418_085435_190.png    gt=26000   off=2000    on=26000   
+    cap_20260418_085559_623.png    gt=17200   off=1700    on=17200   
+    cap_20260418_085643_453.png    gt=17200   off=17080   on=17200   
+    cap_20260418_085737_445.png    gt=25710   off=2530    on=25710   [HELD]
+  REGRESSIONS: 0
+
+=== BLOC+LEAD vs OFF ===
+  FIXES: 1
+    cap_20260418_085643_453.png    gt=17200   off=17080   on=17200   
+  REGRESSIONS: 0

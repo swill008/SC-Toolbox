@@ -1,0 +1,6182 @@
+"""Main application window for Mining Signals."""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import sys
+import threading
+
+from PySide6.QtCore import Qt, QTimer, Signal, QObject, Slot, QMetaObject, Q_ARG, Qt as QtConst
+from PySide6.QtGui import QColor, QBrush, QPalette
+from PySide6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QFrame, QPushButton, QLineEdit, QHeaderView, QStyledItemDelegate,
+    QTabWidget, QFileDialog, QDialog, QSpinBox, QCheckBox,
+    QScrollArea,
+)
+
+from shared.qt.theme import P, apply_theme
+from shared.qt.base_window import SCWindow
+from shared.qt.title_bar import SCTitleBar
+from shared.qt.data_table import SCTable, ColumnDef, SCTableModel
+from shared.qt.ipc_thread import IPCWatcher
+from shared.platform_utils import set_dpi_awareness
+from shared.data_utils import parse_cli_args
+
+from services.sheet_fetcher import SheetFetcher
+from services.signal_matcher import SignalMatcher, SignalMatch
+from services.loadout_loader import (
+    load_loadout_file, describe_snapshot, LoadoutSnapshot,
+    snapshot_to_laser_configs, get_gadget_list,
+)
+from services.salvage_loader import (
+    load_salvage_file, describe_salvage_snapshot, SalvageSnapshot,
+)
+from services.breakability import (
+    LaserConfig, GadgetInfo, BreakResult, FleetBreakResult,
+    compute_with_gadgets, fleet_breakability, default_player_count,
+)
+from ocr.screen_reader import (
+    is_ocr_available, scan_region, tesseract_status, capture_region,
+)
+from ocr.onnx_hud_reader import scan_hud_onnx
+from ocr.sc_ocr.signal_anchor import find_icon as _find_signal_icon
+from ocr.sc_ocr.scan_results_match import (
+    find_scan_results_anchor as _find_scan_results,
+)
+
+from .scan_bubble import ScanBubble
+from .break_bubble import BreakBubble
+from .region_selector import RegionSelector
+from .display_placer import DisplayPlacer
+from .tutorial_popup import TutorialPopup
+from .tutorial_tip import TutorialTip
+from .resource_popup import ResourcePopup
+from .mining_ledger import MiningLedgerTab
+from .mining_chart import MiningChartTab
+from .refinery_locations_tab import RefineryLocationsTab
+from .refinery_yields_tab import RefineryYieldsTab
+from .break_panel import BreakPanel
+from .theme import ACCENT
+from . import chart_bubble
+
+log = logging.getLogger(__name__)
+
+
+# ── Persistent scan-worker pool ──
+# The hot scan path (`_do_scan → _run`) submits the signal and HUD
+# scans to this pool. It's kept alive for the lifetime of the
+# process so that a SINGLE slow worker (e.g. Paddle's ~15–20 s daemon
+# boot on the first scan) can't block the caller during
+# `with ThreadPoolExecutor() as pool:` teardown, which waits on every
+# worker. Abandoned futures complete in the background and are
+# discarded; `_scan_in_progress` flips back to False as soon as
+# `_run` returns, so the next timer tick can fire on schedule.
+_scan_pool = None
+
+
+def _get_scan_pool():
+    """Return the module-level scan pool, creating it on first use.
+
+    Sized DELIBERATELY LARGE (64 workers, nearly always idle). The
+    hot-path guarantee here is: a hung `scan_hud_onnx` or
+    `scan_region` call that exceeded our `.result(timeout=…)` budget
+    must never starve a subsequent scan. Because we abandon hung
+    futures without cancelling them, each hang permanently consumes
+    one worker; sizing the pool small (4) meant ~4 stuck HUD calls
+    were enough to lock the pool and every later scan's
+    `sig_future.result(timeout=15)` timed out BEFORE scan_region
+    even started running (it was queued, not executing).
+    """
+    global _scan_pool
+    if _scan_pool is None:
+        from concurrent.futures import ThreadPoolExecutor
+        _scan_pool = ThreadPoolExecutor(
+            max_workers=64, thread_name_prefix="mining_scan",
+        )
+    return _scan_pool
+
+
+# Turret name lookup — avoids importing Mining_Loadout models in the UI
+_TURRET_NAMES: dict[str, list[str]] = {
+    "Prospector": ["Main Turret"],
+    "MOLE": ["Front Turret", "Port Turret", "Starboard Turret"],
+    "Golem": ["Main Turret"],
+}
+
+
+def _ml_turret_name(ship: str, index: int) -> str:
+    names = _TURRET_NAMES.get(ship, [])
+    if 0 <= index < len(names):
+        return names[index]
+    return f"Turret {index + 1}"
+
+
+# Standard close button style matching the main title bar's X button
+_CLOSE_BTN_STYLE = """
+    QPushButton {
+        background: rgba(255, 60, 60, 0.15);
+        color: #cc6666;
+        border: none;
+        border-radius: 3px;
+        font-family: Consolas;
+        font-size: 13pt;
+        font-weight: bold;
+        padding: 0px;
+    }
+    QPushButton:hover {
+        background-color: rgba(220, 50, 50, 0.85);
+        color: #ffffff;
+    }
+"""
+# ── Config file location (v2.2.7+: moved to persistent storage) ──
+# Old location: tools/Mining_Signals/mining_signals_config.json (inside the
+# install dir). Velopack swaps the install dir on every upgrade, so any user
+# settings stored there were wiped on every release. Users had to re-set the
+# HUD region, ship loadouts, etc. after every patch.
+#
+# New location: %LOCALAPPDATA%\SC_Toolbox\mining_signals\config.json. This
+# lives OUTSIDE the Velopack-managed current\ subtree so it survives
+# upgrades. The legacy path is kept as a one-shot migration source — if the
+# new path doesn't exist but the legacy one does, we read the legacy file on
+# first load and the next save lands at the persistent path.
+#
+# Path resolution itself lives in mining_shared/paths.py so this
+# process (the main app, which WRITES the config) and the
+# signature_finder_viewer popout (a separate process that READS the
+# config) compute identical paths from one source of truth — fixes
+# the silent viewer/app drift class flagged in the v2.2.10 audit.
+from mining_shared.paths import (
+    config_file as _config_file_fn,
+    legacy_config_file as _legacy_config_file_fn,
+    persistent_config_dir as _persistent_config_dir,
+)
+
+_LEGACY_CONFIG_FILE = _legacy_config_file_fn()
+_CONFIG_FILE = _config_file_fn()
+
+# Ship slots available in the Mining Ships tab. Keys are the internal
+# ids stored in config; values are display labels.
+SHIP_SLOTS: list[tuple[str, str]] = [
+    ("golem", "Golem"),
+    ("prospector", "Prospector"),
+    ("mole", "Mole"),
+]
+
+# Rarity tier colours
+RARITY_FG: dict[str, str] = {
+    "Common": "#8cc63f",
+    "Uncommon": "#00bcd4",
+    "Rare": "#ffc107",
+    "Epic": "#aa66ff",
+    "Legendary": "#ff9800",
+    "ROC": "#33ccdd",
+    "FPS": "#44aaff",
+    "Salvage": "#66ccff",
+}
+
+# Rarity sort order (ascending) — used by the table's Rarity column sort.
+# Unknown rarities get a high value so they sort last.
+RARITY_SORT_ORDER: dict[str, int] = {
+    "FPS":       1,
+    "ROC":       2,
+    "Salvage":   3,
+    "Uncommon":  4,
+    "Common":    5,
+    "Rare":      6,
+    "Epic":      7,
+    "Legendary": 8,
+}
+# Reverse lookup: sort index -> rarity name (for display formatter)
+RARITY_BY_KEY: dict[int, str] = {v: k for k, v in RARITY_SORT_ORDER.items()}
+
+
+def _rarity_key(rarity: str) -> int:
+    """Return the custom sort index for a rarity name."""
+    return RARITY_SORT_ORDER.get(rarity, 999)
+
+
+class _RarityRowDelegate(QStyledItemDelegate):
+    """Item delegate that paints each row's text in its rarity color.
+
+    Bypasses QSS text color by painting the cell text directly.
+    Preserves alternating row backgrounds and selection highlights.
+    """
+
+    def __init__(self, source_model: SCTableModel, parent=None):
+        super().__init__(parent)
+        self._source_model = source_model
+        self._even_bg = QColor(P.bg_primary)
+        self._odd_bg = QColor(P.bg_card)
+        self._selection_bg = QColor(P.selection)
+
+    def _resolve_row(self, index):
+        """Map a possibly-proxied index back to a source row number."""
+        model = index.model()
+        src_idx = index
+        if hasattr(model, "mapToSource"):
+            try:
+                src_idx = model.mapToSource(index)
+            except Exception:
+                pass
+        return src_idx.row()
+
+    def _row_color(self, index) -> QColor:
+        """Return the text color for the given index based on row rarity."""
+        row_num = self._resolve_row(index)
+        row = self._source_model.row_data(row_num)
+        if not row:
+            return QColor(P.fg)
+        rarity_name = row.get("_rarity_name", "")
+        if not rarity_name:
+            raw_rarity = row.get("rarity", "")
+            if isinstance(raw_rarity, tuple) and len(raw_rarity) >= 2:
+                rarity_name = str(raw_rarity[1])
+            else:
+                rarity_name = str(raw_rarity)
+        color_hex = RARITY_FG.get(rarity_name)
+        return QColor(color_hex) if color_hex else QColor(P.fg)
+
+    def paint(self, painter, option, index):
+        # Draw background (alternating or selection highlight)
+        painter.save()
+        if option.state & option.state.__class__.State_Selected:
+            painter.fillRect(option.rect, self._selection_bg)
+        elif index.row() % 2 == 0:
+            painter.fillRect(option.rect, self._even_bg)
+        else:
+            painter.fillRect(option.rect, self._odd_bg)
+
+        # Resolve text + alignment from the model
+        text = index.data(Qt.DisplayRole)
+        if text is None:
+            text = ""
+        else:
+            text = str(text)
+
+        align = index.data(Qt.TextAlignmentRole)
+        if align is None:
+            align = int(Qt.AlignLeft | Qt.AlignVCenter)
+
+        # Draw the text in the row's rarity color
+        color = self._row_color(index)
+        painter.setPen(color)
+        # Standard Qt cell padding: 8px horizontal, matches QSS
+        rect = option.rect.adjusted(8, 0, -8, 0)
+        painter.drawText(rect, int(align), text)
+        painter.restore()
+
+
+def _load_config() -> dict:
+    cfg: dict = {
+        "refresh_interval_minutes": 60,
+        "scan_interval_seconds": 3,
+        "ocr_region": None,
+        "hud_region": None,
+        # Manual game-resolution override for the region detectors'
+        # scale prior. None = auto-detect (Game.log → desktop).
+        "game_resolution": None,
+        "ship_loadouts": {k: None for k, _ in SHIP_SLOTS},
+        "active_ship": None,
+        "gadget_quantities": {},
+        "always_use_best_gadget": False,
+        "fleet_loadouts": [],
+        "fleet_player_counts": {},  # path -> int (override default crew)
+        "module_uses_remaining": {},  # ship_id -> [remaining_per_turret]
+        "game_dir": r"C:\Star Citizen\StarCitizen\LIVE",
+        "refinery_picked_up": [],
+        "refinery_deleted": [],
+        "refinery_ocr_region": None,
+        "refinery_orders": [],
+        "refinery_auto_scan": False,
+        "calc_mode": "fleet",  # "fleet" | "team"
+        "salvage_loadouts": [],  # list of DPS Calculator loadout paths
+        "ledger_file": os.path.join(
+            os.path.expanduser("~"), "Documents", "SC Loadouts", "mining_roster.json",
+        ),
+    }
+    # Resolve which file to actually read from. Persistent path is
+    # canonical; legacy in-app path is used as a one-shot migration source
+    # when the persistent file doesn't exist yet (first run after the
+    # v2.2.7 upgrade that introduced this split).
+    read_path: Optional[str] = None
+    if os.path.isfile(_CONFIG_FILE):
+        read_path = _CONFIG_FILE
+    elif os.path.isfile(_LEGACY_CONFIG_FILE):
+        read_path = _LEGACY_CONFIG_FILE
+        log.info(
+            "config: migrating from legacy in-app path %s to persistent "
+            "path %s on next save", _LEGACY_CONFIG_FILE, _CONFIG_FILE,
+        )
+
+    try:
+        if read_path is not None:
+            with open(read_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                cfg.update(data)
+                # Normalize nested ship_loadouts so missing keys exist
+                if not isinstance(cfg.get("ship_loadouts"), dict):
+                    cfg["ship_loadouts"] = {}
+                for k, _ in SHIP_SLOTS:
+                    cfg["ship_loadouts"].setdefault(k, None)
+                # Migrate ledger_file from in-folder to Documents
+                lf = cfg.get("ledger_file", "")
+                if lf and os.path.dirname(os.path.normpath(lf)) == os.path.normpath(
+                    os.path.dirname(_CONFIG_FILE)
+                ):
+                    cfg["ledger_file"] = os.path.join(
+                        os.path.expanduser("~"), "Documents", "SC Loadouts",
+                        "mining_roster.json",
+                    )
+            # If we read from the legacy path, eagerly persist to the
+            # new location so subsequent loads find it there. This makes
+            # the migration sticky even if the user never changes a
+            # setting before the next upgrade.
+            if read_path == _LEGACY_CONFIG_FILE:
+                try:
+                    _save_config(cfg)
+                except Exception as exc:
+                    log.debug("config: eager migration save failed: %s", exc)
+    except (OSError, json.JSONDecodeError):
+        pass
+    return cfg
+
+
+def _save_config(cfg: dict) -> None:
+    try:
+        tmp = _CONFIG_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+        os.replace(tmp, _CONFIG_FILE)
+    except OSError as exc:
+        # ERROR (not warning).  Silent save failures previously meant
+        # users would "set" a region in the UI but nothing ever reached
+        # disk, with zero feedback.  Bumping severity makes it visible
+        # in any log capture, and the startup config log line (in the
+        # MiningSignalsApp __init__) includes a writability probe so
+        # the failure mode is diagnosable from a single log file
+        # without having to walk the user through opening AppData.
+        log.error(
+            "config: SAVE FAILED — %s.  Settings WILL NOT PERSIST.  "
+            "Most likely cause: write blocked by antivirus / "
+            "Controlled Folder Access / permissions on %s",
+            exc, _CONFIG_FILE,
+        )
+
+
+class _DataLoader(QObject):
+    """Loads sheet data in a background thread."""
+
+    data_ready = Signal(list)   # list[dict] of rows
+    error = Signal(str)
+
+    def __init__(self, fetcher: SheetFetcher, parent=None) -> None:
+        super().__init__(parent)
+        self._fetcher = fetcher
+
+    def load(self, force: bool = False) -> None:
+        def _run():
+            result = self._fetcher.load(force_refresh=force)
+            if result.ok:
+                self.data_ready.emit(result.data)
+            else:
+                self.error.emit(result.error or "Unknown error")
+        threading.Thread(target=_run, daemon=True).start()
+
+
+class MiningSignalsApp(SCWindow):
+    """Mining Signals tool — reference table + OCR scanner."""
+
+    _scan_value_ready = Signal(int)   # emitted from bg thread, handled on main thread
+    _hud_data_ready = Signal()        # emitted when HUD data updates (break bubble)
+
+    def __init__(
+        self,
+        x: int = 100, y: int = 100,
+        w: int = 980, h: int = 960,
+        opacity: float = 0.95,
+        cmd_file: str | None = None,
+    ) -> None:
+        # The Scanner tab needs to fit both the signal table (~420 px
+        # of column content) and the break calculator side panel
+        # (~240 px minimum), so min_w is set just above the sum of
+        # those two plus window chrome and the default launch width
+        # leaves a comfortable margin for the panel's detail text.
+        super().__init__(
+            title="Mining Signals",
+            width=w, height=h,
+            min_w=720, min_h=320,
+            opacity=opacity,
+            always_on_top=True,
+            accent=ACCENT,
+        )
+        # Clamp position to the visible area of the primary screen
+        # so the window never ends up on a disconnected monitor
+        self.restore_geometry_from_args(x, y, w, h, opacity)
+
+        self._config = _load_config()
+        # Diagnostic log — surfaces which config file was loaded, the
+        # two scan regions, and a writability probe.  Lets us debug
+        # "region set doesn't persist" reports from a single log line
+        # instead of having to walk the user through opening AppData.
+        # Most useful when ocr_region or hud_region show as null while
+        # the user insists they set them: combine with the writable=
+        # flag to instantly tell whether it's a write-block (False) or
+        # an unsaved-set (True with regions null).
+        try:
+            _probe = _CONFIG_FILE + ".writetest"
+            with open(_probe, "w", encoding="utf-8") as _f:
+                _f.write("ok")
+            os.remove(_probe)
+            _writable = True
+        except OSError:
+            _writable = False
+        log.info(
+            "config: loaded from %s · writable=%s · "
+            "ocr_region=%s · hud_region=%s",
+            _CONFIG_FILE if os.path.isfile(_CONFIG_FILE) else _LEGACY_CONFIG_FILE,
+            _writable,
+            self._config.get("ocr_region"),
+            self._config.get("hud_region"),
+        )
+        self._cmd_file = cmd_file
+        self._rows: list[dict] = []
+        self._all_table_data: list[dict] = []
+        self._matcher = SignalMatcher([])
+        self._scan_timer: QTimer | None = None
+        self._scan_bubble = ScanBubble()
+        self._break_bubble = BreakBubble()
+
+        # Loaded loadout snapshots per ship slot (parsed from disk).
+        self._ship_snapshots: dict[str, LoadoutSnapshot | None] = {
+            k: None for k, _ in SHIP_SLOTS
+        }
+        self._ship_slot_labels: dict[str, QLabel] = {}
+
+        # Fleet: multiple ships in one slot
+        self._fleet_snapshots: list[LoadoutSnapshot] = []
+
+        # Salvage ships loaded from DPS Calculator (display only — no breakability)
+        self._salvage_snapshots: list[SalvageSnapshot] = []
+
+        # Gadget tab: spinbox references for refresh
+        self._gadget_spinboxes: dict[str, object] = {}  # name -> QSpinBox
+
+        # Consecutive-match consensus: require 2 agreeing reads before showing
+        self._last_ocr_value: int | None = None
+        self._confirmed_value: int | None = None
+        # Guard against scan pileup on slower machines
+        self._scan_in_progress: bool = False
+
+        # Idempotency guard for _teardown(). Both closeEvent and the
+        # QApplication.aboutToQuit signal route through _teardown; the
+        # flag stops the second caller from double-stopping timers /
+        # double-flushing the ledger.
+        self._torn_down: bool = False
+
+        # Anchor-gate state. Master toggle ("Start Scan") drives this
+        # to "armed" (or "off"); per-tick anchor detection refines it
+        # to "active_signature" / "active_hud" / back to "armed". When
+        # neither anchor is present, OCR is skipped entirely so the
+        # downstream pipelines can't hallucinate readings from empty
+        # pixels (e.g. between rocks, in menus, with the UI hidden).
+        self._gate_state: str = "off"
+        # Hysteresis state for the signal anchor: NCC scores wobble
+        # 0.05-0.15 between captures even on a stable panel, so a
+        # binary threshold causes the bubble to flicker between
+        # match-mode and scanning-placeholder every time the score
+        # dips. Track recent sig_present results so once the anchor
+        # locks, a sub-threshold tick or two doesn't flip the gate.
+        self._sig_recent_hits: int = 0
+
+        # Refinery order store
+        from services.refinery_orders import RefineryOrderStore
+        self._refinery_order_store = RefineryOrderStore(self._config)
+        self._refinery_scan_timer: QTimer | None = None
+        self._refinery_scan_in_progress: bool = False
+        self._refinery_countdown_timer: QTimer | None = None
+
+        # Services
+        self._fetcher = SheetFetcher(
+            ttl=self._config.get("refresh_interval_minutes", 60) * 60,
+        )
+        self._loader = _DataLoader(self._fetcher, self)
+        self._loader.data_ready.connect(self._on_data_loaded)
+        self._loader.error.connect(self._on_data_error)
+
+        self._scan_value_ready.connect(self._on_scan_result)
+        self._hud_data_ready.connect(self._update_break_bubble)
+
+        # HUD consensus: rolling-window majority vote on recent mass
+        # reads. Prevents flickering between single-digit drift misreads
+        # (e.g. a static 6805 being read as 6805/6815/6845/6855 on
+        # consecutive scans because the subpixel wiggle animation
+        # drifts position-2 digit by 1-5 across scans). The rolling
+        # window commits the MOST-FREQUENT value across the last N
+        # reads, so transient misreads are outvoted by the true value.
+        from collections import deque
+        self._last_hud_mass: float | None = None          # confirmed (displayed)
+        self._last_hud_resistance: float | None = None    # confirmed (displayed)
+        self._last_hud_mineral: str | None = None         # mineral name (e.g. "Beryl")
+        # Raw recent reads, newest at the right. `maxlen=7` means a
+        # stable value needs roughly 4 correct scans out of the last
+        # 7 to become the displayed value — robust against per-scan
+        # single-digit drift, but still responsive (4 seconds of lag
+        # at 1 Hz before a new rock commits).
+        self._hud_mass_window: deque = deque(maxlen=7)
+        self._hud_resistance_window: deque = deque(maxlen=7)
+        self._hud_instability_window: deque = deque(maxlen=7)
+        # Mineral name uses the same rolling-window pattern, but with
+        # a tighter (5) window — the mineral is locked at the api.py
+        # layer per panel-visit, so we mainly want to outvote a
+        # single-frame OCR slip when the lock first establishes.
+        self._hud_mineral_window: deque = deque(maxlen=5)
+        # Kept for back-compat with any code that reads these; the
+        # real decision happens in `_commit_hud_from_window`.
+        self._prev_hud_mass: float | None = None
+        self._prev_hud_resistance: float | None = None
+        # Instability: latest raw read. No consensus smoothing — it's
+        # used as an on/off IMPOSSIBLE flag, not a displayed number.
+        self._last_hud_instability: float | None = None
+
+        # Wire teardown to QApplication.aboutToQuit so that destruction
+        # paths bypassing closeEvent (taskbar end-task, QApplication.quit,
+        # SIGINT handlers, etc.) still stop the RefineryMonitor thread,
+        # the Paddle daemon, and the scan timers. _teardown is idempotent
+        # so the closeEvent path remains safe.
+        try:
+            _qapp = QApplication.instance()
+            if _qapp is not None:
+                _qapp.aboutToQuit.connect(self._teardown)
+        except Exception as exc:
+            log.debug("aboutToQuit wiring failed: %s", exc)
+
+        self._build_ui()
+        self._setup_ipc()
+
+        # Initial data load
+        self._loader.load()
+
+        # First-launch nudge to calibrate the OCR (only fires if not
+        # dismissed and no calibration exists yet for the current
+        # HUD region). Delay so the main window finishes laying out
+        # before the popup appears.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(
+            1500, self._maybe_show_first_launch_calibration_prompt,
+        )
+
+        # Pre-warm the UEX item database in a background thread so the
+        # first breakability calculation doesn't freeze the UI.
+        def _warm_db():
+            try:
+                from services.loadout_loader import _load_item_db
+                _load_item_db()
+            except Exception:
+                pass
+        threading.Thread(target=_warm_db, daemon=True).start()
+
+        # Auto-refresh timer
+        refresh_ms = self._config.get("refresh_interval_minutes", 60) * 60 * 1000
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.timeout.connect(lambda: self._loader.load(force=True))
+        self._refresh_timer.start(refresh_ms)
+
+    def _build_ui(self) -> None:
+        layout = self.content_layout
+
+        # ── Title bar ──
+        self._title_bar = SCTitleBar(
+            self,
+            title="Mining Signals",
+            icon_text="",
+            accent_color=ACCENT,
+            hotkey_text="Shift+9",
+            extra_buttons=[("Tutorial", self._show_tutorial)],
+        )
+        self._title_bar.minimize_clicked.connect(self.showMinimized)
+        self._title_bar.close_clicked.connect(self.user_close)
+        layout.addWidget(self._title_bar)
+
+        # ── Tab bar: Scanner (main) + Mining Ships ──
+        # The scanner page holds all the existing scanner widgets. The
+        # Mining Ships page holds the per-ship loadout slots. During
+        # active scanning the tab bar hides so the collapsed view
+        # stays minimal (see _on_scan_toggle).
+        self._tabs = QTabWidget(self)
+        self._tabs.setStyleSheet(f"""
+            QTabWidget::pane {{
+                border: none;
+                background: transparent;
+            }}
+            QTabBar::tab {{
+                background: {P.bg_card};
+                color: {P.fg_dim};
+                border: none;
+                padding: 5px 14px;
+                font-family: Consolas, monospace;
+                font-size: 9pt;
+                font-weight: bold;
+            }}
+            QTabBar::tab:selected {{
+                background: transparent;
+                color: {ACCENT};
+                border-bottom: 2px solid {ACCENT};
+            }}
+            QTabBar::tab:hover:!selected {{
+                color: {P.fg};
+            }}
+        """)
+        # Region status shown at the right edge of the tab bar
+        self._ocr_status = QLabel("", self._tabs)
+        self._ocr_status.setStyleSheet(
+            f"font-size: 8pt; color: {P.fg_dim}; background: transparent; "
+            f"padding: 4px 8px;"
+        )
+        self._tabs.setCornerWidget(self._ocr_status, Qt.TopRightCorner)
+
+        layout.addWidget(self._tabs, 1)
+
+        # ── Mining Chart tab (live SCMDB data — Regolith-style) ──
+        # Added at the top so it sits before Scanner in the tab order.
+        self._chart_tab = MiningChartTab(
+            parent=self._tabs,
+            popout_handler=self._show_chart_popout,
+        )
+        self._tabs.addTab(self._chart_tab, "Mining Chart")
+
+        # ── Scanner page (wraps the existing scanner UI) ──
+        self._scanner_page = QWidget(self._tabs)
+        scanner_layout = QVBoxLayout(self._scanner_page)
+        scanner_layout.setContentsMargins(0, 0, 0, 0)
+        scanner_layout.setSpacing(0)
+        self._tabs.addTab(self._scanner_page, "Scanner")
+
+        # The rest of the scanner widgets are parented to
+        # self._scanner_page and appended to `layout` below. We keep
+        # using the name `layout` for minimal diff against the
+        # original code — from here on `layout` refers to the
+        # scanner page's layout.
+        layout = scanner_layout
+
+        # ── Search bar: value + name (filters table) ──
+        self._search_row = QWidget(self._scanner_page)
+        search_layout = QHBoxLayout(self._search_row)
+        search_layout.setContentsMargins(8, 4, 8, 2)
+        search_layout.setSpacing(6)
+
+        value_icon = QLabel("#", self._search_row)
+        value_icon.setStyleSheet(f"""
+            font-family: Consolas, monospace;
+            font-size: 10pt; font-weight: bold;
+            color: {P.fg_dim}; background: transparent;
+        """)
+        search_layout.addWidget(value_icon)
+
+        self._search_input = QLineEdit(self._search_row)
+        self._search_input.setPlaceholderText("Signal value...")
+        self._search_input.textChanged.connect(self._on_search)
+        self._search_input.setFixedWidth(130)
+        search_layout.addWidget(self._search_input)
+
+        name_icon = QLabel("\U0001f50d", self._search_row)
+        name_icon.setStyleSheet(f"font-size: 9pt; color: {P.fg_dim}; background: transparent;")
+        search_layout.addWidget(name_icon)
+
+        self._name_input = QLineEdit(self._search_row)
+        self._name_input.setPlaceholderText("Resource name...")
+        self._name_input.textChanged.connect(self._on_name_search)
+        search_layout.addWidget(self._name_input, 1)
+
+        self._search_result = QLabel("", self._search_row)
+        self._search_result.setStyleSheet(f"""
+            font-family: Electrolize, Consolas, monospace;
+            font-size: 9pt; font-weight: bold;
+            color: {P.fg_dim}; background: transparent;
+        """)
+        search_layout.addWidget(self._search_result)
+
+        layout.addWidget(self._search_row)
+
+        # ── OCR controls row 1: scan buttons ──
+        self._ocr_row = QWidget(self)
+        ocr_layout = QHBoxLayout(self._ocr_row)
+        ocr_layout.setContentsMargins(8, 2, 8, 2)
+        ocr_layout.setSpacing(6)
+
+        _btn_style = f"""
+            QPushButton {{
+                font-family: Consolas, monospace;
+                font-size: 8pt; font-weight: bold;
+                color: {ACCENT}; background: transparent;
+                border: 1px solid {ACCENT}; border-radius: 3px;
+                padding: 3px 8px;
+            }}
+            QPushButton:hover {{ background: rgba(51, 221, 136, 0.15); }}
+        """
+
+        self._btn_set_region = QPushButton("Set Scanning Region", self._ocr_row)
+        self._btn_set_region.setCursor(Qt.PointingHandCursor)
+        self._btn_set_region.setToolTip("Select screen area where the mining scanner number appears")
+        self._btn_set_region.clicked.connect(self._on_set_region)
+        self._btn_set_region.setStyleSheet(_btn_style)
+        ocr_layout.addWidget(self._btn_set_region)
+
+        # Second region button for the mining HUD (mass / resistance readout)
+        self._btn_set_hud_region = QPushButton("Set Mining HUD Region", self._ocr_row)
+        self._btn_set_hud_region.setCursor(Qt.PointingHandCursor)
+        self._btn_set_hud_region.setToolTip(
+            "Select screen area where rock mass / resistance appear on the mining HUD"
+        )
+        self._btn_set_hud_region.clicked.connect(self._on_set_hud_region)
+        self._btn_set_hud_region.setStyleSheet(_btn_style)
+        ocr_layout.addWidget(self._btn_set_hud_region)
+
+        # Game resolution — feeds the region detectors' scale prior so
+        # the finders sweep the right template scale for the user's
+        # display. Auto-detected from Game.log; this button lets the
+        # user view it or pin a manual value.
+        self._btn_game_res = QPushButton("Game Resolution", self._ocr_row)
+        self._btn_game_res.setCursor(Qt.PointingHandCursor)
+        self._btn_game_res.setToolTip(
+            "View or override the Star Citizen game resolution used to "
+            "scale the region finders (auto-detected from Game.log)."
+        )
+        self._btn_game_res.clicked.connect(self._on_set_game_resolution)
+        self._btn_game_res.setStyleSheet(_btn_style)
+        ocr_layout.addWidget(self._btn_game_res)
+
+        # ── Calibrate Mining Crops ──
+        # Opens a non-modal dialog where the user can confirm each
+        # row's crop coordinates and lock them in. Saved to disk;
+        # the OCR pipeline uses the saved coords directly at runtime
+        # (skipping all detection — zero drift, zero edge-case bugs).
+        self._btn_calibrate = QPushButton("Calibrate Mining Crops", self._ocr_row)
+        self._btn_calibrate.setCursor(Qt.PointingHandCursor)
+        self._btn_calibrate.setToolTip(
+            "Open the calibration dialog to lock in each row's crop "
+            "coordinates. Once calibrated, the OCR uses your "
+            "confirmed positions instead of auto-detecting (more "
+            "stable, faster, works on any background)."
+        )
+        self._btn_calibrate.clicked.connect(self._on_calibrate_crops)
+        self._btn_calibrate.setStyleSheet(_btn_style)
+        ocr_layout.addWidget(self._btn_calibrate)
+
+        self._btn_scan_toggle = QPushButton("Start Scan", self._ocr_row)
+        self._btn_scan_toggle.setCursor(Qt.PointingHandCursor)
+        self._btn_scan_toggle.setCheckable(True)
+        self._btn_scan_toggle.clicked.connect(self._on_scan_toggle)
+        self._btn_scan_toggle.setStyleSheet(f"""
+            QPushButton {{
+                font-family: Consolas, monospace;
+                font-size: 8pt; font-weight: bold;
+                color: {P.fg}; background: transparent;
+                border: 1px solid {P.border}; border-radius: 3px;
+                padding: 3px 8px;
+            }}
+            QPushButton:hover {{ background: rgba(51, 221, 136, 0.15); border-color: {ACCENT}; }}
+            QPushButton:checked {{
+                color: {P.bg_primary}; background: {ACCENT};
+                border-color: {ACCENT};
+            }}
+        """)
+        ocr_layout.addWidget(self._btn_scan_toggle)
+
+        # Inline scan result — primary display, always visible
+        self._inline_result = QLabel("", self._ocr_row)
+        self._inline_result.setStyleSheet(f"""
+            font-family: Electrolize, Consolas, monospace;
+            font-size: 11pt; font-weight: bold;
+            color: {ACCENT}; background: transparent;
+            padding: 0 6px;
+        """)
+        ocr_layout.addWidget(self._inline_result)
+
+        self._hotkey_hint = QLabel("Shift+9 to hide", self._ocr_row)
+        self._hotkey_hint.setStyleSheet(f"""
+            font-family: Consolas, monospace;
+            font-size: 7pt; color: {P.fg_dim};
+            background: transparent;
+        """)
+        ocr_layout.addWidget(self._hotkey_hint)
+
+        ocr_layout.addStretch(1)
+        layout.addWidget(self._ocr_row)
+
+        # ── OCR controls row 2: display location + ship selector ──
+        self._display_row = QWidget(self)
+        display_layout = QHBoxLayout(self._display_row)
+        display_layout.setContentsMargins(8, 0, 8, 4)
+        display_layout.setSpacing(6)
+
+        self._btn_set_display = QPushButton("Set Mining Output Display Location", self._display_row)
+        self._btn_set_display.setCursor(Qt.PointingHandCursor)
+        self._btn_set_display.setToolTip("Choose where the result bubble appears on screen")
+        self._btn_set_display.clicked.connect(self._on_set_display)
+        self._btn_set_display.setStyleSheet(_btn_style)
+        display_layout.addWidget(self._btn_set_display)
+
+        self._btn_set_break_display = QPushButton("Set Break Bubble Location", self._display_row)
+        self._btn_set_break_display.setCursor(Qt.PointingHandCursor)
+        self._btn_set_break_display.setToolTip("Choose where the breakability panel appears on screen")
+        self._btn_set_break_display.clicked.connect(self._on_set_break_display)
+        self._btn_set_break_display.setStyleSheet(_btn_style)
+        display_layout.addWidget(self._btn_set_break_display)
+
+        self._btn_choose_ship = QPushButton("Choose Mining Ship", self._display_row)
+        self._btn_choose_ship.setCursor(Qt.PointingHandCursor)
+        self._btn_choose_ship.setToolTip(
+            "Pick which loaded ship loadout to use for breakability calculations"
+        )
+        self._btn_choose_ship.clicked.connect(self._on_choose_mining_ship)
+        self._btn_choose_ship.setStyleSheet(_btn_style)
+        display_layout.addWidget(self._btn_choose_ship)
+
+        self._btn_calc_mode = QPushButton("Calc: Fleet", self._display_row)
+        self._btn_calc_mode.setCursor(Qt.PointingHandCursor)
+        self._btn_calc_mode.setCheckable(True)
+        is_team = self._config.get("calc_mode") == "team"
+        self._btn_calc_mode.setChecked(is_team)
+        if is_team:
+            self._btn_calc_mode.setText("Calc: Team")
+        self._btn_calc_mode.setToolTip(
+            "Fleet = all ships combined. Team = only your assigned team."
+        )
+        self._btn_calc_mode.clicked.connect(self._on_toggle_calc_mode)
+        self._btn_calc_mode.setStyleSheet(_btn_style)
+        display_layout.addWidget(self._btn_calc_mode)
+
+        display_layout.addStretch(1)
+        layout.addWidget(self._display_row)
+
+        # ── Breakability row: mass + resistance inputs + live result ──
+        self._break_row = QWidget(self)
+        break_layout = QHBoxLayout(self._break_row)
+        break_layout.setContentsMargins(8, 0, 8, 4)
+        break_layout.setSpacing(6)
+
+        _input_style = f"""
+            QLineEdit {{
+                font-family: Consolas, monospace;
+                font-size: 9pt; color: {P.fg};
+                background: {P.bg_card}; border: 1px solid {P.border};
+                border-radius: 3px; padding: 2px 6px;
+            }}
+            QLineEdit:focus {{ border-color: {ACCENT}; }}
+        """
+
+        mass_lbl = QLabel("Mass:", self._break_row)
+        mass_lbl.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+        break_layout.addWidget(mass_lbl)
+
+        self._mass_input = QLineEdit(self._break_row)
+        self._mass_input.setPlaceholderText("0")
+        self._mass_input.setFixedWidth(80)
+        self._mass_input.setStyleSheet(_input_style)
+        self._mass_input.textChanged.connect(self._on_break_inputs_changed)
+        break_layout.addWidget(self._mass_input)
+
+        res_lbl = QLabel("Resistance %:", self._break_row)
+        res_lbl.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+        break_layout.addWidget(res_lbl)
+
+        self._resistance_input = QLineEdit(self._break_row)
+        self._resistance_input.setPlaceholderText("0")
+        self._resistance_input.setFixedWidth(60)
+        self._resistance_input.setStyleSheet(_input_style)
+        self._resistance_input.textChanged.connect(self._on_break_inputs_changed)
+        break_layout.addWidget(self._resistance_input)
+
+        self._break_result = QLabel("", self._break_row)
+        self._break_result.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 9pt; "
+            f"font-weight: bold; color: {P.fg_dim}; background: transparent; "
+            f"padding: 0 8px;"
+        )
+        break_layout.addWidget(self._break_result, 1)
+
+        # Substitute button — shown when manual input rock can't be broken
+        self._btn_substitute = QPushButton("Substitute", self._break_row)
+        self._btn_substitute.setCursor(Qt.PointingHandCursor)
+        self._btn_substitute.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: #ff4444; background: transparent; border: 1px solid #ff4444; "
+            f"border-radius: 3px; padding: 3px 8px; }}"
+            f"QPushButton:hover {{ background: rgba(255,68,68,0.15); }}"
+        )
+        self._btn_substitute.clicked.connect(self._on_show_substitute)
+        self._btn_substitute.setVisible(False)
+        break_layout.addWidget(self._btn_substitute)
+
+        layout.addWidget(self._break_row)
+
+        # ── Scan hint (shown during scanning) ──
+        self._scan_hint = QLabel(
+            "Results can take several seconds to scan. Please stay on target and await results.",
+            self,
+        )
+        self._scan_hint.setStyleSheet(f"""
+            font-family: Consolas, monospace;
+            font-size: 8pt; font-weight: bold;
+            color: {P.fg_bright}; background: transparent;
+            padding: 2px 8px;
+        """)
+        self._scan_hint.setWordWrap(True)
+        self._scan_hint.setVisible(False)
+        layout.addWidget(self._scan_hint)
+
+        # ── Status bar ──
+        self._status_row = QWidget(self)
+        status_layout = QHBoxLayout(self._status_row)
+        status_layout.setContentsMargins(8, 0, 8, 2)
+        self._status_label = QLabel("Loading...", self._status_row)
+        self._status_label.setStyleSheet(f"font-size: 8pt; color: {P.fg_dim}; background: transparent;")
+        status_layout.addStretch(1)
+        status_layout.addWidget(self._status_label)
+        layout.addWidget(self._status_row)
+
+        # ── Separator ──
+        self._separator = QFrame(self)
+        self._separator.setFrameShape(QFrame.HLine)
+        self._separator.setFixedHeight(1)
+        self._separator.setStyleSheet(f"background-color: {P.border};")
+        layout.addWidget(self._separator)
+
+        # ── Signal table ──
+        # The Rarity column stores the sort index (int) so Qt's native
+        # comparison sorts by our custom order. The fmt maps it back
+        # to the display name.
+        def _fmt_rarity(raw):
+            if isinstance(raw, int):
+                return RARITY_BY_KEY.get(raw, "")
+            if isinstance(raw, tuple) and len(raw) >= 2:
+                return str(raw[1])
+            return str(raw) if raw is not None else ""
+
+        self._table = SCTable(
+            columns=[
+                ColumnDef("Resource", "name", width=95),
+                ColumnDef("Rarity", "rarity", width=70, fmt=_fmt_rarity),
+                ColumnDef("1", "1", width=52, alignment=Qt.AlignRight),
+                ColumnDef("2", "2", width=52, alignment=Qt.AlignRight),
+                ColumnDef("3", "3", width=52, alignment=Qt.AlignRight),
+                ColumnDef("4", "4", width=52, alignment=Qt.AlignRight),
+                ColumnDef("5", "5", width=52, alignment=Qt.AlignRight),
+                ColumnDef("6", "6", width=52, alignment=Qt.AlignRight),
+            ],
+            parent=self,
+            sortable=True,
+        )
+        # Replace the default row delegate with one that colors each
+        # row's text by rarity. Access the internal source model to
+        # read the row's rarity at paint time.
+        self._table.setItemDelegate(
+            _RarityRowDelegate(self._table._source_model, self._table)
+        )
+        # Column sizing: every column hugs its content and nothing
+        # stretches, so there are no gaps between Resource / Rarity
+        # and the six signal-value columns regardless of how wide the
+        # window is.  Any leftover horizontal space on the right is
+        # just empty scroll-area background — not a column gap.
+        header = self._table.horizontalHeader()
+        header.setStretchLastSection(False)
+        for i in range(8):  # Resource, Rarity, 1..6
+            header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
+        # Double-click a row to open a detail popup with pin/close
+        self._table.row_double_clicked.connect(self._open_resource_popup)
+
+        # Wrap the table in a horizontal row so a permanent break
+        # calculator side panel can live to its right — that's what
+        # fills the empty whitespace that used to sit past column 6.
+        self._break_panel = BreakPanel(self._scanner_page)
+        table_row = QHBoxLayout()
+        table_row.setContentsMargins(0, 0, 0, 0)
+        table_row.setSpacing(0)
+        table_row.addWidget(self._table, 0)
+        table_row.addWidget(self._break_panel, 1)
+        layout.addLayout(table_row, 1)
+
+        # Widgets to hide when scan is active
+        # (keep Set Region, scan toggle, and hotkey hint visible)
+        self._expanded_widgets = [
+            self._search_row, self._status_row,
+            self._separator, self._table, self._break_panel,
+            self._display_row, self._break_row,
+        ]
+
+        # ── Mining Ships tab page ──
+        self._ships_page = self._build_ships_tab()
+        self._tabs.addTab(self._ships_page, "Mining Ships")
+
+        # ── Gadgets tab ──
+        self._gadgets_page = self._build_gadgets_tab()
+        self._tabs.addTab(self._gadgets_page, "Gadgets")
+
+        # ── Refinery tab ──
+        self._refinery_page = self._build_refinery_tab()
+        self._tabs.addTab(self._refinery_page, "Refinery")
+
+        # ── Mining Ledger tab ──
+        self._ledger_tab = MiningLedgerTab(
+            config=self._config,
+            save_config_fn=_save_config,
+            fleet_snapshots=self._fleet_snapshots,
+            ship_snapshots=self._ship_snapshots,
+            salvage_snapshots=self._salvage_snapshots,
+            parent=self._tabs,
+        )
+        self._tabs.addTab(self._ledger_tab, "Mining Roster")
+
+        # Default to the Scanner tab on startup; Mining Chart sits at the
+        # top of the bar but shouldn't hijack the initial view.
+        self._tabs.setCurrentWidget(self._scanner_page)
+
+        # Load any previously-selected loadout files from config
+        self._restore_ship_loadouts()
+        self._restore_fleet_loadouts()
+        self._restore_salvage_loadouts()
+
+        # Refresh ledger fleet panel now that snapshots are loaded
+        self._ledger_tab.refresh_fleet_panel()
+
+        # Update OCR status
+        self._update_ocr_status()
+        self._update_ship_button_label()
+        self._update_consumables_display()
+        # Seed the break panel with the current (possibly empty) state.
+        self._refresh_break_panel()
+
+    # ── Mining Ships tab ──
+
+    def _build_ships_tab(self) -> QWidget:
+        """Construct the Mining Ships tab page.
+
+        Contains two sub-tabs:
+          - Mining: one row per mining ship (Golem / Prospector / Mole)
+            plus Mining Ops Fleet section.
+          - Salvage: loadable DPS Calculator salvage ship loadouts.
+        """
+        container = QWidget(self._tabs)
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        sub_tabs = QTabWidget(container)
+        sub_tabs.setDocumentMode(True)
+        container_layout.addWidget(sub_tabs)
+
+        # ── Mining sub-tab ──
+        page = QWidget(sub_tabs)
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(16, 16, 16, 16)
+        page_layout.setSpacing(10)
+
+        header = QLabel(
+            "Load a saved Mining Loadout file for each ship. The active "
+            "selection (via 'Choose Mining Ship' on the Scanner tab) feeds "
+            "the breakability calculator.",
+            page,
+        )
+        header.setWordWrap(True)
+        header.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+        page_layout.addWidget(header)
+
+        # Shared button style for the load/clear buttons
+        btn_style = f"""
+            QPushButton {{
+                font-family: Consolas, monospace;
+                font-size: 8pt; font-weight: bold;
+                color: {ACCENT}; background: transparent;
+                border: 1px solid {ACCENT}; border-radius: 3px;
+                padding: 4px 10px;
+            }}
+            QPushButton:hover {{ background: rgba(51, 221, 136, 0.15); }}
+            QPushButton:disabled {{
+                color: {P.fg_dim}; border-color: {P.border};
+            }}
+        """
+
+        for slot_id, ship_label in SHIP_SLOTS:
+            # Outer container for this ship's block
+            block = QWidget(page)
+            block_layout = QVBoxLayout(block)
+            block_layout.setContentsMargins(0, 0, 0, 0)
+            block_layout.setSpacing(2)
+
+            # Header row: ship name + buttons
+            header_row = QWidget(block)
+            header_layout = QHBoxLayout(header_row)
+            header_layout.setContentsMargins(0, 0, 0, 0)
+            header_layout.setSpacing(8)
+
+            name_lbl = QLabel(f"{ship_label}:", header_row)
+            name_lbl.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 10pt; "
+                f"font-weight: bold; color: {P.fg}; background: transparent;"
+            )
+            header_layout.addWidget(name_lbl)
+            header_layout.addStretch(1)
+
+            load_btn = QPushButton("\U0001F4C2 Load", header_row)
+            load_btn.setCursor(Qt.PointingHandCursor)
+            load_btn.setToolTip(f"Load a Mining Loadout JSON file for the {ship_label}")
+            load_btn.setStyleSheet(btn_style)
+            load_btn.clicked.connect(
+                lambda _=False, sid=slot_id, lbl=ship_label: self._on_load_ship_loadout(sid, lbl)
+            )
+            header_layout.addWidget(load_btn)
+
+            clear_btn = QPushButton("Clear", header_row)
+            clear_btn.setCursor(Qt.PointingHandCursor)
+            clear_btn.setToolTip(f"Unload the {ship_label}'s loadout")
+            clear_btn.setStyleSheet(btn_style)
+            clear_btn.clicked.connect(
+                lambda _=False, sid=slot_id: self._on_clear_ship_loadout(sid)
+            )
+            header_layout.addWidget(clear_btn)
+
+            block_layout.addWidget(header_row)
+
+            # Hierarchy detail label (multi-line, shows turrets + modules)
+            detail_lbl = QLabel("", block)
+            detail_lbl.setWordWrap(True)
+            detail_lbl.setTextFormat(Qt.RichText)
+            detail_lbl.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 8pt; "
+                f"color: {P.fg_dim}; background: transparent; "
+                f"padding-left: 16px;"
+            )
+            block_layout.addWidget(detail_lbl)
+            self._ship_slot_labels[slot_id] = detail_lbl
+
+            page_layout.addWidget(block)
+
+        # ── Mining Ops Fleet section ──
+        fleet_sep = QFrame(page)
+        fleet_sep.setFrameShape(QFrame.HLine)
+        fleet_sep.setFixedHeight(1)
+        fleet_sep.setStyleSheet(f"background-color: {P.border};")
+        page_layout.addWidget(fleet_sep)
+
+        fleet_header = QWidget(page)
+        fh_layout = QHBoxLayout(fleet_header)
+        fh_layout.setContentsMargins(0, 6, 0, 0)
+        fh_layout.setSpacing(8)
+
+        fleet_lbl = QLabel("Mining Ops Fleet:", fleet_header)
+        fleet_lbl.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 10pt; "
+            f"font-weight: bold; color: {P.fg}; background: transparent;"
+        )
+        fh_layout.addWidget(fleet_lbl)
+        fh_layout.addStretch(1)
+
+        add_ship_btn = QPushButton("Add Ship", fleet_header)
+        add_ship_btn.setCursor(Qt.PointingHandCursor)
+        add_ship_btn.setStyleSheet(btn_style)
+        add_ship_btn.clicked.connect(self._on_fleet_add_ship)
+        fh_layout.addWidget(add_ship_btn)
+
+        expand_btn = QPushButton("Expand Fleet", fleet_header)
+        expand_btn.setCursor(Qt.PointingHandCursor)
+        expand_btn.setStyleSheet(btn_style)
+        expand_btn.clicked.connect(self._on_fleet_expand)
+        fh_layout.addWidget(expand_btn)
+
+        clear_fleet_btn = QPushButton("Clear Fleet", fleet_header)
+        clear_fleet_btn.setCursor(Qt.PointingHandCursor)
+        clear_fleet_btn.setStyleSheet(btn_style)
+        clear_fleet_btn.clicked.connect(self._on_fleet_clear)
+        fh_layout.addWidget(clear_fleet_btn)
+
+        page_layout.addWidget(fleet_header)
+
+        # Fleet ship name labels (first 5)
+        self._fleet_names_label = QLabel("", page)
+        self._fleet_names_label.setWordWrap(True)
+        self._fleet_names_label.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent; padding-left: 16px;"
+        )
+        page_layout.addWidget(self._fleet_names_label)
+
+        page_layout.addStretch(1)
+        sub_tabs.addTab(page, "Mining")
+
+        # ── Salvage sub-tab ──
+        salvage_page = self._build_salvage_sub_tab(sub_tabs, btn_style)
+        sub_tabs.addTab(salvage_page, "Salvage")
+
+        return container
+
+    def _build_salvage_sub_tab(self, parent: QWidget, btn_style: str) -> QWidget:
+        """Salvage ships sub-tab — load DPS Calculator loadouts for display
+        in the Mining Roster. Salvage ships don't contribute to breakability
+        calculations, so they're display-only here.
+        """
+        page = QWidget(parent)
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(16, 16, 16, 16)
+        page_layout.setSpacing(10)
+
+        header = QLabel(
+            "Load DPS Calculator loadout files (.json) for salvage ships. "
+            "Salvage ships loaded here appear in the Mining Roster fleet "
+            "panel so you can drag them into teams and strike groups.",
+            page,
+        )
+        header.setWordWrap(True)
+        header.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+        page_layout.addWidget(header)
+
+        # Header row: title + Add/Clear buttons
+        header_row = QWidget(page)
+        hr_layout = QHBoxLayout(header_row)
+        hr_layout.setContentsMargins(0, 4, 0, 0)
+        hr_layout.setSpacing(8)
+
+        title_lbl = QLabel("Salvage Fleet:", header_row)
+        title_lbl.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 10pt; "
+            f"font-weight: bold; color: {P.fg}; background: transparent;"
+        )
+        hr_layout.addWidget(title_lbl)
+        hr_layout.addStretch(1)
+
+        add_btn = QPushButton("\U0001F4C2 Add Salvage Ship", header_row)
+        add_btn.setCursor(Qt.PointingHandCursor)
+        add_btn.setStyleSheet(btn_style)
+        add_btn.setToolTip("Load a DPS Calculator loadout file")
+        add_btn.clicked.connect(self._on_salvage_add_ship)
+        hr_layout.addWidget(add_btn)
+
+        clear_btn = QPushButton("Clear All", header_row)
+        clear_btn.setCursor(Qt.PointingHandCursor)
+        clear_btn.setStyleSheet(btn_style)
+        clear_btn.clicked.connect(self._on_salvage_clear)
+        hr_layout.addWidget(clear_btn)
+
+        page_layout.addWidget(header_row)
+
+        # Scrollable list of loaded salvage ships
+        self._salvage_names_label = QLabel("(no salvage ships loaded)", page)
+        self._salvage_names_label.setWordWrap(True)
+        self._salvage_names_label.setTextFormat(Qt.RichText)
+        self._salvage_names_label.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent; padding-left: 16px;"
+        )
+        page_layout.addWidget(self._salvage_names_label)
+
+        page_layout.addStretch(1)
+        return page
+
+    # ── Gadgets tab ──
+
+    def _build_gadgets_tab(self) -> QWidget:
+        """Build the Gadgets tab with quantity selectors + always-use toggle."""
+        page = QWidget(self._tabs)
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(16, 16, 16, 16)
+        page_layout.setSpacing(8)
+
+        header = QLabel(
+            "Set your available gadgets. Gadgets are only recommended when "
+            "a ship cannot break a rock without one, unless 'Always use best "
+            "gadget' is enabled.",
+            page,
+        )
+        header.setWordWrap(True)
+        header.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+        page_layout.addWidget(header)
+
+        # Always-use toggle
+        self._always_best_gadget = QCheckBox("Always use best gadget", page)
+        self._always_best_gadget.setChecked(
+            self._config.get("always_use_best_gadget", False)
+        )
+        self._always_best_gadget.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 9pt; "
+            f"color: {ACCENT}; background: transparent;"
+        )
+        self._always_best_gadget.stateChanged.connect(self._on_always_best_changed)
+        page_layout.addWidget(self._always_best_gadget)
+
+        # Gadget rows
+        gadgets_db = get_gadget_list()
+        quantities = self._config.get("gadget_quantities", {})
+
+        if not gadgets_db:
+            no_data = QLabel(
+                "Gadget data unavailable — ensure Mining Loadout tool is installed.",
+                page,
+            )
+            no_data.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 8pt; "
+                f"color: {P.fg_dim}; background: transparent;"
+            )
+            page_layout.addWidget(no_data)
+        else:
+            _spin_style = f"""
+                QSpinBox {{
+                    font-family: Consolas, monospace; font-size: 9pt;
+                    color: {P.fg}; background: {P.bg_card};
+                    border: 1px solid {P.border}; border-radius: 3px;
+                    padding: 2px 4px;
+                }}
+                QSpinBox::up-button, QSpinBox::down-button {{
+                    width: 16px; border: none;
+                    background: {P.bg_secondary};
+                }}
+                QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
+                    background: rgba(51, 221, 136, 0.25);
+                }}
+                QSpinBox::up-arrow {{
+                    image: none; border-left: 4px solid transparent;
+                    border-right: 4px solid transparent;
+                    border-bottom: 5px solid {ACCENT};
+                    width: 0; height: 0;
+                }}
+                QSpinBox::down-arrow {{
+                    image: none; border-left: 4px solid transparent;
+                    border-right: 4px solid transparent;
+                    border-top: 5px solid {ACCENT};
+                    width: 0; height: 0;
+                }}
+            """
+
+            def _trait_text(val, label):
+                if val is None:
+                    return None
+                color = ACCENT if val < 0 else "#ff4444" if val > 0 else P.fg_dim
+                return f'<span style="color:{color};">{label}: {val:+.0f}%</span>'
+
+            for name in sorted(gadgets_db.keys()):
+                g = gadgets_db[name]
+                block = QWidget(page)
+                block_layout = QVBoxLayout(block)
+                block_layout.setContentsMargins(0, 0, 0, 4)
+                block_layout.setSpacing(1)
+
+                # Top row: name + spinbox
+                top_row = QWidget(block)
+                top_layout = QHBoxLayout(top_row)
+                top_layout.setContentsMargins(0, 0, 0, 0)
+                top_layout.setSpacing(8)
+
+                name_lbl = QLabel(name, top_row)
+                name_lbl.setFixedWidth(120)
+                name_lbl.setStyleSheet(
+                    f"font-family: Consolas, monospace; font-size: 9pt; "
+                    f"font-weight: bold; color: {P.fg}; background: transparent;"
+                )
+                top_layout.addWidget(name_lbl)
+
+                # All traits as colored tags
+                traits = []
+                for val, label in [
+                    (g.resistance, "Resist"),
+                    (g.instability, "Instab"),
+                    (g.charge_window, "ChgWnd"),
+                    (g.charge_rate, "ChgRate"),
+                    (g.cluster, "Cluster"),
+                ]:
+                    t = _trait_text(val, label)
+                    if t:
+                        traits.append(t)
+
+                traits_lbl = QLabel("  ".join(traits) if traits else "—", top_row)
+                traits_lbl.setTextFormat(Qt.RichText)
+                traits_lbl.setStyleSheet(
+                    f"font-family: Consolas, monospace; font-size: 7pt; "
+                    f"background: transparent;"
+                )
+                top_layout.addWidget(traits_lbl, 1)
+
+                spin = QSpinBox(top_row)
+                spin.setRange(0, 99)
+                spin.setValue(quantities.get(name, 0))
+                spin.setFixedWidth(70)
+                spin.setStyleSheet(_spin_style)
+                spin.valueChanged.connect(
+                    lambda val, n=name: self._on_gadget_qty_changed(n, val)
+                )
+                top_layout.addWidget(spin)
+                self._gadget_spinboxes[name] = spin
+
+                block_layout.addWidget(top_row)
+                page_layout.addWidget(block)
+
+        # ── Mining Foreman Console button ──
+        admiral_sep = QFrame(page)
+        admiral_sep.setFrameShape(QFrame.HLine)
+        admiral_sep.setFixedHeight(1)
+        admiral_sep.setStyleSheet(f"background-color: {P.border};")
+        page_layout.addWidget(admiral_sep)
+
+        admiral_btn = QPushButton("Mining Foreman Console", page)
+        admiral_btn.setCursor(Qt.PointingHandCursor)
+        admiral_btn.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas, monospace; font-size: 9pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent; "
+            f"border: 1px solid {ACCENT}; border-radius: 3px; padding: 6px 14px; }}"
+            f"QPushButton:hover {{ background: rgba(51,221,136,0.15); }}"
+        )
+        admiral_btn.clicked.connect(self._on_fleet_admiral_view)
+        page_layout.addWidget(admiral_btn)
+
+        page_layout.addStretch(1)
+        return page
+
+    # ── Refinery tab ──
+
+    def _build_refinery_tab(self) -> QWidget:
+        """Build the Refinery tab with sub-tabs: In Process / Complete."""
+        page = QWidget(self._tabs)
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(16, 8, 16, 8)
+        page_layout.setSpacing(6)
+
+        # Live monitor instance
+        self._refinery_monitor = None
+        # Raw log results for legacy complete-only entries
+        self._refinery_raw_results: list[dict] = []
+        self._refinery_picked_up: set[str] = set(
+            self._config.get("refinery_picked_up", [])
+        )
+        self._refinery_deleted: set[str] = set(
+            self._config.get("refinery_deleted", [])
+        )
+
+        _btn = (
+            f"QPushButton {{ font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg}; background: {P.bg_card}; "
+            f"border: 1px solid {P.border}; border-radius: 3px; padding: 3px 8px; }}"
+            f"QPushButton:hover {{ background: rgba(51,221,136,0.15); }}"
+        )
+        _btn_accent = (
+            f"QPushButton {{ font-family: Consolas, monospace; font-size: 8pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent; "
+            f"border: 1px solid {ACCENT}; border-radius: 3px; padding: 3px 8px; }}"
+            f"QPushButton:hover {{ background: rgba(51,221,136,0.15); }}"
+        )
+        _btn_red = (
+            f"QPushButton {{ font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg}; background: {P.bg_card}; "
+            f"border: 1px solid {P.border}; border-radius: 3px; padding: 3px 10px; }}"
+            f"QPushButton:hover {{ background: rgba(255,60,60,0.15); "
+            f"border-color: #cc6666; color: #cc6666; }}"
+        )
+        _lbl = (
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg_dim}; background: transparent;"
+        )
+
+        # ── Toolbar row ──
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(6)
+
+        btn_set_region = QPushButton("Set Refinery Region", page)
+        btn_set_region.setStyleSheet(_btn)
+        btn_set_region.clicked.connect(self._on_set_refinery_region)
+        toolbar.addWidget(btn_set_region)
+
+        btn_scan = QPushButton("Scan Now", page)
+        btn_scan.setStyleSheet(_btn_accent)
+        btn_scan.clicked.connect(self._do_refinery_scan)
+        self._refinery_scan_btn = btn_scan
+        toolbar.addWidget(btn_scan)
+
+        self._refinery_auto_cb = QCheckBox("Auto-Scan", page)
+        self._refinery_auto_cb.setChecked(
+            self._config.get("refinery_auto_scan", False)
+        )
+        self._refinery_auto_cb.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 8pt; "
+            f"color: {P.fg}; background: transparent;"
+        )
+        self._refinery_auto_cb.stateChanged.connect(self._on_refinery_auto_toggle)
+        toolbar.addWidget(self._refinery_auto_cb)
+
+        toolbar.addStretch(1)
+
+        btn_log_path = QPushButton("Set Log Path", page)
+        btn_log_path.setStyleSheet(_btn)
+        btn_log_path.clicked.connect(self._on_refinery_set_dir)
+        toolbar.addWidget(btn_log_path)
+
+        page_layout.addLayout(toolbar)
+
+        # Status labels
+        region_text = "Region set" if self._config.get("refinery_ocr_region") else "No region set"
+        self._refinery_region_label = QLabel(region_text, page)
+        self._refinery_region_label.setStyleSheet(_lbl)
+        page_layout.addWidget(self._refinery_region_label)
+
+        # Summary
+        self._refinery_summary = QLabel("", page)
+        self._refinery_summary.setStyleSheet(
+            f"font-family: Consolas, monospace; font-size: 9pt; "
+            f"color: {ACCENT}; background: transparent;"
+        )
+        page_layout.addWidget(self._refinery_summary)
+
+        # ── Sub-tabs ──
+        sub_tabs = QTabWidget(page)
+        sub_tabs.setStyleSheet(f"""
+            QTabBar::tab {{
+                font-family: Consolas, monospace; font-size: 9pt;
+                color: {P.fg_dim}; background: transparent;
+                padding: 6px 12px; border: none;
+                border-bottom: 2px solid transparent;
+            }}
+            QTabBar::tab:selected {{
+                color: {ACCENT}; border-bottom-color: {ACCENT};
+            }}
+            QTabBar::tab:hover:!selected {{ color: {P.fg}; }}
+        """)
+
+        # ── In Process sub-tab ──
+        in_process_page = QWidget(sub_tabs)
+        ip_layout = QVBoxLayout(in_process_page)
+        ip_layout.setContentsMargins(0, 8, 0, 0)
+        ip_layout.setSpacing(4)
+
+        self._refinery_ip_table = SCTable(
+            columns=[
+                ColumnDef("Name", "name", width=160),
+                ColumnDef("Station", "station", width=130),
+                ColumnDef("Method", "method", width=130),
+                ColumnDef("Cost", "cost", width=80, alignment=Qt.AlignRight,
+                          fmt=lambda v: f"{v:,.0f}" if v else "—"),
+                ColumnDef("Time Left", "time_left", width=100, fg_color=ACCENT),
+                ColumnDef("Commodities", "commodities_str", width=200),
+            ],
+            parent=in_process_page,
+            sortable=True,
+        )
+        self._refinery_ip_table.row_double_clicked.connect(
+            self._on_refinery_order_clicked
+        )
+        ip_layout.addWidget(self._refinery_ip_table, 1)
+
+        # IP action buttons
+        ip_btns = QHBoxLayout()
+        ip_btns.setSpacing(6)
+        btn_rename = QPushButton("Rename", in_process_page)
+        btn_rename.setStyleSheet(_btn)
+        btn_rename.clicked.connect(self._on_refinery_rename)
+        ip_btns.addWidget(btn_rename)
+        btn_del_ip = QPushButton("Delete", in_process_page)
+        btn_del_ip.setStyleSheet(_btn_red)
+        btn_del_ip.clicked.connect(self._on_refinery_delete_ip)
+        ip_btns.addWidget(btn_del_ip)
+        ip_btns.addStretch(1)
+        ip_layout.addLayout(ip_btns)
+
+        sub_tabs.addTab(in_process_page, "Orders In Process")
+
+        # ── Complete sub-tab ──
+        complete_page = QWidget(sub_tabs)
+        cp_layout = QVBoxLayout(complete_page)
+        cp_layout.setContentsMargins(0, 8, 0, 0)
+        cp_layout.setSpacing(4)
+
+        self._refinery_cp_table = SCTable(
+            columns=[
+                ColumnDef("Name", "name", width=160),
+                ColumnDef("Station", "station", width=130),
+                ColumnDef("Method", "method", width=130),
+                ColumnDef("Cost", "cost", width=80, alignment=Qt.AlignRight,
+                          fmt=lambda v: f"{v:,.0f}" if v else "—"),
+                ColumnDef("Completed", "completed_at", width=140),
+                ColumnDef("Commodities", "commodities_str", width=200),
+            ],
+            parent=complete_page,
+            sortable=True,
+        )
+        self._refinery_cp_table.row_double_clicked.connect(
+            self._on_refinery_order_clicked
+        )
+        cp_layout.addWidget(self._refinery_cp_table, 1)
+
+        # Complete action buttons
+        cp_btns = QHBoxLayout()
+        cp_btns.setSpacing(6)
+        btn_pickup = QPushButton("Mark Picked Up", complete_page)
+        btn_pickup.setStyleSheet(_btn_accent)
+        btn_pickup.setToolTip("Move selected order to Picked Up tab")
+        btn_pickup.clicked.connect(self._on_refinery_mark_picked_up)
+        cp_btns.addWidget(btn_pickup)
+        btn_del_cp = QPushButton("Delete", complete_page)
+        btn_del_cp.setStyleSheet(_btn_red)
+        btn_del_cp.clicked.connect(self._on_refinery_delete_cp)
+        cp_btns.addWidget(btn_del_cp)
+        btn_clear = QPushButton("Clear All Completed", complete_page)
+        btn_clear.setStyleSheet(_btn_red)
+        btn_clear.clicked.connect(self._on_refinery_clear_complete)
+        cp_btns.addWidget(btn_clear)
+        cp_btns.addStretch(1)
+        cp_layout.addLayout(cp_btns)
+
+        sub_tabs.addTab(complete_page, "Orders Complete")
+
+        # ── Picked Up sub-tab ──
+        pickup_page = QWidget(sub_tabs)
+        pu_layout = QVBoxLayout(pickup_page)
+        pu_layout.setContentsMargins(0, 8, 0, 0)
+        pu_layout.setSpacing(4)
+
+        self._refinery_pu_table = SCTable(
+            columns=[
+                ColumnDef("Name", "name", width=160),
+                ColumnDef("Station", "station", width=130),
+                ColumnDef("Method", "method", width=130),
+                ColumnDef("Cost", "cost", width=80, alignment=Qt.AlignRight,
+                          fmt=lambda v: f"{v:,.0f}" if v else "—"),
+                ColumnDef("Picked Up", "picked_up_at", width=140),
+                ColumnDef("Commodities", "commodities_str", width=200),
+            ],
+            parent=pickup_page,
+            sortable=True,
+        )
+        self._refinery_pu_table.row_double_clicked.connect(
+            self._on_refinery_order_clicked
+        )
+        pu_layout.addWidget(self._refinery_pu_table, 1)
+
+        pu_btns = QHBoxLayout()
+        pu_btns.setSpacing(6)
+        btn_del_pu = QPushButton("Delete", pickup_page)
+        btn_del_pu.setStyleSheet(_btn_red)
+        btn_del_pu.clicked.connect(self._on_refinery_delete_pu)
+        pu_btns.addWidget(btn_del_pu)
+        btn_clear_pu = QPushButton("Clear All Picked Up", pickup_page)
+        btn_clear_pu.setStyleSheet(_btn_red)
+        btn_clear_pu.clicked.connect(self._on_refinery_clear_picked_up)
+        pu_btns.addWidget(btn_clear_pu)
+        pu_btns.addStretch(1)
+        pu_layout.addLayout(pu_btns)
+
+        sub_tabs.addTab(pickup_page, "Picked Up")
+
+        # ── Locations sub-tab (refinery directory + near-me search) ──
+        self._refinery_locations_tab = RefineryLocationsTab(
+            parent=sub_tabs,
+            player_location_provider=self._get_player_location,
+            status_label=None,   # wire the shared label after it exists
+        )
+        sub_tabs.addTab(self._refinery_locations_tab, "Locations")
+
+        # ── Yields sub-tab (refinery mineral yield comparison table) ──
+        self._refinery_yields_tab = RefineryYieldsTab(parent=sub_tabs)
+        # When yield data loads, share it with the Locations tab so its
+        # detail popup can show per-mineral bonuses.
+        self._refinery_yields_tab._loader.loaded.connect(
+            lambda data: self._refinery_locations_tab.set_yield_data(data)
+        )
+        sub_tabs.addTab(self._refinery_yields_tab, "Yields")
+
+        page_layout.addWidget(sub_tabs, 1)
+
+        # Status label
+        self._refinery_status = QLabel("Starting...", page)
+        self._refinery_status.setStyleSheet(_lbl)
+        page_layout.addWidget(self._refinery_status)
+
+        # Share the status label with the locations sub-tab so row
+        # clicks flash "Copied '<name>' to clipboard" in the same place
+        # as the other refinery messages.
+        self._refinery_locations_tab._shared_status = self._refinery_status
+
+        # Start log monitor + countdown timer
+        self._start_refinery_monitor()
+        self._refinery_countdown_timer = QTimer(self)
+        self._refinery_countdown_timer.timeout.connect(self._refresh_refinery_countdowns)
+        self._refinery_countdown_timer.start(1000)
+
+        # Start auto-scan if enabled
+        if self._config.get("refinery_auto_scan", False):
+            self._start_refinery_auto_scan()
+
+        # Initial table refresh
+        self._refresh_refinery_tables()
+
+        return page
+
+    # ── Refinery helpers ──
+
+    def _persist_refinery_orders(self) -> None:
+        """Save order store to config."""
+        self._config["refinery_orders"] = self._refinery_order_store.to_config_list()
+        _save_config(self._config)
+
+    def _refresh_refinery_tables(self) -> None:
+        """Rebuild both In Process and Complete tables from the order store."""
+        # In Process table
+        ip_orders = self._refinery_order_store.get_in_process()
+        ip_data = []
+        for o in ip_orders:
+            ip_data.append({
+                "id": o.id,
+                "name": o.name,
+                "station": o.station,
+                "method": o.method,
+                "cost": o.cost,
+                "time_left": o.time_remaining_str(),
+                "commodities_str": o.commodities_summary(),
+            })
+        self._refinery_ip_table.set_data(ip_data)
+
+        # Complete table
+        cp_orders = self._refinery_order_store.get_complete()
+        cp_data = []
+        for o in cp_orders:
+            completed = ""
+            if o.completed_at:
+                completed = o.completed_at.replace("T", " ")[:16]
+            cp_data.append({
+                "id": o.id,
+                "name": o.name,
+                "station": o.station,
+                "method": o.method,
+                "cost": o.cost,
+                "completed_at": completed,
+                "commodities_str": o.commodities_summary(),
+            })
+        self._refinery_cp_table.set_data(cp_data)
+
+        # Picked Up table
+        pu_orders = self._refinery_order_store.get_picked_up()
+        pu_data = []
+        for o in pu_orders:
+            picked = ""
+            if o.picked_up_at:
+                picked = o.picked_up_at.replace("T", " ")[:16]
+            pu_data.append({
+                "id": o.id,
+                "name": o.name,
+                "station": o.station,
+                "method": o.method,
+                "cost": o.cost,
+                "picked_up_at": picked,
+                "commodities_str": o.commodities_summary(),
+            })
+        self._refinery_pu_table.set_data(pu_data)
+
+        # Summary
+        n_ip = len(ip_orders)
+        n_cp = len(cp_orders)
+        n_pu = len(pu_orders)
+        total_cost = sum(o.cost for o in ip_orders)
+        self._refinery_summary.setText(
+            f"{n_ip} in process  ·  {n_cp} complete  ·  "
+            f"{n_pu} picked up  ·  {total_cost:,.0f} aUEC pending"
+        )
+
+    def _refresh_refinery_countdowns(self) -> None:
+        """Update only the Time Left column for in-process orders (called every 1s)."""
+        ip_orders = self._refinery_order_store.get_in_process()
+        if not ip_orders:
+            return
+
+        # Preserve current selection across the data refresh
+        selected = self._refinery_ip_table.get_selected_row()
+        selected_id = selected.get("id") if selected else None
+
+        ip_data = []
+        for o in ip_orders:
+            ip_data.append({
+                "id": o.id,
+                "name": o.name,
+                "station": o.station,
+                "method": o.method,
+                "cost": o.cost,
+                "time_left": o.time_remaining_str(),
+                "commodities_str": o.commodities_summary(),
+            })
+        self._refinery_ip_table.set_data(ip_data)
+
+        # Restore selection by matching order ID
+        if selected_id:
+            model = self._refinery_ip_table.model()
+            src = self._refinery_ip_table._source_model
+            for row in range(src.rowCount()):
+                row_data = src.row_data(row)
+                if row_data and row_data.get("id") == selected_id:
+                    if self._refinery_ip_table._proxy:
+                        src_idx = src.index(row, 0)
+                        proxy_idx = self._refinery_ip_table._proxy.mapFromSource(src_idx)
+                        self._refinery_ip_table.selectRow(proxy_idx.row())
+                    else:
+                        self._refinery_ip_table.selectRow(row)
+                    break
+
+    # ── Refinery OCR scanning ──
+
+    def _on_set_refinery_region(self) -> None:
+        """Open region selector for the refinery kiosk area."""
+        selector = RegionSelector(self)
+        selector.region_selected.connect(self._on_refinery_region_selected)
+        selector.show()
+
+    def _on_refinery_region_selected(self, region: dict) -> None:
+        self._config["refinery_ocr_region"] = region
+        _save_config(self._config)
+        self._refinery_region_label.setText(
+            f"Region: {region['w']}×{region['h']} at ({region['x']}, {region['y']})"
+        )
+
+    _last_refinery_hash: int = 0
+
+    def _do_refinery_scan(self) -> None:
+        """One-shot refinery OCR scan in background thread.
+
+        Skips OCR if the captured image hasn't changed since last scan.
+        """
+        region = self._config.get("refinery_ocr_region")
+        if not region:
+            self._refinery_status.setText("Set a refinery region first.")
+            return
+        if self._refinery_scan_in_progress:
+            return
+        if self._scan_timer is not None:
+            self._refinery_status.setText("Mining scanner active — skipping refinery scan.")
+            return
+
+        self._refinery_scan_in_progress = True
+        self._refinery_scan_btn.setEnabled(False)
+        self._refinery_status.setText("Scanning refinery panel...")
+
+        station = ""
+        if self._refinery_monitor and self._refinery_monitor.current_location:
+            station = self._refinery_monitor.current_location
+
+        prev_hash = MiningSignalsApp._last_refinery_hash
+
+        def _run():
+            try:
+                # Quick change detection — hash a sample of the image
+                from ocr.screen_reader import capture_region
+                img = capture_region(region)
+                if img is not None:
+                    img_hash = hash(img.tobytes()[:4096])
+                    if img_hash == prev_hash and prev_hash != 0:
+                        # Panel unchanged — skip full OCR
+                        QMetaObject.invokeMethod(
+                            self, "_on_refinery_ocr_skipped",
+                            Qt.QueuedConnection,
+                        )
+                        return
+                    MiningSignalsApp._last_refinery_hash = img_hash
+
+                from ocr.refinery_reader import scan_refinery
+                result = scan_refinery(region, station=station)
+            except Exception as exc:
+                log.exception("Refinery OCR failed: %s", exc)
+                result = None
+            QMetaObject.invokeMethod(
+                self, "_on_refinery_ocr_result",
+                Qt.QueuedConnection,
+                Q_ARG("QVariant", result),
+            )
+
+        threading.Thread(target=_run, daemon=True).start()
+
+    @Slot("QVariant")
+    @Slot()
+    def _on_refinery_ocr_skipped(self) -> None:
+        """Called when auto-scan detects no change — skip OCR."""
+        self._refinery_scan_in_progress = False
+        self._refinery_scan_btn.setEnabled(True)
+
+    @Slot("QVariant")
+    def _on_refinery_ocr_result(self, result) -> None:
+        """Handle OCR scan result on main thread."""
+        self._refinery_scan_in_progress = False
+        self._refinery_scan_btn.setEnabled(True)
+
+        if result is None:
+            self._refinery_status.setText("Refinery panel not detected.")
+            return
+        if not result:
+            self._refinery_status.setText("Panel detected but no orders parsed.")
+            return
+
+        added = 0
+        for order_data in result:
+            order = self._refinery_order_store.add_order(
+                station=order_data.get("station", ""),
+                commodities=order_data.get("commodities", []),
+                method=order_data.get("method", ""),
+                cost=order_data.get("cost", 0),
+                processing_seconds=order_data.get("processing_seconds", 0),
+            )
+            if order:
+                added += 1
+
+        self._persist_refinery_orders()
+        self._refresh_refinery_tables()
+        self._refinery_status.setText(
+            f"Scanned {len(result)} order(s), {added} added."
+        )
+
+    def _on_refinery_auto_toggle(self, state: int) -> None:
+        """Toggle auto-scan on/off."""
+        enabled = state != 0
+        self._config["refinery_auto_scan"] = enabled
+        _save_config(self._config)
+        if enabled:
+            self._start_refinery_auto_scan()
+        else:
+            self._stop_refinery_auto_scan()
+
+    def _start_refinery_auto_scan(self) -> None:
+        if self._refinery_scan_timer is not None:
+            return
+        self._refinery_scan_timer = QTimer(self)
+        self._refinery_scan_timer.timeout.connect(self._do_refinery_scan)
+        self._refinery_scan_timer.start(3000)
+
+    def _stop_refinery_auto_scan(self) -> None:
+        if self._refinery_scan_timer is not None:
+            self._refinery_scan_timer.stop()
+            self._refinery_scan_timer = None
+
+    # ── Refinery log monitor ──
+
+    def _get_player_location(self) -> str:
+        """Return the most recent player location reported by the log
+        scanner (empty string if nothing has been observed yet).
+
+        Used by :class:`RefineryLocationsTab` to rank refineries by
+        proximity.  Kept as a small method so the tab doesn't need a
+        direct reference to the ``RefineryMonitor``.
+        """
+        mon = self._refinery_monitor
+        if mon is None:
+            return ""
+        return mon.current_location or ""
+
+    def _start_refinery_monitor(self) -> None:
+        """Start (or restart) the live refinery log monitor."""
+        if self._refinery_monitor is not None:
+            self._refinery_monitor.stop()
+            self._refinery_monitor = None
+
+        # Use `or ""` so a null value in the shipped sanitized config
+        # falls back to empty string — dict.get("game_dir", "") would
+        # return None since the key is present with value null.
+        game_dir = self._config.get("game_dir") or ""
+        if not game_dir:
+            self._refinery_status.setText("No game directory set — click 'Set Log Path'.")
+            return
+
+        from services.log_scanner import RefineryMonitor
+
+        self._refinery_monitor = RefineryMonitor(game_dir)
+        self._refinery_monitor.subscribe(self._on_refinery_monitor_update)
+        self._refinery_monitor.start()
+
+    def _on_refinery_monitor_update(self, results: list[dict]) -> None:
+        """Called from monitor bg thread — push to main thread."""
+        QMetaObject.invokeMethod(
+            self, "_on_refinery_log_results",
+            Qt.QueuedConnection,
+            Q_ARG("QVariant", results),
+        )
+
+    @Slot("QVariant")
+    def _on_refinery_log_results(self, results: list) -> None:
+        """Handle log completion events — match to in-process orders."""
+        from services.refinery_orders import match_log_completion
+
+        # The monitor updates ``current_location`` on every log line it
+        # sees (even non-refinery ones), so every dispatch from its
+        # worker is a good cue to refresh the Locations tab when
+        # "Near me" is active.
+        loc_tab = getattr(self, "_refinery_locations_tab", None)
+        if loc_tab is not None:
+            loc_tab.notify_player_location_changed()
+
+        self._refinery_raw_results = results
+        changed = False
+
+        for event in results:
+            eid = event.get("id", "")
+            if eid in self._refinery_deleted:
+                continue
+            # Try to match to an in-process OCR order
+            matched_ids = match_log_completion(self._refinery_order_store, event)
+            for oid in matched_ids:
+                self._refinery_order_store.complete_order(
+                    oid, event["timestamp"], eid
+                )
+                changed = True
+
+            # If no match, create a standalone complete entry (if not already tracked)
+            if not matched_ids and not self._refinery_order_store.get_order(eid):
+                self._refinery_order_store.add_log_only_completion(event)
+                changed = True
+
+        if changed:
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_set_dir(self) -> None:
+        """Let the user pick the Star Citizen LIVE directory."""
+        # Coerce None → "" (sanitized config may have game_dir: null)
+        current = self._config.get("game_dir") or ""
+        path = QFileDialog.getExistingDirectory(
+            self, "Select Star Citizen LIVE Directory", current,
+        )
+        if path:
+            self._config["game_dir"] = path
+            _save_config(self._config)
+            self._start_refinery_monitor()
+
+    # ── Refinery order actions ──
+
+    def _on_refinery_order_clicked(self, row_data: dict) -> None:
+        """Open detail popup for clicked order."""
+        oid = row_data.get("id")
+        if not oid:
+            return
+        order = self._refinery_order_store.get_order(oid)
+        if not order:
+            return
+        from ui.refinery_popup import RefineryOrderPopup
+        popup = RefineryOrderPopup(order, self._refinery_order_store, self)
+        popup.order_changed.connect(self._on_refinery_order_changed)
+        popup.show()
+
+    def _on_refinery_order_changed(self) -> None:
+        """Called when popup modifies an order (rename etc)."""
+        self._persist_refinery_orders()
+        self._refresh_refinery_tables()
+
+    def _on_refinery_rename(self) -> None:
+        """Rename the selected in-process order via inline dialog."""
+        row = self._refinery_ip_table.get_selected_row()
+        if not row:
+            return
+        oid = row.get("id")
+        order = self._refinery_order_store.get_order(oid) if oid else None
+        if not order:
+            return
+        from PySide6.QtWidgets import QInputDialog
+        new_name, ok = QInputDialog.getText(
+            self, "Rename Order", "New name:", text=order.name,
+        )
+        if ok and new_name.strip():
+            self._refinery_order_store.rename_order(oid, new_name.strip())
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_delete_ip(self) -> None:
+        row = self._refinery_ip_table.get_selected_row()
+        if row and row.get("id"):
+            self._refinery_order_store.delete_order(row["id"])
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_delete_cp(self) -> None:
+        row = self._refinery_cp_table.get_selected_row()
+        if row and row.get("id"):
+            self._refinery_order_store.delete_order(row["id"])
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_clear_complete(self) -> None:
+        for order in self._refinery_order_store.get_complete():
+            self._refinery_order_store.delete_order(order.id)
+        self._persist_refinery_orders()
+        self._refresh_refinery_tables()
+
+    def _on_refinery_mark_picked_up(self) -> None:
+        """Move selected complete order to Picked Up."""
+        row = self._refinery_cp_table.get_selected_row()
+        if row and row.get("id"):
+            self._refinery_order_store.pickup_order(row["id"])
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_delete_pu(self) -> None:
+        row = self._refinery_pu_table.get_selected_row()
+        if row and row.get("id"):
+            self._refinery_order_store.delete_order(row["id"])
+            self._persist_refinery_orders()
+            self._refresh_refinery_tables()
+
+    def _on_refinery_clear_picked_up(self) -> None:
+        for order in self._refinery_order_store.get_picked_up():
+            self._refinery_order_store.delete_order(order.id)
+        self._persist_refinery_orders()
+        self._refresh_refinery_tables()
+
+    def _on_fleet_admiral_view(self) -> None:
+        """Open the Mining Foreman Console — full consumable/gadget management popup."""
+        if hasattr(self, "_admiral_popup") and self._admiral_popup:
+            try:
+                self._admiral_popup.close()
+            except RuntimeError:
+                pass
+
+        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup.destroyed.connect(lambda: setattr(self, "_admiral_popup", None))
+        self._admiral_popup = popup
+
+        popup._drag_pos = None
+
+        def _mp(event):
+            if event.button() == Qt.LeftButton:
+                popup._drag_pos = event.globalPosition().toPoint() - popup.frameGeometry().topLeft()
+
+        def _mm(event):
+            if popup._drag_pos and event.buttons() & Qt.LeftButton:
+                popup.move(event.globalPosition().toPoint() - popup._drag_pos)
+
+        popup.mousePressEvent = _mp
+        popup.mouseMoveEvent = _mm
+
+        popup.setFixedWidth(400)
+        outer = QVBoxLayout(popup)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        frame = QFrame(popup)
+        frame.setObjectName("admiral_frame")
+        frame.setStyleSheet(
+            f"QFrame#admiral_frame {{ background: {P.bg_card}; "
+            f"border: 1px solid {ACCENT}; border-radius: 4px; }}"
+        )
+        fl = QVBoxLayout(frame)
+        fl.setContentsMargins(12, 12, 12, 12)
+        fl.setSpacing(6)
+
+        _ns = f"background: transparent; border: none;"
+        _spin_style = (
+            f"QSpinBox {{ font-family: Consolas; font-size: 8pt; color: {P.fg}; "
+            f"background: {P.bg_card}; border: 1px solid {P.border}; border-radius: 3px; }}"
+            f"QSpinBox::up-button, QSpinBox::down-button {{ width: 14px; border: none; "
+            f"background: {P.bg_secondary}; }}"
+            f"QSpinBox::up-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-bottom: 4px solid {ACCENT}; }}"
+            f"QSpinBox::down-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-top: 4px solid {ACCENT}; }}"
+        )
+
+        # Header + close
+        hdr = QWidget(frame)
+        hl = QHBoxLayout(hdr)
+        hl.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Mining Foreman Console", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas; font-size: 11pt; "
+            f"font-weight: bold; color: {ACCENT}; {_ns}"
+        )
+        hl.addWidget(title)
+        hl.addStretch(1)
+        close_btn = QPushButton("\u2716", hdr)
+        close_btn.setFixedSize(32, 28)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setStyleSheet(_CLOSE_BTN_STYLE)
+        close_btn.clicked.connect(popup.close)
+        hl.addWidget(close_btn)
+        fl.addWidget(hdr)
+
+        # Refresh All buttons
+        btn_row = QWidget(frame)
+        br_layout = QHBoxLayout(btn_row)
+        br_layout.setContentsMargins(0, 4, 0, 4)
+        br_layout.setSpacing(6)
+
+        ref_mods = QPushButton("Refresh All Modules", btn_row)
+        ref_mods.setCursor(Qt.PointingHandCursor)
+        ref_mods.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: {ACCENT}; {_ns} border: 1px solid {ACCENT}; border-radius: 3px; "
+            f"padding: 3px 8px; }}"
+        )
+        def _refresh_mods():
+            pos = popup.pos()
+            self._replenish_all_modules()
+            popup.close()
+            self._on_fleet_admiral_view()
+            # Restore position of the new popup
+            if hasattr(self, '_fleet_admiral_popup') and self._fleet_admiral_popup:
+                self._fleet_admiral_popup.move(pos)
+
+        ref_mods.clicked.connect(_refresh_mods)
+        br_layout.addWidget(ref_mods)
+
+        ref_gad = QPushButton("Refresh All Gadgets", btn_row)
+        ref_gad.setCursor(Qt.PointingHandCursor)
+        ref_gad.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: #ffc107; {_ns} border: 1px solid #ffc107; border-radius: 3px; "
+            f"padding: 3px 8px; }}"
+        )
+
+        def _refresh_gads():
+            pos = popup.pos()
+            self._replenish_all_gadgets()
+            popup.close()
+            self._on_fleet_admiral_view()
+            if hasattr(self, '_fleet_admiral_popup') and self._fleet_admiral_popup:
+                self._fleet_admiral_popup.move(pos)
+
+        ref_gad.clicked.connect(_refresh_gads)
+        br_layout.addWidget(ref_gad)
+        br_layout.addStretch(1)
+        fl.addWidget(btn_row)
+
+        # ── Gadgets section (yellow) ──
+        g_hdr = QLabel("Gadgets", frame)
+        g_hdr.setStyleSheet(
+            f"font-family: Consolas; font-size: 9pt; font-weight: bold; "
+            f"color: #ffc107; {_ns} padding-top: 4px;"
+        )
+        fl.addWidget(g_hdr)
+
+        quantities = self._config.get("gadget_quantities", {})
+        gadgets_db = get_gadget_list()
+        for name in sorted(gadgets_db.keys()):
+            row = QWidget(frame)
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(8, 0, 0, 0)
+            rl.setSpacing(6)
+
+            lbl = QLabel(name, row)
+            lbl.setFixedWidth(100)
+            lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: #ffc107; {_ns}")
+            rl.addWidget(lbl)
+
+            spin = QSpinBox(row)
+            spin.setRange(0, 99)
+            spin.setValue(quantities.get(name, 0))
+            spin.setFixedWidth(60)
+            spin.setStyleSheet(_spin_style)
+            spin.valueChanged.connect(
+                lambda val, n=name: self._on_gadget_qty_changed(n, val)
+            )
+            rl.addWidget(spin)
+            rl.addStretch(1)
+            fl.addWidget(row)
+
+        # ── Modules section (green) per ship ──
+        configs = self.active_laser_configs()
+        ships_seen: set[str] = set()
+        has_modules = False
+        for c in configs:
+            if not c.ship_id or c.active_module_uses == 0:
+                continue
+            has_modules = True
+            if c.ship_id not in ships_seen:
+                ships_seen.add(c.ship_id)
+                s_hdr = QLabel(c.ship_display, frame)
+                s_hdr.setStyleSheet(
+                    f"font-family: Consolas; font-size: 9pt; font-weight: bold; "
+                    f"color: {ACCENT}; {_ns} padding-top: 6px;"
+                )
+                fl.addWidget(s_hdr)
+
+            row = QWidget(frame)
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(8, 0, 0, 0)
+            rl.setSpacing(6)
+
+            color = ACCENT if c.active_uses_remaining > 0 else "#ff4444"
+            turret_text = f"T{c.turret_index+1}"
+            if c.active_module_names:
+                turret_text += f": {c.active_module_names}"
+            lbl = QLabel(turret_text, row)
+            lbl.setFixedWidth(200)
+            lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {color}; {_ns}")
+            rl.addWidget(lbl)
+
+            spin = QSpinBox(row)
+            spin.setRange(0, c.active_module_uses)
+            spin.setValue(c.active_uses_remaining)
+            spin.setFixedWidth(60)
+            spin.setStyleSheet(_spin_style)
+            spin.valueChanged.connect(
+                lambda val, sid=c.ship_id, tidx=c.turret_index: self._set_module_uses(sid, tidx, val)
+            )
+            rl.addWidget(spin)
+
+            max_lbl = QLabel(f"/ {c.active_module_uses}", row)
+            max_lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {P.fg_dim}; {_ns}")
+            rl.addWidget(max_lbl)
+            rl.addStretch(1)
+            fl.addWidget(row)
+
+        if not has_modules:
+            no_mods = QLabel("No active modules in fleet", frame)
+            no_mods.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {P.fg_dim}; {_ns}")
+            fl.addWidget(no_mods)
+
+        outer.addWidget(frame)
+        popup.adjustSize()
+        popup.move(self.mapToGlobal(self.rect().center()) - popup.rect().center())
+        self._fleet_admiral_popup = popup
+        popup.show()
+
+    def _on_always_best_changed(self, state: int) -> None:
+        self._config["always_use_best_gadget"] = bool(state)
+        _save_config(self._config)
+        # Refresh the inline breakability result immediately
+        self._on_break_inputs_changed()
+
+    def _on_gadget_qty_changed(self, name: str, value: int) -> None:
+        self._config.setdefault("gadget_quantities", {})[name] = value
+        _save_config(self._config)
+        self._update_consumables_display()
+
+    def _refresh_gadget_spinboxes(self) -> None:
+        """Sync spinbox values from config (e.g. after auto-decrement)."""
+        quantities = self._config.get("gadget_quantities", {})
+        for name, spin in self._gadget_spinboxes.items():
+            try:
+                spin.blockSignals(True)
+                spin.setValue(quantities.get(name, 0))
+                spin.blockSignals(False)
+            except RuntimeError:
+                pass
+
+    # ── Fleet handlers ──
+
+    def _on_fleet_add_ship(self) -> None:
+        """Open file picker to add one or more ships to the fleet."""
+        default_dir = self._guess_mining_loadout_dir()
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "Add Ships to Fleet", default_dir,
+            "Mining Loadout (*.json);;All files (*.*)",
+        )
+        if not paths:
+            return
+        added = 0
+        existing_paths = {os.path.normpath(s.source_path) for s in self._fleet_snapshots}
+        for path in paths:
+            norm = os.path.normpath(path)
+            if norm in existing_paths:
+                log.info("Fleet: skipping duplicate %s", os.path.basename(path))
+                continue
+            snap = load_loadout_file(path)
+            if snap is not None:
+                self._fleet_snapshots.append(snap)
+                self._config.setdefault("fleet_loadouts", []).append(path)
+                existing_paths.add(norm)
+                added += 1
+        if added:
+            _save_config(self._config)
+            self._update_fleet_label()
+            self._ledger_tab.refresh_fleet_panel()
+            log.info("Added %d ship(s) to fleet", added)
+
+    def _on_fleet_clear(self) -> None:
+        """Remove all ships from the fleet."""
+        self._fleet_snapshots.clear()
+        self._config["fleet_loadouts"] = []
+        if self._config.get("active_ship") == "fleet":
+            self._config["active_ship"] = None
+            self._update_ship_button_label()
+        _save_config(self._config)
+        self._update_fleet_label()
+        self._ledger_tab.refresh_fleet_panel()
+
+    def _on_fleet_expand(self) -> None:
+        """Show a scrollable popup with the full fleet details."""
+        if not self._fleet_snapshots:
+            return
+
+        dialog = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
+        dialog.setAttribute(Qt.WA_TranslucentBackground)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+
+        outer = QVBoxLayout(dialog)
+        outer.setContentsMargins(1, 1, 1, 1)
+
+        frame = QFrame(dialog)
+        frame.setStyleSheet(
+            f"QFrame {{ background: {P.bg_card}; border: 1px solid {ACCENT}; "
+            f"border-radius: 4px; }}"
+        )
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(10, 10, 10, 10)
+        frame_layout.setSpacing(6)
+
+        # Header row
+        hdr = QWidget(frame)
+        hdr_layout = QHBoxLayout(hdr)
+        hdr_layout.setContentsMargins(0, 0, 0, 0)
+        title = QLabel(f"Mining Ops Fleet ({len(self._fleet_snapshots)} ships)", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas, monospace; font-size: 10pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent;"
+        )
+        hdr_layout.addWidget(title)
+        hdr_layout.addStretch(1)
+
+        edit_btn = QPushButton("Add Ship", hdr)
+        edit_btn.setCursor(Qt.PointingHandCursor)
+        edit_btn.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: {ACCENT}; background: transparent; border: 1px solid {ACCENT}; "
+            f"border-radius: 3px; padding: 3px 8px; }}"
+        )
+        edit_btn.clicked.connect(lambda: (self._on_fleet_add_ship(), dialog.close()))
+        hdr_layout.addWidget(edit_btn)
+
+        frame_layout.addWidget(hdr)
+
+        # Scrollable ship list
+        scroll = QScrollArea(frame)
+        scroll.setWidgetResizable(True)
+        scroll.setMaximumHeight(400)
+        scroll.setStyleSheet(
+            f"QScrollArea {{ border: none; background: transparent; }}"
+        )
+
+        content = QWidget(scroll)
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(8)
+
+        for i, snap in enumerate(self._fleet_snapshots):
+            ship_block = QWidget(content)
+            sb_layout = QHBoxLayout(ship_block)
+            sb_layout.setContentsMargins(0, 0, 0, 0)
+            sb_layout.setSpacing(8)
+
+            # Ship loadout details
+            detail = QLabel("", ship_block)
+            detail.setWordWrap(True)
+            detail.setTextFormat(Qt.RichText)
+            lines = self._format_snap_hierarchy(snap)
+            detail.setText(lines)
+            detail.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 8pt; "
+                f"color: {P.fg_dim}; background: transparent;"
+            )
+            sb_layout.addWidget(detail, 1)
+
+            # Delete button
+            del_btn = QPushButton("x", ship_block)
+            del_btn.setCursor(Qt.PointingHandCursor)
+            del_btn.setFixedSize(32, 28)
+            del_btn.setStyleSheet(_CLOSE_BTN_STYLE)
+            del_btn.clicked.connect(
+                lambda _=False, idx=i, dlg=dialog: self._on_fleet_delete_ship(idx, dlg)
+            )
+            sb_layout.addWidget(del_btn)
+
+            content_layout.addWidget(ship_block)
+
+        content_layout.addStretch(1)
+        scroll.setWidget(content)
+        frame_layout.addWidget(scroll, 1)
+        outer.addWidget(frame)
+
+        dialog.setFixedWidth(400)
+        dialog.adjustSize()
+        dialog.move(self.mapToGlobal(self.rect().center()))
+        dialog.show()
+
+    def _on_fleet_crew_changed(self, ship_path: str, crew: int) -> None:
+        """Update the player count for a fleet ship."""
+        self._config.setdefault("fleet_player_counts", {})[ship_path] = crew
+        _save_config(self._config)
+        log.info("Fleet crew for %s set to %d", os.path.basename(ship_path), crew)
+
+    def _on_fleet_delete_ship(self, index: int, dialog: QWidget) -> None:
+        """Remove a ship from the fleet by index."""
+        if 0 <= index < len(self._fleet_snapshots):
+            self._fleet_snapshots.pop(index)
+            paths = self._config.get("fleet_loadouts", [])
+            if 0 <= index < len(paths):
+                paths.pop(index)
+            _save_config(self._config)
+            self._update_fleet_label()
+            self._ledger_tab.refresh_fleet_panel()
+        dialog.close()
+
+    def _restore_fleet_loadouts(self) -> None:
+        """Reload fleet ships from config at startup (deduplicates)."""
+        paths = self._config.get("fleet_loadouts", [])
+        self._fleet_snapshots.clear()
+        valid_paths: list[str] = []
+        seen: set[str] = set()
+        for path in paths:
+            norm = os.path.normpath(path)
+            if norm in seen:
+                continue
+            snap = load_loadout_file(path)
+            if snap:
+                self._fleet_snapshots.append(snap)
+                valid_paths.append(path)
+                seen.add(norm)
+        self._config["fleet_loadouts"] = valid_paths
+        _save_config(self._config)
+        self._update_fleet_label()
+
+    def _update_fleet_label(self) -> None:
+        """Update the compact fleet names display (first 5)."""
+        if not self._fleet_snapshots:
+            self._fleet_names_label.setText(
+                f'<span style="color:{P.fg_dim};">(no ships in fleet)</span>'
+            )
+            return
+        display_names: list[str] = []
+        for i, s in enumerate(self._fleet_snapshots[:5]):
+            name = self._fleet_display_name(s)
+            if i == 0:
+                name = f"[YOU] {name}"
+            display_names.append(name)
+        remaining = len(self._fleet_snapshots) - 5
+        text = ", ".join(display_names)
+        if remaining > 0:
+            text += f" +{remaining} more"
+        self._fleet_names_label.setText(
+            f'<span style="color:{ACCENT};">{text}</span>'
+        )
+
+    @staticmethod
+    def _fleet_display_name(snap: LoadoutSnapshot) -> str:
+        """Format a fleet ship as 'filename (SHIP_TYPE)'."""
+        fname = os.path.splitext(os.path.basename(snap.source_path))[0]
+        return f"{fname} ({snap.ship})"
+
+    # ── Salvage ships ──
+
+    def _on_salvage_add_ship(self) -> None:
+        """Open file picker to load a DPS Calculator loadout as a salvage ship."""
+        default_dir = self._guess_mining_loadout_dir()
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "Add Salvage Ship (DPS Calculator JSON)", default_dir,
+            "DPS Calculator Loadout (*.json);;All files (*.*)",
+        )
+        if not paths:
+            return
+        added = 0
+        existing_paths = {
+            os.path.normpath(s.source_path) for s in self._salvage_snapshots
+        }
+        for path in paths:
+            norm = os.path.normpath(path)
+            if norm in existing_paths:
+                log.info("Salvage: skipping duplicate %s", os.path.basename(path))
+                continue
+            snap = load_salvage_file(path)
+            if snap is not None:
+                self._salvage_snapshots.append(snap)
+                self._config.setdefault("salvage_loadouts", []).append(path)
+                existing_paths.add(norm)
+                added += 1
+        if added:
+            _save_config(self._config)
+            self._update_salvage_label()
+            if hasattr(self, "_ledger_tab"):
+                self._ledger_tab.refresh_fleet_panel()
+            log.info("Added %d salvage ship(s)", added)
+
+    def _on_salvage_clear(self) -> None:
+        """Remove all salvage ships."""
+        self._salvage_snapshots.clear()
+        self._config["salvage_loadouts"] = []
+        _save_config(self._config)
+        self._update_salvage_label()
+        if hasattr(self, "_ledger_tab"):
+            self._ledger_tab.refresh_fleet_panel()
+
+    def _restore_salvage_loadouts(self) -> None:
+        """Reload salvage ships from config at startup (deduplicates)."""
+        paths = self._config.get("salvage_loadouts", [])
+        self._salvage_snapshots.clear()
+        valid_paths: list[str] = []
+        seen: set[str] = set()
+        for path in paths:
+            norm = os.path.normpath(path)
+            if norm in seen:
+                continue
+            snap = load_salvage_file(path)
+            if snap is not None:
+                self._salvage_snapshots.append(snap)
+                valid_paths.append(path)
+                seen.add(norm)
+        self._config["salvage_loadouts"] = valid_paths
+        _save_config(self._config)
+        self._update_salvage_label()
+
+    def _update_salvage_label(self) -> None:
+        """Update the compact salvage names display."""
+        if not hasattr(self, "_salvage_names_label"):
+            return
+        if not self._salvage_snapshots:
+            self._salvage_names_label.setText(
+                f'<span style="color:{P.fg_dim};">(no salvage ships loaded)</span>'
+            )
+            return
+        display_names: list[str] = []
+        for s in self._salvage_snapshots[:8]:
+            fname = os.path.splitext(os.path.basename(s.source_path))[0]
+            display_names.append(f"{fname} ({s.ship})")
+        remaining = len(self._salvage_snapshots) - 8
+        text = ", ".join(display_names)
+        if remaining > 0:
+            text += f" +{remaining} more"
+        self._salvage_names_label.setText(
+            f'<span style="color:{ACCENT};">{text}</span>'
+        )
+
+    @staticmethod
+    def _format_snap_hierarchy(snap: LoadoutSnapshot) -> str:
+        """Format a snapshot's turret hierarchy as HTML."""
+        PLACEHOLDER_NAMES = {
+            "\u2014 No Laser \u2014", "\u2014 No Module \u2014", "\u2014 No Gadget \u2014",
+            "— No Laser —", "— No Module —", "— No Gadget —",
+        }
+        fname = os.path.splitext(os.path.basename(snap.source_path))[0]
+        lines: list[str] = [f'<b>{fname} ({snap.ship})</b>']
+        for idx, turret in enumerate(snap.turrets):
+            laser = turret.laser if turret.laser not in PLACEHOLDER_NAMES else "(empty)"
+            lines.append(f'&nbsp;&nbsp;{laser}')
+            for mod in turret.modules:
+                if mod not in PLACEHOLDER_NAMES:
+                    lines.append(f'&nbsp;&nbsp;&nbsp;&nbsp;{mod}')
+        return "<br>".join(lines)
+
+    def _restore_ship_loadouts(self) -> None:
+        """Reload persisted loadout files at startup."""
+        stored = self._config.get("ship_loadouts") or {}
+        for slot_id, _ in SHIP_SLOTS:
+            path = stored.get(slot_id)
+            if not path:
+                self._update_ship_slot_label(slot_id, None)
+                continue
+            snap = load_loadout_file(path)
+            self._ship_snapshots[slot_id] = snap
+            self._update_ship_slot_label(slot_id, snap)
+            if snap is None:
+                # File went missing — drop the stale reference
+                self._config.setdefault("ship_loadouts", {})[slot_id] = None
+        _save_config(self._config)
+
+    # Placeholder module names from Mining_Loadout (skip in display)
+    _PLACEHOLDER_NAMES = {
+        "\u2014 No Laser \u2014", "\u2014 No Module \u2014", "\u2014 No Gadget \u2014",
+        "— No Laser —", "— No Module —", "— No Gadget —",
+    }
+
+    def _update_ship_slot_label(self, slot_id: str, snap: LoadoutSnapshot | None) -> None:
+        """Refresh the detail label for a ship slot.
+
+        Renders a turret/module hierarchy using rich text:
+            Laser Name
+              Module 1
+              Module 2
+        """
+        lbl = self._ship_slot_labels.get(slot_id)
+        if lbl is None:
+            return
+
+        if snap is None:
+            lbl.setText(
+                f'<span style="color:{P.fg_dim};">(no loadout loaded)</span>'
+            )
+            return
+
+        lines: list[str] = []
+        for idx, turret in enumerate(snap.turrets):
+            laser = turret.laser
+            if laser in self._PLACEHOLDER_NAMES:
+                laser = "(empty)"
+            turret_label = _ml_turret_name(snap.ship, idx)
+            lines.append(
+                f'<span style="color:{ACCENT}; font-weight:bold;">'
+                f'{turret_label}: {laser}</span>'
+            )
+            for mod in turret.modules:
+                if mod in self._PLACEHOLDER_NAMES:
+                    continue
+                lines.append(
+                    f'<span style="color:{P.fg_dim}; margin-left:16px;">'
+                    f'&nbsp;&nbsp;&nbsp;&nbsp;{mod}</span>'
+                )
+
+        if snap.gadget and snap.gadget not in self._PLACEHOLDER_NAMES:
+            lines.append(
+                f'<span style="color:{ACCENT};">Gadget: {snap.gadget}</span>'
+            )
+
+        lbl.setText("<br>".join(lines) if lines else "(empty loadout)")
+
+    def _update_ship_button_label(self) -> None:
+        """Update the 'Choose Mining Ship' button to reflect active selection."""
+        active = self._config.get("active_ship")
+        if active == "fleet":
+            self._btn_choose_ship.setText(f"Ship: Fleet ({len(self._fleet_snapshots)})")
+        elif active:
+            display = dict(SHIP_SLOTS).get(active, active.title())
+            self._btn_choose_ship.setText(f"Ship: {display}")
+        else:
+            self._btn_choose_ship.setText("Choose Mining Ship")
+
+    # ── Ship slot handlers ──
+
+    def _on_load_ship_loadout(self, slot_id: str, ship_label: str) -> None:
+        """Open a file picker and load a Mining Loadout JSON for one slot."""
+        # Default to the Mining_Loadout tool's config location if it exists
+        default_dir = self._guess_mining_loadout_dir()
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Load {ship_label} Loadout",
+            default_dir,
+            "Mining Loadout (*.json);;All files (*.*)",
+        )
+        if not path:
+            return
+
+        snap = load_loadout_file(path)
+        if snap is None:
+            self._ocr_status.setText(f"Failed to load loadout: {os.path.basename(path)}")
+            return
+
+        self._ship_snapshots[slot_id] = snap
+        self._config.setdefault("ship_loadouts", {})[slot_id] = snap.source_path
+        _save_config(self._config)
+        self._update_ship_slot_label(slot_id, snap)
+        self._ledger_tab.refresh_fleet_panel()
+        log.info("Loaded %s loadout: %s", ship_label, snap.source_path)
+
+    def _on_clear_ship_loadout(self, slot_id: str) -> None:
+        """Unload a ship slot."""
+        self._ship_snapshots[slot_id] = None
+        self._config.setdefault("ship_loadouts", {})[slot_id] = None
+        # If the cleared slot was the active selection, drop that too
+        if self._config.get("active_ship") == slot_id:
+            self._config["active_ship"] = None
+            self._update_ship_button_label()
+        _save_config(self._config)
+        self._update_ship_slot_label(slot_id, None)
+        self._ledger_tab.refresh_fleet_panel()
+
+    @staticmethod
+    def _guess_mining_loadout_dir() -> str:
+        """Return the directory where Mining_Loadout exports loadout files.
+
+        Mining_Loadout saves/loads exports to ~/Documents/SC Loadouts/.
+        Falls back to the user's Documents folder if it doesn't exist yet.
+        """
+        sc_loadouts = os.path.join(os.path.expanduser("~"), "Documents", "SC Loadouts")
+        if os.path.isdir(sc_loadouts):
+            return sc_loadouts
+        return os.path.join(os.path.expanduser("~"), "Documents")
+
+    # ── Choose Mining Ship popup ──
+
+    def _on_toggle_calc_mode(self, checked: bool) -> None:
+        mode = "team" if checked else "fleet"
+        self._config["calc_mode"] = mode
+        self._btn_calc_mode.setText(f"Calc: {'Team' if checked else 'Fleet'}")
+        _save_config(self._config)
+        self._update_break_bubble()
+        self._refresh_break_panel()
+
+    def _resource_name_for_break_bubble(self) -> str:
+        """Pick the resource name to display in the break bubble.
+
+        Priority:
+          1. HUD-OCR'd mineral name (``_last_hud_mineral``) — direct
+             read from the SCAN RESULTS panel.
+          2. Signal-scanner match (``_last_matched_resource``) — the
+             rock's signature value resolved to a canonical name via
+             the SignalMatcher database.
+          3. Empty.
+
+        The signal-match fallback was previously gated on ``_last_hud_mass
+        is None`` to defend against the "stale Silicon shown on a
+        Titanium rock" scenario where the signal scanner had been
+        pointed at a different rock previously. In practice that
+        defence backfired: the user's HUD mineral OCR is failing on
+        letters (CRNN reads 'Cfkv'/'Crfkve' garbage that doesn't
+        fuzzy-match), so suppressing the signal-match fallback when
+        HUD has data left the bubble showing nothing at all.
+
+        Decision: re-enable the unconditional fallback. When the
+        signal scanner is up to date (typical workflow: point it at
+        the rock before scanning) the match IS the right name. The
+        edge-case stale-match scenario is a smaller UX cost than the
+        current "always blank" behaviour.
+        """
+        hud_mineral = getattr(self, "_last_hud_mineral", None)
+        if hud_mineral:
+            return hud_mineral
+        return getattr(self, "_last_matched_resource", "") or ""
+
+    def _build_reassignable_pool(self) -> list[tuple[str, str, str, bool]]:
+        """Build the list of crew members eligible to fill empty MOLE turrets.
+
+        Returns: [(player_name, source_ship_id, source_display, is_mining_donor)]
+
+        Sources:
+        - Players on support ships (cargo/escort/repair/medical) flagged
+          can_reassign=True. ``is_mining_donor=False`` — their ship still
+          functions normally during the rock break.
+        - Players on weaker mining ships flagged BOTH can_reassign=True
+          AND auto_reassign=True. ``is_mining_donor=True`` — donor ship
+          gets excluded from the rock calculation.
+
+        The current user (assigned_user) is never reassigned away from
+        their own ship.
+        """
+        pool: list[tuple[str, str, str, bool]] = []
+        if not hasattr(self, "_ledger_tab"):
+            return pool
+        data = getattr(self._ledger_tab, "_data", None)
+        if data is None:
+            return pool
+
+        # Build lookup: player_name -> PlayerEntry
+        players_by_name = {p.name: p for p in (data.players or [])}
+        assigned_user = getattr(data, "assigned_user", "") or ""
+
+        # Walk mining ships across all buckets
+        all_mining_ships = list(getattr(data, "foreman_ships", []) or [])
+        all_mining_ships.extend(getattr(data, "unassigned_ships", []) or [])
+        for team in getattr(data, "teams", []) or []:
+            all_mining_ships.extend(getattr(team, "ships", []) or [])
+
+        for ship in all_mining_ships:
+            display = getattr(ship, "ship_name", "") or "ship"
+            ship_id = getattr(ship, "loadout_path", "") or ""
+            for player_name in (getattr(ship, "crew", []) or []):
+                if not player_name or player_name == assigned_user:
+                    continue
+                p = players_by_name.get(player_name)
+                if p is None:
+                    continue
+                # Mining ship donors require BOTH can_reassign + auto_reassign
+                if p.can_reassign and p.auto_reassign:
+                    pool.append((player_name, ship_id, display, True))
+
+        # Walk support ships (non-mining). Crew listed on support ships
+        # can be pulled if can_reassign is set.
+        # Note: FleetSupportShip currently doesn't carry crew names — skip
+        # for now. If/when support ships gain crew lists, add here.
+
+        return pool
+
+    def _build_ledger_ship_lookup(self) -> dict[str, object]:
+        """Map loadout_path -> CrewAssignment from the Mining Ledger.
+
+        Used to enrich fleet configs with per-laser crew assignments.
+        Returns an empty dict if the ledger isn't loaded.
+        """
+        lookup: dict[str, object] = {}
+        if not hasattr(self, "_ledger_tab"):
+            return lookup
+        data = getattr(self._ledger_tab, "_data", None)
+        if data is None:
+            return lookup
+
+        # Walk all assignment buckets in the ledger
+        all_ships: list = []
+        all_ships.extend(getattr(data, "foreman_ships", []) or [])
+        all_ships.extend(getattr(data, "unassigned_ships", []) or [])
+        for team in getattr(data, "teams", []) or []:
+            all_ships.extend(getattr(team, "ships", []) or [])
+
+        for s in all_ships:
+            path = getattr(s, "loadout_path", "")
+            if path:
+                lookup[path] = s
+        return lookup
+
+    @staticmethod
+    def _laser_crew_for_turret(
+        ship_crew: list[str],
+        laser_crew_map: dict[int, list[str]] | None,
+        turret_index: int,
+    ) -> list[str]:
+        """Determine which crew members are assigned to a specific turret.
+
+        Priority:
+        1. Explicit per-turret assignment in ``laser_crew_map[turret_index]``.
+        2. Fallback: deal the ship-level ``crew`` list across turrets in order
+           (turret 0 → first player, turret 1 → second, etc.).
+        """
+        if laser_crew_map and turret_index in laser_crew_map:
+            return list(laser_crew_map[turret_index])
+        # Fallback: split ship-level crew across turrets one-by-one
+        if ship_crew and 0 <= turret_index < len(ship_crew):
+            return [ship_crew[turret_index]]
+        return []
+
+    def team_laser_configs(self, team_node) -> list:
+        """Resolve LaserConfigs for all mining ships in a specific team."""
+        configs = []
+        if team_node is None:
+            return configs
+        ships = self._ledger_tab._scene.ships_in_team(team_node)
+        player_counts = self._config.get("fleet_player_counts", {})
+        module_uses = self._config.get("module_uses_remaining", {})
+        team_name = getattr(team_node, "team_name", "") or ""
+        cluster = getattr(team_node, "cluster", "") or ""
+
+        for ship_node in ships:
+            if not ship_node.loadout_path:
+                continue
+            snap = load_loadout_file(ship_node.loadout_path)
+            if snap is None:
+                continue
+            ship_configs = snapshot_to_laser_configs(snap)
+            display_name = ship_node.ship_name
+            crew = player_counts.get(snap.source_path, default_player_count(snap.ship))
+            ship_uses = module_uses.get(snap.source_path)
+            ship_crew = list(getattr(ship_node, "crew", []) or [])
+            laser_crew_map = getattr(ship_node, "laser_crew", None)
+
+            for idx, c in enumerate(ship_configs):
+                c.name = f"{display_name} > {c.name}"
+                c.ship_id = snap.source_path
+                c.ship_display = display_name
+                c.ship_type = snap.ship
+                c.player_count = crew
+                c.turret_index = idx
+                c.team_name = team_name
+                c.cluster = cluster
+                c.player_names = list(ship_crew)
+                c.laser_crew = self._laser_crew_for_turret(ship_crew, laser_crew_map, idx)
+                if ship_uses and idx < len(ship_uses):
+                    c.active_uses_remaining = ship_uses[idx]
+                else:
+                    c.active_uses_remaining = c.active_module_uses
+            configs.extend(ship_configs)
+        return configs
+
+    def _on_choose_mining_ship(self) -> None:
+        """Show a compact popup with the three ship options.
+
+        Uses a plain QWidget with the Popup flag instead of QDialog.exec()
+        so that clicking outside the popup simply closes it (no error).
+        """
+        # Close any existing popup first (guard against dangling C++ pointer
+        # left behind by WA_DeleteOnClose)
+        try:
+            if hasattr(self, "_ship_popup") and self._ship_popup is not None:
+                self._ship_popup.close()
+        except RuntimeError:
+            pass
+        self._ship_popup = None
+
+        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_TranslucentBackground)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup.destroyed.connect(lambda: setattr(self, "_ship_popup", None))
+        self._ship_popup = popup
+
+        outer = QVBoxLayout(popup)
+        outer.setContentsMargins(1, 1, 1, 1)
+
+        frame = QFrame(popup)
+        frame.setStyleSheet(
+            f"QFrame {{ background: {P.bg_card}; border: 1px solid {ACCENT}; "
+            f"border-radius: 4px; }}"
+        )
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(10, 10, 10, 10)
+        frame_layout.setSpacing(6)
+
+        title = QLabel("Choose Mining Ship", frame)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas, monospace; font-size: 10pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent; "
+            f"padding-bottom: 4px;"
+        )
+        frame_layout.addWidget(title)
+
+        btn_style_enabled = f"""
+            QPushButton {{
+                font-family: Consolas, monospace; font-size: 9pt;
+                font-weight: bold; color: {ACCENT}; background: transparent;
+                border: 1px solid {ACCENT}; border-radius: 3px;
+                padding: 6px 14px; text-align: left;
+            }}
+            QPushButton:hover {{ background: rgba(51, 221, 136, 0.18); }}
+        """
+        btn_style_disabled = f"""
+            QPushButton {{
+                font-family: Consolas, monospace; font-size: 9pt;
+                color: {P.fg_dim}; background: transparent;
+                border: 1px solid {P.border}; border-radius: 3px;
+                padding: 6px 14px; text-align: left;
+            }}
+        """
+
+        for slot_id, ship_label in SHIP_SLOTS:
+            snap = self._ship_snapshots.get(slot_id)
+            has_loadout = snap is not None
+            if has_loadout:
+                text = f"{ship_label}  \u2014  {os.path.basename(snap.source_path)}"
+            else:
+                text = f"{ship_label}  (no loadout \u2014 load one first)"
+
+            btn = QPushButton(text, frame)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setEnabled(has_loadout)
+            btn.setStyleSheet(btn_style_enabled if has_loadout else btn_style_disabled)
+            btn.clicked.connect(
+                lambda _=False, sid=slot_id, pw=popup: self._on_ship_picked(sid, pw)
+            )
+            frame_layout.addWidget(btn)
+
+        # Fleet option
+        has_fleet = len(self._fleet_snapshots) > 0
+        fleet_text = f"Mining Ops Fleet  ({len(self._fleet_snapshots)} ships)" if has_fleet else "Mining Ops Fleet  (empty)"
+        fleet_btn = QPushButton(fleet_text, frame)
+        fleet_btn.setCursor(Qt.PointingHandCursor)
+        fleet_btn.setEnabled(has_fleet)
+        fleet_btn.setStyleSheet(btn_style_enabled if has_fleet else btn_style_disabled)
+        fleet_btn.clicked.connect(
+            lambda _=False, pw=popup: self._on_ship_picked("fleet", pw)
+        )
+        frame_layout.addWidget(fleet_btn)
+
+        outer.addWidget(frame)
+
+        # Position the popup directly under the Choose Mining Ship button
+        btn_pos = self._btn_choose_ship.mapToGlobal(self._btn_choose_ship.rect().bottomLeft())
+        popup.adjustSize()
+        popup.move(btn_pos)
+        popup.show()
+
+    def _on_ship_picked(self, slot_id: str, popup: QWidget) -> None:
+        """Record the selected ship and close the popup."""
+        self._config["active_ship"] = slot_id
+        _save_config(self._config)
+        self._update_ship_button_label()
+        self._refresh_break_panel()
+        log.info("Active mining ship set to: %s", slot_id)
+        popup.close()
+
+    def _active_loadout_snapshot(self) -> LoadoutSnapshot | None:
+        """Return the currently active ship's parsed loadout, or None."""
+        active = self._config.get("active_ship")
+        if not active:
+            return None
+        return self._ship_snapshots.get(active)
+
+    def active_laser_configs(self) -> list[LaserConfig]:
+        """Return resolved LaserConfig objects for the currently active ship/fleet.
+
+        When fleet mode is active, concatenates configs from all fleet
+        ships with ship-name prefixes on each turret for identification.
+        """
+        active = self._config.get("active_ship")
+
+        if active == "fleet":
+            configs: list[LaserConfig] = []
+            player_counts = self._config.get("fleet_player_counts", {})
+            module_uses = self._config.get("module_uses_remaining", {})
+            ledger_lookup = self._build_ledger_ship_lookup()
+            for snap in self._fleet_snapshots:
+                ship_configs = snapshot_to_laser_configs(snap)
+                display_name = self._fleet_display_name(snap)
+                crew = player_counts.get(
+                    snap.source_path,
+                    default_player_count(snap.ship),
+                )
+                # Get or initialize remaining module uses for this ship
+                ship_uses = module_uses.get(snap.source_path)
+                # Look up matching ledger entry for per-laser crew assignment
+                ledger_ship = ledger_lookup.get(snap.source_path)
+                ship_crew = list(getattr(ledger_ship, "crew", []) or []) if ledger_ship else []
+                laser_crew_map = getattr(ledger_ship, "laser_crew", None) if ledger_ship else None
+                for idx, c in enumerate(ship_configs):
+                    c.name = f"{display_name} > {c.name}"
+                    c.ship_id = snap.source_path
+                    c.ship_display = display_name
+                    c.ship_type = snap.ship
+                    c.player_count = crew
+                    c.turret_index = idx
+                    c.player_names = list(ship_crew)
+                    c.laser_crew = self._laser_crew_for_turret(ship_crew, laser_crew_map, idx)
+                    # Set remaining uses from config, or initialize from UEX max
+                    if ship_uses and idx < len(ship_uses):
+                        c.active_uses_remaining = ship_uses[idx]
+                    else:
+                        c.active_uses_remaining = c.active_module_uses
+                configs.extend(ship_configs)
+            return configs
+
+        snap = self._active_loadout_snapshot()
+        if snap is None:
+            return []
+        ship_configs = snapshot_to_laser_configs(snap)
+        # Single ship mode: also populate uses remaining
+        module_uses = self._config.get("module_uses_remaining", {})
+        ship_uses = module_uses.get(snap.source_path) if snap else None
+        for idx, c in enumerate(ship_configs):
+            c.turret_index = idx
+            c.ship_id = snap.source_path
+            if ship_uses and idx < len(ship_uses):
+                c.active_uses_remaining = ship_uses[idx]
+            else:
+                c.active_uses_remaining = c.active_module_uses
+        return ship_configs
+
+    def _setup_ipc(self) -> None:
+        """Set up IPC polling for launcher commands."""
+        if self._cmd_file:
+            self._ipc = IPCWatcher(self._cmd_file, parent=self)
+            self._ipc.command_received.connect(self._on_ipc_command)
+            self._ipc.start()
+
+    def _on_ipc_command(self, cmd: dict) -> None:
+        cmd_type = cmd.get("type", "")
+        log.debug("IPC command received: %s", cmd_type)
+        if cmd_type in ("show", "activate", "raise"):
+            # Ensure the window is on a visible screen before showing
+            geom = self.geometry()
+            self.restore_geometry_from_args(
+                geom.x(), geom.y(), geom.width(), geom.height(),
+                self.windowOpacity(),
+            )
+            if self.isMinimized():
+                self.showNormal()
+            else:
+                self.show()
+            self.raise_()
+            self.activateWindow()
+        elif cmd_type == "hide":
+            self.hide()
+        elif cmd_type == "toggle":
+            self.toggle_visibility()
+        elif cmd_type == "quit":
+            QApplication.instance().quit()
+
+    # ── Data loading ──
+
+    def _on_data_loaded(self, rows: list[dict]) -> None:
+        self._rows = rows
+        self._matcher.update(rows)
+
+        # Feed the same value set into sc_ocr's signal voter as a
+        # tie-breaker. When Tesseract returns multiple plausible
+        # candidates across PSM/scale variants, the voter prefers a
+        # value that exact-matches a known signature in the chart —
+        # which kills the dominant flicker pattern (e.g. 17,020 ↔
+        # 17,011 where only 17,020 is a real Silicon × 4-rocks value).
+        try:
+            from ocr.sc_ocr.api import set_known_signal_values
+            known: set[int] = set()
+            for r in rows:
+                for col_n in range(1, 21):
+                    v = r.get(str(col_n), 0)
+                    if v:
+                        try:
+                            known.add(int(v))
+                        except (TypeError, ValueError):
+                            pass
+            set_known_signal_values(known)
+            log.info(
+                "UI: registered %d known signature values with sc_ocr voter",
+                len(known),
+            )
+        except Exception as exc:
+            log.debug("UI: could not register signal values: %s", exc)
+
+        # Build table data with rarity-aware formatting
+        table_data: list[dict] = []
+        for row in rows:
+            entry = dict(row)
+            # Store numeric values for sorting
+            for col in ("1", "2", "3", "4", "5", "6"):
+                entry[col] = int(entry.get(col, 0))
+            # Rarity becomes its sort index (int) so Qt sorts by custom order.
+            # The display formatter maps the int back to the name.
+            rarity_str = entry.get("rarity", "")
+            entry["rarity"] = _rarity_key(rarity_str)
+            # Keep the plain string under a separate key for filter logic
+            # and the row-color delegate
+            entry["_rarity_name"] = rarity_str
+            table_data.append(entry)
+
+        # Keep the full dataset so filters can be reapplied
+        self._all_table_data = table_data
+        self._apply_filters()
+        self._status_label.setText(f"{len(rows)} resources loaded")
+        log.info("UI: loaded %d resources", len(rows))
+
+        # Pre-warm ONNX sessions in the background so the user's first
+        # "Start Scan" doesn't pay the 10-20 s cold-start hit on
+        # InferenceSession + first inference (CRNN v1 is the slow one).
+        # Best-effort, daemonized — failures are logged inside
+        # prewarm_models() and the existing lazy-load fallbacks in
+        # _ensure_* still cover us if anything goes wrong here.
+        # Internal _prewarm_started gate makes this safe to call again
+        # if _on_data_loaded fires for a manual refresh.
+        try:
+            from ocr.onnx_hud_reader import prewarm_models as _prewarm_onnx
+            threading.Thread(
+                target=_prewarm_onnx,
+                name="onnx_prewarm",
+                daemon=True,
+            ).start()
+        except Exception as exc:
+            log.debug("UI: ONNX prewarm dispatch failed: %s", exc)
+
+    def _on_data_error(self, msg: str) -> None:
+        self._status_label.setText(f"Error: {msg}")
+        log.warning("UI: data load error: %s", msg)
+
+    # ── Search / filter ──
+
+    @staticmethod
+    def _fuzzy_score(query: str, target: str) -> float:
+        """Return a fuzzy match score in [0.0, 1.0] for *query* against *target*.
+
+        Scoring rules:
+          - 1.0 for exact match
+          - 0.9 if target starts with query
+          - 0.7 if query is a substring of target
+          - 0.5 * ratio if all query chars appear in target in order
+          - 0.0 otherwise
+        """
+        if not query:
+            return 1.0
+        q = query.lower()
+        t = target.lower()
+        if q == t:
+            return 1.0
+        if t.startswith(q):
+            return 0.9
+        if q in t:
+            return 0.7
+        # Subsequence match: all query chars appear in order within target
+        ti = 0
+        matched = 0
+        for ch in q:
+            found = t.find(ch, ti)
+            if found == -1:
+                return 0.0
+            ti = found + 1
+            matched += 1
+        # Reward tight matches (fewer skipped chars = higher score)
+        ratio = matched / max(ti, 1)
+        return 0.5 * ratio
+
+    @staticmethod
+    def _value_fuzzy_score(query: str, row: dict) -> float:
+        """Return the best fuzzy score for *query* against *row*'s signal values.
+
+        Scoring checks every rock column (1-15+) and returns the highest match:
+          - 1.0 if any column exactly equals the query
+          - 0.95 if any column's digits start with the query
+          - 0.85 if the query is a contiguous substring of any column
+          - 0.70 if the query is close numerically (within 5%) to any column
+          - 0.0 otherwise
+        """
+        if not query.isdigit():
+            return 0.0
+        q = query
+        try:
+            q_int = int(query)
+        except ValueError:
+            return 0.0
+
+        best = 0.0
+        for key, raw in row.items():
+            if key in ("name", "rarity"):
+                continue
+            try:
+                col_val = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if col_val <= 0:
+                continue
+
+            s = str(col_val)
+            # Exact match
+            if s == q:
+                return 1.0
+            # Prefix match
+            if s.startswith(q):
+                best = max(best, 0.95)
+                continue
+            # Substring match
+            if q in s:
+                best = max(best, 0.85)
+                continue
+            # Numerical proximity (within 5% of the column value)
+            tolerance = max(50, int(col_val * 0.05))
+            if abs(col_val - q_int) <= tolerance:
+                best = max(best, 0.70)
+
+        return best
+
+    def _apply_filters(self) -> None:
+        """Filter the table based on the current value and name search inputs."""
+        if not self._all_table_data:
+            return
+
+        value_text = self._search_input.text().strip()
+        name_text = self._name_input.text().strip()
+
+        filtered = self._all_table_data
+
+        # Value filter: fuzzy digit matching across all rock columns
+        if value_text:
+            scored_vals = []
+            for row in filtered:
+                score = self._value_fuzzy_score(value_text, row)
+                if score > 0.0:
+                    scored_vals.append((score, row))
+            scored_vals.sort(key=lambda sr: (-sr[0], sr[1]["name"]))
+            filtered = [row for _, row in scored_vals]
+
+        # Name filter: fuzzy matching
+        if name_text:
+            scored = []
+            for row in filtered:
+                score = self._fuzzy_score(name_text, row["name"])
+                if score > 0.0:
+                    scored.append((score, row))
+            # Sort by score descending, then alphabetically
+            scored.sort(key=lambda sr: (-sr[0], sr[1]["name"]))
+            filtered = [row for _, row in scored]
+
+        self._table.set_data(filtered)
+        self._sync_table_min_width()
+
+    def _on_search(self, text: str) -> None:
+        """Handle value search input changes — updates result label and filters table."""
+        text = text.strip()
+
+        if not text:
+            self._search_result.setText("")
+            self._apply_filters()
+            return
+
+        try:
+            value = int(text)
+        except ValueError:
+            self._search_result.setText("Enter a number")
+            self._search_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 9pt; font-weight: bold;
+                color: {P.red}; background: transparent;
+            """)
+            return
+
+        matches = self._matcher.match_all(value, tolerance=10)
+        if matches:
+            parts = []
+            for m in matches:
+                rock_word = "R" if m.rock_count == 1 else "R"
+                parts.append(f"{m.name} ({m.rock_count}{rock_word})")
+            color = RARITY_FG.get(matches[0].rarity, P.fg)
+            self._search_result.setText(" | ".join(parts))
+            self._search_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 9pt; font-weight: bold;
+                color: {color}; background: transparent;
+            """)
+        else:
+            self._search_result.setText("No match")
+            self._search_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 9pt; font-weight: bold;
+                color: {P.red}; background: transparent;
+            """)
+
+        self._apply_filters()
+
+    def _on_name_search(self, text: str) -> None:
+        """Handle name search input changes — filters table by fuzzy name match."""
+        self._apply_filters()
+
+    # ── OCR scanning ──
+
+    def _update_ocr_status(self) -> None:
+        region = self._config.get("ocr_region")
+        status = tesseract_status()
+        if status != "Ready":
+            self._ocr_status.setText(status)
+            # Still allow scan toggle — Tesseract will auto-download on first scan
+            self._btn_scan_toggle.setEnabled(region is not None)
+        elif not region:
+            self._ocr_status.setText("No scan region set")
+            self._btn_scan_toggle.setEnabled(False)
+        else:
+            self._ocr_status.setText(
+                f"Region: {region['x']},{region['y']} "
+                f"{region['w']}x{region['h']}"
+            )
+            self._btn_scan_toggle.setEnabled(True)
+
+    def _show_tutorial(self) -> None:
+        self._tutorial = TutorialPopup(self)
+        self._tutorial.show()
+
+    def _show_chart_popout(self, data) -> None:
+        """Open the Mining Chart in a floating singleton window.
+
+        Called by :class:`MiningChartTab` when the user clicks the
+        "Pop-out Chart" button. ``data`` is the already-loaded
+        ``MiningChartData`` (or ``None`` if the chart is still loading).
+        """
+        chart_bubble.show_singleton(self, data)
+
+    def _open_resource_popup(self, row: dict) -> None:
+        """Open a detail popup for the clicked resource row."""
+        if row:
+            ResourcePopup(row, parent=self)
+
+    def _on_set_region(self) -> None:
+        # Gate on a one-shot tutorial tip the first time the user
+        # clicks this button. After they tick "Do not show again" it
+        # skips straight to the region selector — and if a different
+        # tip is already on screen this click is absorbed (the user
+        # has to dismiss that one first).
+        TutorialTip.show_once(
+            self,
+            self._config,
+            lambda: _save_config(self._config),
+            key="set_scan_region",
+            title="Set Scanning Region",
+            body_html=(
+                "<p style='margin-top:0;'>Select the entire <b "
+                "style='color:#33dd88;'>signature scanner panel</b> on "
+                "your radial menu &mdash; the panel showing the "
+                "location-pin icon AND the signal value number "
+                "(e.g. <b>10,150</b>).</p>"
+                "<p style='color:#33dd88;'><b>Include BOTH:</b></p>"
+                "<ul style='margin-top:4px;'>"
+                "<li>The <b>location-pin icon</b> on the left &mdash; "
+                "the scanner uses it to anchor.  Without it, the scan "
+                "cannot find the panel and silently returns nothing.</li>"
+                "<li>The <b>signal value digits</b> on the right</li>"
+                "</ul>"
+                "<p>Add a small margin around them.  A region of about "
+                "<b>150&times;50 pixels</b> or larger generally works "
+                "well.</p>"
+                "<p style='color:#ff5533;'>Do <b>NOT</b> draw a tight "
+                "box around only the digits &mdash; that was the "
+                "previous wording and it's wrong: without the icon "
+                "the anchor has nothing to lock onto.</p>"
+            ),
+            on_proceed=self._open_scan_region_selector,
+        )
+
+    def _open_scan_region_selector(self) -> None:
+        """Actually open the scanning-region selector. Called either
+        directly (when the tip is dismissed) or as the on_proceed
+        callback when the user clicks OK on the tip."""
+        self._region_selector = RegionSelector(
+            detector="signal",
+            game_resolution=self._effective_game_resolution(),
+        )
+        self._region_selector.region_selected.connect(self._on_region_selected)
+        self._region_selector.show()
+
+    def _on_region_selected(self, region: dict) -> None:
+        self._config["ocr_region"] = region
+        _save_config(self._config)
+        self._update_ocr_status()
+        log.info("Scanning region set: %s", region)
+
+    def _on_set_hud_region(self) -> None:
+        """Open the region selector for the mining HUD (mass / resistance)."""
+        TutorialTip.show_once(
+            self,
+            self._config,
+            lambda: _save_config(self._config),
+            key="set_hud_region",
+            title="Set Mining HUD Region",
+            body_html=(
+                "<p style='margin-top:0;'>Select the <b "
+                "style='color:#33dd88;'>SCAN RESULTS</b> panel on "
+                "your mining HUD &mdash; the panel that shows "
+                "<b>MASS</b>, <b>RESISTANCE</b>, and <b>INSTABILITY</b> "
+                "for the rock you're scanning.</p>"
+                "<p><b style='color:#ff5533;'>Do NOT include the "
+                "COMPOSITION region</b> (the breakdown of mineral "
+                "percentages below the SCAN RESULTS panel). The "
+                "COMPOSITION text confuses the OCR pipeline and pulls "
+                "the row anchors to the wrong place.</p>"
+                "<p>Draw the box from just above the <b>SCAN RESULTS</b> "
+                "title down to just below the <b>INSTABILITY</b> row "
+                "&mdash; stop before COMPOSITION starts.</p>"
+            ),
+            on_proceed=self._open_hud_region_selector,
+        )
+
+    def _open_hud_region_selector(self) -> None:
+        """Actually open the HUD-region selector. Tip-gated entry
+        point splits the show-tip and open-selector paths so the
+        selector waits until the user dismisses the tip."""
+        self._hud_region_selector = RegionSelector(
+            detector="hud",
+            game_resolution=self._effective_game_resolution(),
+        )
+        self._hud_region_selector.region_selected.connect(self._on_hud_region_selected)
+        self._hud_region_selector.show()
+
+    def _on_hud_region_selected(self, region: dict) -> None:
+        self._config["hud_region"] = region
+        _save_config(self._config)
+        log.info("Mining HUD region set: %s", region)
+
+    def _effective_game_resolution(self) -> Optional[dict]:
+        """Resolved game resolution ({"w","h","source"}) for the region
+        detectors' scale prior, or None if it can't be determined."""
+        try:
+            from ui.game_resolution import get_game_resolution
+            res = get_game_resolution(self._config)
+            return res if res.get("w") else None
+        except Exception as exc:
+            log.debug("effective game resolution unavailable: %s", exc)
+            return None
+
+    def _on_set_game_resolution(self) -> None:
+        """View / override the game resolution used by the region
+        detectors' scale prior."""
+        try:
+            from ui.game_resolution_dialog import GameResolutionDialog
+            from ui.game_resolution import get_game_resolution
+        except Exception as exc:
+            log.error("game resolution dialog unavailable: %s", exc)
+            return
+        dlg = GameResolutionDialog(self._config, parent=self)
+        if dlg.exec():
+            self._config["game_resolution"] = dlg.result_override()
+            _save_config(self._config)
+            eff = get_game_resolution(self._config)
+            log.info(
+                "Game resolution set: %sx%s (source=%s)",
+                eff["w"], eff["h"], eff["source"],
+            )
+
+    def _on_set_display(self) -> None:
+        self._display_placer = DisplayPlacer()
+        self._display_placer.position_selected.connect(self._on_display_selected)
+        self._display_placer.show()
+
+    def _on_display_selected(self, pos: dict) -> None:
+        self._config["bubble_position"] = pos
+        _save_config(self._config)
+        log.info("Bubble display position set: (%d, %d)", pos["x"], pos["y"])
+
+    def _on_set_break_display(self) -> None:
+        from .display_placer import BreakBubblePlacer
+        self._break_placer = BreakBubblePlacer()
+        self._break_placer.position_selected.connect(self._on_break_display_selected)
+        self._break_placer.show()
+
+    def _on_break_display_selected(self, pos: dict) -> None:
+        self._config["break_bubble_position"] = pos
+        _save_config(self._config)
+        log.info("Break bubble position set: (%d, %d)", pos["x"], pos["y"])
+
+    def _on_calibrate_crops(self) -> None:
+        """Open the calibration dialog for the current HUD region.
+
+        Single-instance: only ONE Mining HUD OCR Calibration dialog
+        may be open at a time across the whole machine. If one is
+        already open (in this process or another), bring it to the
+        front instead of creating a duplicate.
+        """
+        hud_region = self._config.get("hud_region")
+        if not hud_region or not hud_region.get("w"):
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self, "HUD region not set",
+                "Set the Mining HUD Region first (use the button to "
+                "the left), then come back to calibrate.",
+            )
+            return
+
+        # In-process raise: a dialog already exists in this app.
+        existing = getattr(self, "_calibration_dialog", None)
+        if existing is not None and existing.isVisible():
+            existing.raise_()
+            existing.activateWindow()
+            return
+
+        try:
+            from ui.calibration_dialog import CalibrationDialog
+            from ocr.onnx_hud_reader import scan_hud_onnx
+            # NOTE: package is named ``mining_shared`` (not ``shared``)
+            # to avoid collision with the SC_Toolbox-wide
+            # ``shared/`` package one directory up.  When the launcher
+            # bootstraps ``import shared.path_setup``, it binds the
+            # name ``shared`` to that other package in ``sys.modules``,
+            # and any submodule lookup (``shared.single_instance``)
+            # will only ever consult that package's ``__path__`` —
+            # ``invalidate_caches()`` and ``sys.path`` tweaks cannot
+            # un-shadow it.
+            from mining_shared.single_instance import SingleInstance
+
+            ocr_region = self._config.get("ocr_region")
+            dlg = CalibrationDialog(
+                region=dict(hud_region),
+                scan_callback=scan_hud_onnx,
+                parent=self,
+                signature_region=(
+                    dict(ocr_region) if ocr_region else None
+                ),
+            )
+
+            # Cross-process raise: another app instance may already
+            # have the slot. acquire() pokes that holder to come to
+            # the front. Either way we abort our own open.
+            guard = SingleInstance("calibration_dialog", dlg)
+            if not guard.acquire():
+                dlg.deleteLater()
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.information(
+                    self, "Calibration already open",
+                    "Mining HUD OCR Calibration is already open in "
+                    "another window. It has been brought to the "
+                    "front.",
+                )
+                return
+            # Pin the guard onto the dialog so its lifetime matches
+            # the window's. Slot is released automatically on close.
+            dlg._single_instance = guard
+
+            dlg.show()
+            self._calibration_dialog = dlg  # keep ref so it isn't GC'd
+        except Exception as exc:
+            log.error("calibration dialog failed: %s", exc, exc_info=True)
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self, "Calibration error",
+                f"Could not open calibration dialog:\n\n{exc}",
+            )
+
+    def _maybe_show_first_launch_calibration_prompt(self) -> None:
+        """If the user hasn't dismissed it AND no calibration exists,
+        nudge them to calibrate. Called once per app start when the
+        scanner page is first activated."""
+        try:
+            from ocr.sc_ocr import calibration as _cal
+        except Exception:
+            return
+        if _cal.is_first_launch_prompt_dismissed():
+            return
+        hud_region = self._config.get("hud_region")
+        if hud_region and _cal.is_complete(dict(hud_region)):
+            return  # already calibrated
+        from PySide6.QtWidgets import (
+            QDialog, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+        )
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Mining Signals — One-time setup recommended")
+        v = QVBoxLayout(dlg)
+        msg = QLabel(
+            "<h3 style='color:#33dd88;'>Calibrate the Mining HUD OCR</h3>"
+            "<p>For best accuracy, take ~30 seconds to <b>calibrate "
+            "the crop coordinates</b> for each value row "
+            "(MASS / RESISTANCE / INSTABILITY).</p>"
+            "<p>Once calibrated, the OCR uses your confirmed positions "
+            "directly — no detection drift, works on any background.</p>"
+            "<p>Click <b style='color:#33dd88;'>Calibrate Mining Crops</b> "
+            "in the scanner bar to start. (You can do this any time.)</p>"
+        )
+        msg.setWordWrap(True)
+        msg.setStyleSheet("padding: 8px; font-family: Consolas; font-size: 10pt;")
+        v.addWidget(msg)
+        cb = QCheckBox("Don't show this again")
+        v.addWidget(cb)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        ok = QPushButton("OK")
+        ok.setStyleSheet(
+            "QPushButton { background: #33dd88; color: black; "
+            "padding: 6px 14px; font-weight: bold; border: none; }"
+        )
+        ok.setDefault(True)
+        ok.clicked.connect(dlg.accept)
+        row.addWidget(ok)
+        v.addLayout(row)
+        dlg.exec()
+        if cb.isChecked():
+            _cal.dismiss_first_launch_prompt()
+
+    def _on_scan_toggle(self, checked: bool) -> None:
+        if checked:
+            # Save expanded size before collapsing
+            self._expanded_size = (self.width(), self.height())
+            self._btn_scan_toggle.setText("Stop Scan")
+
+            # Force the Scanner tab and hide the tab bar so the
+            # collapsed view matches its pre-tabs appearance.
+            self._tabs.setCurrentWidget(self._scanner_page)
+            self._tabs.tabBar().setVisible(False)
+
+            # Hide everything except title bar and the scan toggle row
+            for w in self._expanded_widgets:
+                w.setVisible(False)
+
+            # Shrink window to just title bar + scan controls + inline result + hint
+            self.setMinimumHeight(110)
+            self.resize(self.width(), 110)
+
+            # Reset consensus state
+            self._last_ocr_value = None
+            self._confirmed_value = None
+            self._inline_result.setText("")
+            self._scan_hint.setVisible(True)
+
+            # Show "Scanning — Please Wait" bubble immediately
+            bubble_pos = self._config.get("bubble_position")
+            if bubble_pos:
+                self._scan_bubble.show_scanning(bubble_pos["x"], bubble_pos["y"])
+            else:
+                region = (self._config.get("ocr_region") or {})
+                self._scan_bubble.show_scanning(
+                    region.get("x", 500) + region.get("w", 200) + 10,
+                    region.get("y", 400),
+                )
+
+            # Start scanning. Hard-cap the tick at 500 ms regardless
+            # of the saved config value — older configs have 1-3 s
+            # values that are way too slow for the post-mutex-fix
+            # pipeline (HUD scans now finish in well under a second
+            # when the gate stops dispatching the slow signal-OCR
+            # path). The OCR worker's ``_scan_in_progress`` guard
+            # prevents pile-up, so tighter cadence costs nothing
+            # but more responsive UI. Floor at 100 ms to avoid
+            # pegging a CPU.
+            interval_s = self._config.get("scan_interval_seconds", 0.5)
+            interval = max(100, min(500, int(float(interval_s) * 1000)))
+            self._scan_timer = QTimer(self)
+            self._scan_timer.timeout.connect(self._do_scan)
+            self._scan_timer.start(interval)
+            self._gate_state = "armed"
+            self._do_scan()  # immediate first scan
+
+            # First-run tutorial tip. Fires AFTER the scan has actually
+            # started (no on_proceed needed) — the tip is informational
+            # only and shouldn't gate the scan kickoff. If the user
+            # already ticked "Do not show again" on a prior session,
+            # show_once is a no-op.
+            TutorialTip.show_once(
+                self,
+                self._config,
+                lambda: _save_config(self._config),
+                key="start_scan",
+                title="Scanning Tips",
+                body_html=(
+                    "<p style='margin-top:0;'>Two scanners run in "
+                    "parallel:</p>"
+                    "<ul style='margin-top:4px;'>"
+                    "<li><b style='color:#33dd88;'>Signal scanner</b> "
+                    "&mdash; reads the orange/red signal-value number "
+                    "from the region you set. Matches it against the "
+                    "community signal table to identify the resource.</li>"
+                    "<li><b style='color:#33dd88;'>HUD scanner</b> "
+                    "&mdash; reads MASS, RESISTANCE, and INSTABILITY "
+                    "from the SCAN RESULTS panel. Feeds the breakability "
+                    "calculation.</li>"
+                    "</ul>"
+                    "<p><b style='color:#ffb347;'>If a result looks wrong:</b> "
+                    "look away from the rock and wait for the bubble to "
+                    "clear, then look back. This forces a fresh OCR pass "
+                    "and clears any locked-in misread.</p>"
+                    "<p><b style='color:#ffb347;'>For best accuracy:</b> "
+                    "keep the scanning HUD elements clear of in-game "
+                    "obstructions &mdash; bright backgrounds, ship parts, "
+                    "particle effects, and other overlays all reduce OCR "
+                    "confidence.</p>"
+                ),
+            )
+        else:
+            self._btn_scan_toggle.setText("Start Scan")
+            if self._scan_timer:
+                self._scan_timer.stop()
+                self._scan_timer = None
+            self._gate_state = "off"
+            self._inline_result.setText("")
+
+            self._scan_hint.setVisible(False)
+
+            # Restore expanded view
+            for w in self._expanded_widgets:
+                w.setVisible(True)
+            # Restore the tab bar so the user can switch tabs again
+            self._tabs.tabBar().setVisible(True)
+
+            self.setMinimumHeight(300)
+            if hasattr(self, "_expanded_size"):
+                # Clamp the restored geometry to sane bounds. Without
+                # this, repeated collapse/expand cycles can compound
+                # frame-inclusive vs frame-exclusive geometry drift
+                # (Qt + Windows quirk) plus child widget sizeHint growth
+                # — at minute 108 of one user's session the main window
+                # ballooned 1.5x per resize until createDIB failed at
+                # 32768x32768 and the process crashed. 1600x1200 is
+                # plenty for the expanded view; if a real wider screen
+                # ever wants more, this constant can be relaxed.
+                ew, eh = self._expanded_size
+                ew = min(max(ew, 400), 1600)
+                eh = min(max(eh, 300), 1200)
+                self.resize(ew, eh)
+
+    # ── Rolling-window consensus for HUD reads ─────────────
+    # Each per-scan raw value is pushed into a deque. The
+    # displayed value is the rounded majority (most-frequent
+    # integer) across the window. This defeats the per-scan
+    # single-digit drift caused by the HUD wiggle animation:
+    # static mass 6805 read as 6805/6815/6845/6855 across
+    # scans → the window picks the mode (most frequent = 6805).
+
+    def reset_consensus_state(self) -> None:
+        """Manual escape hatch — wipe every rolling window, last-value
+        cache, and module-level lock so the next scan starts fresh.
+
+        Wired to the "Reset consensus" button in the Calibrate Mining
+        Crops dialog. The stable-swap logic is sticky by design (it
+        takes 4-of-6 agreement to swap a signal value, all-of-5 to
+        swap a HUD field, and once locked the cached value persists
+        until the panel disappears). When the OCR misfires and locks
+        onto a wrong value (e.g. always reads a leading "1"), there
+        was previously no way to break it without closing the panel
+        in-game and waiting for the buffers to time out.
+
+        This clears:
+          * Per-app HUD rolling windows (mass / resistance /
+            instability / mineral)
+          * Per-app last-displayed HUD values
+          * Per-app last/confirmed signal-scanner OCR values
+          * Module-level consensus and lock caches in
+            ``ocr.sc_ocr.api`` (covers _RECENT_READS, _STABLE_VALUE,
+            _RECENT_SIGNAL_READS, _STABLE_SIGNAL, _field_lock_cache,
+            _difficulty_cache, etc.)
+
+        Safe to call mid-scan: the in-flight scan finishes against
+        empty buffers and the next-completing scan repopulates them.
+        """
+        # Per-app HUD rolling windows + last-shown values.
+        try:
+            self._hud_mass_window.clear()
+            self._hud_resistance_window.clear()
+            self._hud_instability_window.clear()
+            self._hud_mineral_window.clear()
+        except Exception as exc:
+            log.debug("reset_consensus_state: HUD window clear: %s", exc)
+        self._last_hud_mass = None
+        self._last_hud_resistance = None
+        self._last_hud_instability = None
+        self._last_hud_mineral = None
+        self._prev_hud_mass = None
+        self._prev_hud_resistance = None
+
+        # Per-app signal-scanner consensus.
+        self._last_ocr_value = None
+        self._confirmed_value = None
+
+        # Module-level state inside the SC-OCR engine: deques + locked
+        # values for both the HUD value buffers and the signal buffer,
+        # plus per-region field-lock and difficulty caches.
+        try:
+            from ocr.sc_ocr import api as _sc_api
+            _sc_api.reset_all_consensus()
+        except Exception as exc:
+            log.warning(
+                "reset_consensus_state: sc_ocr.api reset failed: %s",
+                exc,
+            )
+
+        log.info("reset_consensus_state: all consensus state cleared")
+
+    def _push_hud_read(
+        self,
+        mass: float | None,
+        resistance: float | None,
+        instability: float | None,
+    ) -> None:
+        """Push raw HUD reads into rolling windows and commit majority.
+
+        Each field has TWO commit paths:
+          1. **Rock-change snap** — if the latest 2 reads agree with
+             each other but differ from the currently-displayed value
+             by more than a noise threshold, we treat that as the user
+             having aimed at a different rock and commit the new value
+             immediately (also flushing the window so future mode-
+             voting uses the new baseline). Without this, mode-of-7
+             voting would hold the OLD rock's value for 3-4 seconds
+             after the user moves the crosshair to a new rock.
+          2. **Mode-of-window** — fallback when the rock didn't change.
+             Suppresses single-frame OCR noise.
+        """
+        # Mass ────
+        if mass is not None:
+            # Round to int for cleaner majority matching —
+            # mass is always displayed without decimals.
+            self._hud_mass_window.append(round(mass))
+        else:
+            self._hud_mass_window.append(None)
+        self._prev_hud_mass = mass  # back-compat
+
+        # 1) Rock-change snap: 2 consecutive reads agreeing on a
+        # value that's >5% different (and >5 kg absolute) from the
+        # currently displayed mass means the user is now aiming at
+        # a different rock. Commit immediately.
+        last_two_mass = [v for v in list(self._hud_mass_window)[-2:] if v is not None]
+        if (
+            len(last_two_mass) == 2
+            and last_two_mass[0] == last_two_mass[1]
+            and self._last_hud_mass is not None
+            and abs(last_two_mass[0] - self._last_hud_mass) > max(5, self._last_hud_mass * 0.05)
+        ):
+            log.info(
+                "_push_hud_read: mass rock-change snap %s → %s",
+                self._last_hud_mass, last_two_mass[0],
+            )
+            self._last_hud_mass = float(last_two_mass[0])
+            self._hud_mass_window.clear()
+            self._hud_mass_window.append(last_two_mass[0])
+        else:
+            # 2) Mode-of-window vote (existing logic).
+            mass_counts: dict[int, int] = {}
+            none_count = 0
+            for v in self._hud_mass_window:
+                if v is None:
+                    none_count += 1
+                else:
+                    mass_counts[v] = mass_counts.get(v, 0) + 1
+
+            # Recency-weighted decay: if the LAST 3 entries are all
+            # None, the user has moved off the rock for a sustained
+            # window — clear regardless of older successful reads
+            # still sitting in the back of the deque. The earlier
+            # "wait until window is fully None" rule meant a single
+            # cached value held the bubble visible for ~21 s on
+            # 3-second scans (7 entries × 3 s) even after the user
+            # was clearly elsewhere. 3 trailing Nones gives ~9 s of
+            # absence tolerance, which rides out FRACTURE MODE
+            # transitions without staring at stale data forever.
+            _recent_mass = list(self._hud_mass_window)[-3:]
+            if (
+                len(_recent_mass) == 3
+                and all(v is None for v in _recent_mass)
+            ):
+                self._last_hud_mass = None
+            elif mass_counts:
+                best_val = max(mass_counts, key=mass_counts.get)
+                # Commit immediately: the mode of the window is always
+                # better than no value at all. With the in-scan 3-engine
+                # majority voting upstream, individual reads are already
+                # fairly reliable — requiring 2+ window appearances was
+                # delaying results too much and on some users' machines
+                # prevented the break bubble from ever populating.
+                self._last_hud_mass = float(best_val)
+            elif none_count >= 5:
+                # Belt-and-braces fallback for the case where window
+                # is partial (just-started scanning) and we haven't
+                # filled the trailing-3 buffer yet.
+                self._last_hud_mass = None
+
+        # Resistance ────
+        if resistance is not None:
+            self._hud_resistance_window.append(round(resistance))
+        else:
+            self._hud_resistance_window.append(None)
+        self._prev_hud_resistance = resistance
+
+        # 1) Rock-change snap: resistance steps in 1% increments and
+        # changes ≥10% are clearly a different rock (resistance is
+        # rock-property, not animation-jittery).
+        last_two_res = [v for v in list(self._hud_resistance_window)[-2:] if v is not None]
+        if (
+            len(last_two_res) == 2
+            and last_two_res[0] == last_two_res[1]
+            and self._last_hud_resistance is not None
+            and abs(last_two_res[0] - self._last_hud_resistance) >= 10
+        ):
+            log.info(
+                "_push_hud_read: resistance rock-change snap %s → %s",
+                self._last_hud_resistance, last_two_res[0],
+            )
+            self._last_hud_resistance = float(last_two_res[0])
+            self._hud_resistance_window.clear()
+            self._hud_resistance_window.append(last_two_res[0])
+        else:
+            res_counts: dict[int, int] = {}
+            res_nones = 0
+            for v in self._hud_resistance_window:
+                if v is None:
+                    res_nones += 1
+                else:
+                    res_counts[v] = res_counts.get(v, 0) + 1
+
+            # See mass: trailing-3-Nones decay rule.
+            _recent_res = list(self._hud_resistance_window)[-3:]
+            if (
+                len(_recent_res) == 3
+                and all(v is None for v in _recent_res)
+            ):
+                self._last_hud_resistance = None
+            elif res_counts:
+                best_val = max(res_counts, key=res_counts.get)
+                # Same policy as mass: commit the mode immediately.
+                self._last_hud_resistance = float(best_val)
+            elif res_nones >= 5:
+                self._last_hud_resistance = None
+
+        # Instability ────
+        # Bucket to 0.01 for majority keying — the SC HUD always
+        # renders instability to two decimals and the OCR-confidence
+        # gate in sc_ocr already rejects obviously-wrong frames, so
+        # we can preserve the full hundredths resolution here. Earlier
+        # 0.1 bucketing hid legitimate reads like 2.22 behind 2.2.
+        if instability is not None:
+            self._hud_instability_window.append(round(instability * 100))
+        else:
+            self._hud_instability_window.append(None)
+
+        # 1) Rock-change snap: instability buckets are integers of
+        # 1/100. A jump of ≥50 buckets (= 0.5 instability units) is
+        # well outside HUD jitter and indicates a different rock.
+        last_two_inst = [v for v in list(self._hud_instability_window)[-2:] if v is not None]
+        if (
+            len(last_two_inst) == 2
+            and last_two_inst[0] == last_two_inst[1]
+            and self._last_hud_instability is not None
+            and abs(last_two_inst[0] / 100.0 - self._last_hud_instability) >= 0.5
+        ):
+            log.info(
+                "_push_hud_read: instability rock-change snap %s → %s",
+                self._last_hud_instability, last_two_inst[0] / 100.0,
+            )
+            self._last_hud_instability = last_two_inst[0] / 100.0
+            self._hud_instability_window.clear()
+            self._hud_instability_window.append(last_two_inst[0])
+        else:
+            inst_counts: dict[int, int] = {}
+            inst_nones = 0
+            for v in self._hud_instability_window:
+                if v is None:
+                    inst_nones += 1
+                else:
+                    inst_counts[v] = inst_counts.get(v, 0) + 1
+
+            # See mass: trailing-3-Nones decay rule.
+            _recent_inst = list(self._hud_instability_window)[-3:]
+            if (
+                len(_recent_inst) == 3
+                and all(v is None for v in _recent_inst)
+            ):
+                self._last_hud_instability = None
+            elif inst_counts:
+                best_key = max(inst_counts, key=inst_counts.get)
+                self._last_hud_instability = best_key / 100.0
+            elif inst_nones >= 5:
+                self._last_hud_instability = None
+
+    def _do_scan(self) -> None:
+        region = self._config.get("ocr_region")
+        hud_region = self._config.get("hud_region")
+        if not region and not hud_region:
+            log.info("_do_scan: no regions set — skipping")
+            return
+
+        # Skip if the previous scan is still running (prevents pileup
+        # on slower machines where OCR takes longer than the interval)
+        if self._scan_in_progress:
+            log.info("_do_scan: previous scan still in flight — skipping")
+            return
+        log.debug(
+            "_do_scan: firing region=%s hud_region=%s",
+            region, hud_region,
+        )
+
+        self._scan_in_progress = True
+
+        def _run():
+            try:
+                # ── ANCHOR GATE ──
+                # Capture each configured region with a SINGLE frame
+                # (not the 300 ms averaged composite the OCR pipeline
+                # uses) and run its anchor matcher. Only the scanner
+                # whose anchor is present this tick gets dispatched.
+                # If neither anchor is present, OCR is skipped entirely
+                # — this is the no-hallucination guarantee: empty pixels
+                # never reach the OCR fallback paths.
+                #
+                # Anchors are mutually exclusive in normal play (signal
+                # scanner UI and rock-scan panel are different game
+                # modes); if both somehow cross threshold simultaneously
+                # the signal scanner wins by convention.
+                import numpy as _np
+
+                sig_present = False
+                hud_present = False
+                sig_score: float | None = None
+                hud_score: float | None = None
+                hud_bypass = False
+
+                # Calibration bypass: if the user has explicitly
+                # saved per-row calibration for the HUD region, that's
+                # a direct assertion that the panel lives at those
+                # coordinates. We trust it over a per-tick NCC anchor
+                # that may fail on edge cases (HUD scale, color, anti-
+                # aliasing). Without this bypass the gate could lock
+                # us out of OCR even when the panel is plainly on
+                # screen — which is exactly what was happening on the
+                # user's region 2717,905,369,291.
+                if hud_region:
+                    try:
+                        from ocr.sc_ocr import calibration as _cal
+                        hud_bypass = bool(_cal.load(hud_region))
+                    except Exception as _cal_exc:
+                        log.debug(
+                            "gate: calibration lookup failed: %r",
+                            _cal_exc,
+                        )
+
+                if region:
+                    sig_img = capture_region(region)
+                    if sig_img is not None:
+                        try:
+                            # Use max-of-RGB-channels rather than ITU-R
+                            # 601 luma. The SC HUD renders the location-
+                            # pin icon with chromatic aberration on dark
+                            # backgrounds (cyan/red fringes ringing each
+                            # stroke). PIL's ``convert("L")`` blends
+                            # channels with weights (R*0.30 + G*0.59 +
+                            # B*0.11), which spatially blurs the AA'd
+                            # strokes and tanks NCC against the clean
+                            # template — empirically dropping real
+                            # matches from 0.85+ down to ~0.55. Max-
+                            # channel keeps each glyph's brightest
+                            # channel intact, so the stroke shape NCC
+                            # was trained on stays recognizable. Same
+                            # trick ``find_scan_results_anchor`` uses.
+                            _rgb = _np.asarray(
+                                sig_img.convert("RGB"), dtype=_np.uint8,
+                            )
+                            _gray = _rgb.max(axis=2).astype(_np.uint8)
+                            # Hysteresis-aware threshold pair.
+                            #   * STRICT (0.74) = "fresh enter" floor.
+                            #     Empty screens score up to 0.72 (false
+                            #     positives), so we keep entry above.
+                            #   * RELAXED (0.55) = "stay locked" floor.
+                            #     Once we've already confirmed the
+                            #     anchor, brief frame-to-frame score
+                            #     wobble (chromatic aberration shifts,
+                            #     anti-alias differences) shouldn't
+                            #     flip the gate to None and force the
+                            #     scan bubble to flicker into the
+                            #     "Scanning Please Wait" placeholder.
+                            #     We only drop the gate after 3
+                            #     consecutive sub-strict ticks, which
+                            #     rides out wobble while still catching
+                            #     "user moved off the panel".
+                            # NOTE: STRICT was 0.74 originally to keep
+                            # empty screens (which score up to 0.72) from
+                            # false-positiving the gate. But chromatic
+                            # aberration on real-game frames pins the
+                            # icon's NCC score in the 0.55-0.70 band, so
+                            # the strict floor created a chicken-and-egg:
+                            # the gate could never enter hysteresis from
+                            # cold, signature scanning never started, the
+                            # bubble stayed on "Scanning Please Wait"
+                            # forever. Lowered to 0.55 (same as relaxed)
+                            # — false positives just dispatch a no-op
+                            # scan that produces no value, vs. previous
+                            # behavior of permanently gating off real
+                            # signatures. See user report on v2.2.8.
+                            _SIG_STRICT = 0.55
+                            _SIG_RELAXED = 0.55
+                            _SIG_STICK_TICKS = 3
+                            _floor = (
+                                _SIG_RELAXED
+                                if self._sig_recent_hits > 0
+                                else _SIG_STRICT
+                            )
+                            # Pass RGB so signal_anchor can run the
+                            # geometric structural validator on each
+                            # CNN-validated candidate. Rejects digit
+                            # clusters that the CNN re-rank misclassified
+                            # as ``@`` (the failure mode where one icon
+                            # template + 600 augmentations leaks the
+                            # `@` class onto digit silhouettes at small
+                            # crop scales).
+                            _sig_match = _find_signal_icon(
+                                _gray, min_score=_floor, rgb_image=_rgb,
+                            )
+                            if _sig_match is not None:
+                                sig_present = True
+                                sig_score = float(_sig_match[4])
+                                self._sig_recent_hits = min(
+                                    _SIG_STICK_TICKS,
+                                    self._sig_recent_hits + 1,
+                                )
+                            else:
+                                # Decay the stick counter. Gate stays
+                                # True until the run reaches 0.
+                                if self._sig_recent_hits > 0:
+                                    self._sig_recent_hits -= 1
+                                    sig_present = True  # hysteresis-held
+                        except Exception as exc:
+                            log.info(
+                                "gate: signal anchor check failed: %r",
+                                exc,
+                            )
+
+                if hud_region:
+                    if hud_bypass:
+                        # User-calibrated → assume panel is present.
+                        hud_present = True
+                    else:
+                        hud_img = capture_region(hud_region)
+                        if hud_img is not None:
+                            try:
+                                _hud_anchor = _find_scan_results(hud_img)
+                                if _hud_anchor is not None:
+                                    hud_present = True
+                                    try:
+                                        hud_score = float(
+                                            _hud_anchor.get("score", 0.0)
+                                        )
+                                    except (AttributeError, TypeError):
+                                        hud_score = None
+                            except Exception as exc:
+                                log.info(
+                                    "gate: scan-results anchor check failed: %r",
+                                    exc,
+                                )
+
+                # Per-tick gate diagnostic so it's possible to see
+                # WHY OCR isn't running from the log alone instead of
+                # having to instrument the panel-finder viewer.
+                log.info(
+                    "gate: sig_present=%s sig_score=%s hud_present=%s "
+                    "hud_score=%s hud_bypass=%s",
+                    sig_present,
+                    f"{sig_score:.2f}" if sig_score is not None else "—",
+                    hud_present,
+                    f"{hud_score:.2f}" if hud_score is not None else "—",
+                    hud_bypass,
+                )
+
+                # No mutex: when both anchors fire, both scans run.
+                #
+                # Earlier revisions tried to pick a winner because we
+                # were worried about NCC false positives flipping the
+                # gate state. Now that the signal anchor's threshold
+                # has its hysteresis pair (0.74 strict / 0.55 relaxed)
+                # AND the HUD anchor benefits from the calibration
+                # bypass, false positives from EITHER anchor are
+                # individually rare. The two scanners read different
+                # screen regions and dispatch to different futures in
+                # the persistent pool — running both in parallel is
+                # cheap and lets the user populate BOTH bubbles
+                # simultaneously when both panels are on screen.
+                #
+                # Net: holding the scanner on a rock no longer makes
+                # the break bubble flicker off — HUD scans dispatch
+                # every tick the calibration bypass is active, so
+                # _last_hud_mass refreshes in lock-step instead of
+                # going stale and decaying.
+
+                # Distinct ``active_both`` state when both anchors
+                # fire so ``_apply_gate_state`` doesn't clear one
+                # side's cached values just because the other side
+                # also matched. With the mutex removed, both scans
+                # actually run in parallel — but the previous
+                # if/elif chain only set one flag, and the gate-state
+                # handler then nuked the other side's state on every
+                # tick, causing the break bubble (and the scan
+                # bubble) to flicker.
+                if sig_present and hud_present:
+                    self._gate_state = "active_both"
+                elif sig_present:
+                    self._gate_state = "active_signature"
+                elif hud_present:
+                    self._gate_state = "active_hud"
+                else:
+                    self._gate_state = "armed"
+                QMetaObject.invokeMethod(
+                    self, "_apply_gate_state",
+                    Qt.QueuedConnection,
+                    Q_ARG(str, self._gate_state),
+                )
+
+                # ── ARMED BUT WAITING ──
+                # No anchor present → no panel on screen → skip OCR
+                # entirely. The cache + bubble cleanup is handled by
+                # ``_apply_gate_state`` on the main thread (queued
+                # above), so all this path needs to do is re-show the
+                # "Scanning…" placeholder and bail before dispatch.
+                # ``_maybe_show_scanning`` runs AFTER the gate-state
+                # slot, so by then ``_scan_bubble._matches`` is empty
+                # and the break bubble is hidden — its early-return
+                # guards will pass and the placeholder will appear.
+                if not sig_present and not hud_present:
+                    QMetaObject.invokeMethod(
+                        self, "_maybe_show_scanning",
+                        Qt.QueuedConnection,
+                    )
+                    return
+
+                # ── DISPATCH ──
+                # Use a PERSISTENT module-level pool. A `with
+                # ThreadPoolExecutor() as pool:` block calls
+                # pool.shutdown(wait=True) on exit, which waits for
+                # every worker thread to finish — including futures
+                # we've already abandoned via `.result(timeout=…)`.
+                # On the first scan, the Paddle daemon inside
+                # scan_region needs ~15–20 s to boot, so the context
+                # manager's shutdown blocks that long and leaves
+                # `_scan_in_progress` stuck True, starving every
+                # subsequent timer tick.
+                pool = _get_scan_pool()
+                sig_future = None
+                hud_future = None
+                if sig_present:
+                    sig_future = pool.submit(scan_region, region)
+                if hud_present:
+                    hud_future = pool.submit(scan_hud_onnx, hud_region)
+
+                signal_value = None
+                if sig_future is not None:
+                    try:
+                        signal_value = sig_future.result(timeout=6)
+                    except Exception as exc:
+                        log.info(
+                            "signal scan timed out/failed after 6s: %r",
+                            exc,
+                        )
+
+                if True:
+
+                    if hud_future is not None:
+                        try:
+                            # Light-background scans route through the
+                            # PaddleOCR sidecar which takes ~9 s warm
+                            # on CPU. The old 5 s timeout here caused
+                            # every light scan to time out, producing
+                            # garbage dark-pipeline fallback reads.
+                            # 14 s covers a warm Paddle call (12 s
+                            # inner timeout + overhead). Dark-path
+                            # scans typically finish in <5 s anyway
+                            # so the higher budget only costs time on
+                            # actual light panels.
+                            hud_result = hud_future.result(timeout=14)
+                            hud_mass = hud_result.get("mass")
+                            hud_res = hud_result.get("resistance")
+                            hud_inst = hud_result.get("instability")
+                            hud_mineral = hud_result.get("mineral_name")
+                            panel_visible = hud_result.get("panel_visible", False)
+                            # Push to the rolling window regardless — None
+                            # entries signal "this scan didn't read",
+                            # which weakens the vote without erasing
+                            # prior signal.
+                            self._hud_mineral_window.append(
+                                hud_mineral if hud_mineral else None,
+                            )
+                            if hud_mineral:
+                                # Vote across the window: the most-
+                                # common non-None mineral wins. If
+                                # there's already a stable value,
+                                # require ≥2 votes for a candidate to
+                                # override it — protects the locked
+                                # mineral from a single noisy frame
+                                # (a fuzzy-match collision e.g.
+                                # "Borase" vs "Beryl"). If there's no
+                                # prior stable value, accept the
+                                # latest read immediately so the UI
+                                # doesn't sit blank waiting for a
+                                # second confirmation.
+                                _counts: dict[str, int] = {}
+                                for _v in self._hud_mineral_window:
+                                    if _v:
+                                        _counts[_v] = _counts.get(_v, 0) + 1
+                                if _counts:
+                                    _winner, _votes = max(
+                                        _counts.items(), key=lambda kv: kv[1],
+                                    )
+                                    if (self._last_hud_mineral is None
+                                            or _votes >= 2
+                                            or _winner == self._last_hud_mineral):
+                                        self._last_hud_mineral = _winner
+                                    # else: stick with the existing
+                                    # stable value; a single dissenting
+                                    # read isn't enough to flip it.
+                                else:
+                                    self._last_hud_mineral = hud_mineral
+
+                            # If the scan panel isn't visible (mineral-row
+                            # finder returned None), push None reads
+                            # through the consensus windows instead of
+                            # nuking the cached values. The consensus
+                            # logic decays naturally after a few
+                            # consecutive Nones — that pattern is robust
+                            # to transient capture failures (FRACTURE
+                            # MODE animation frames, brief overlays from
+                            # other UI elements) without flushing values
+                            # that just locked in.
+                            #
+                            # Previously this branch hard-cleared every
+                            # cached value AND the windows, which meant
+                            # one bad frame between rocks reset
+                            # ``_last_hud_mass`` to None and dropped the
+                            # break bubble + re-armed the scan bubble.
+                            # On HUDs where ``_find_mineral_row``
+                            # occasionally fails on a panel that's
+                            # plainly on screen (FRACTURE MODE, anti-
+                            # aliasing edge cases) it looked like OCR
+                            # had stopped working entirely.
+                            if not panel_visible:
+                                self._push_hud_read(None, None, None)
+                                self._hud_mineral_window.append(None)
+                            else:
+                                # Panel is visible. Push raw reads into
+                                # the rolling consensus windows and let
+                                # `_commit_hud_from_window` decide what
+                                # to display. A None read clears the
+                                # displayed value only after it dominates
+                                # the window, preventing transient OCR
+                                # misses from hiding the bubble.
+                                self._push_hud_read(
+                                    hud_mass, hud_res, hud_inst
+                                )
+                        except Exception as exc:
+                            log.info(
+                                "HUD ONNX scan timed out/failed after 14s: %r",
+                                exc,
+                            )
+
+                    if signal_value is not None:
+                        QMetaObject.invokeMethod(
+                            self, "_on_scan_result",
+                            Qt.QueuedConnection,
+                            Q_ARG(int, signal_value),
+                        )
+                    elif sig_future is not None:
+                        # Signal scan was DISPATCHED (anchor matched
+                        # this tick or hysteresis-held) but the OCR
+                        # returned no value. That's the "signature
+                        # panel is no longer on screen but the anchor
+                        # still false-locks via hysteresis" case —
+                        # the bubble would otherwise sit on stale
+                        # matches indefinitely because
+                        # ``_on_scan_result`` is what manages the
+                        # match lifecycle and it's only called on
+                        # successful reads. Queue an
+                        # ``_on_signal_no_value`` slot to drive the
+                        # no-value streak counter on the UI thread.
+                        QMetaObject.invokeMethod(
+                            self, "_on_signal_no_value",
+                            Qt.QueuedConnection,
+                        )
+
+                    # ALWAYS invoke _update_break_bubble. It's the
+                    # single source of truth for whether the break
+                    # bubble should be shown, hidden, or re-rendered
+                    # — gating the call on cached values being non-
+                    # None means a successful decay (mass/resistance
+                    # going to None after 5 consecutive None reads,
+                    # i.e. user looked away from the rock) leaves the
+                    # bubble frozen on whatever was last shown,
+                    # because nobody calls back in to hide it. The
+                    # function's own ``mass is None or resistance is
+                    # None`` branch already handles the hide-and-
+                    # placeholder path.
+                    QMetaObject.invokeMethod(
+                        self, "_update_break_bubble",
+                        Qt.QueuedConnection,
+                    )
+                    if self._last_hud_mass is not None or self._last_hud_resistance is not None:
+                        # HUD has data — the break bubble owns the
+                        # screen real estate; dismiss the scanning
+                        # placeholder so it doesn't sit on top.
+                        QMetaObject.invokeMethod(
+                            self, "_dismiss_scanning",
+                            Qt.QueuedConnection,
+                        )
+                    elif signal_value is None:
+                        # No signal AND no HUD data — re-show "Scanning"
+                        QMetaObject.invokeMethod(
+                            self, "_maybe_show_scanning",
+                            Qt.QueuedConnection,
+                        )
+            finally:
+                self._scan_in_progress = False
+
+        threading.Thread(target=_run, daemon=True).start()
+
+    def force_one_scan(self) -> None:
+        """Fire a single user-initiated scan tick immediately.
+
+        Used by the calibration dialog's "Scan now" button so the user
+        can verify a freshly-saved manual crop without leaving the
+        dialog. Behaviour:
+
+        * Does NOT touch the Start/Stop scan toggle. If the user has
+          scanning paused, this remains a one-shot — no auto-resume.
+        * If the periodic scan loop is already running (timer active),
+          this is a no-op: the next tick is at most ~500 ms away and
+          firing on top of it would just race the in-flight scan.
+        * Bypasses the ``_scan_in_progress`` "previous scan still in
+          flight" guard. The guard exists for the periodic timer to
+          avoid pile-up; for a user-initiated request we want fresh
+          data even if a scan is mid-flight, so we reset the flag and
+          let ``_do_scan`` re-arm itself.
+        * Re-reads config from disk before firing so the just-saved
+          manual crop / calibration are honoured by ``_do_scan`` (which
+          reads ``self._config`` for ``ocr_region`` / ``hud_region``).
+        * Fire-and-forget: ``_do_scan`` already dispatches the heavy
+          work onto a daemon ``threading.Thread``, so the UI thread
+          returns immediately.
+        """
+        # If the periodic loop is active, leave it alone — racing it
+        # would only serve to violate the in-flight guard for no win.
+        if self._scan_timer is not None:
+            log.info("force_one_scan: scan loop already active — no-op")
+            return
+
+        # Pull fresh config so the freshly-saved calibration / region
+        # in the dialog is what _do_scan picks up.
+        try:
+            self._config = _load_config()
+        except Exception as exc:
+            log.warning("force_one_scan: config reload failed: %r", exc)
+
+        # Bypass the in-flight guard. The guard's purpose is to keep
+        # the periodic timer from queueing scans on top of a slow OCR
+        # pass; a user clicking "Scan now" is explicitly asking for
+        # fresh data, so clearing the flag is the correct trade-off.
+        # Worst case: two threads briefly run the OCR pipeline in
+        # parallel — both write to per-tick state, the later one wins,
+        # nothing corrupts (the pipeline functions are reentrant).
+        if self._scan_in_progress:
+            log.info(
+                "force_one_scan: bypassing in-flight guard (user-initiated)",
+            )
+            self._scan_in_progress = False
+
+        log.info("force_one_scan: firing one-shot scan tick")
+        try:
+            self._do_scan()
+        except Exception as exc:
+            log.warning("force_one_scan: _do_scan raised: %r", exc)
+
+    @Slot(int)
+    def _on_scan_result(self, value: int) -> None:
+        # Mirror live HUD OCR values into the manual input fields so
+        # the user always sees what the pipeline is actually using.
+        # HUD OCR has priority over manual input in
+        # ``_get_mass_resistance``, so updating the text boxes here
+        # is purely cosmetic — the breakability calc already uses
+        # the live values regardless of what's typed.
+        if self._last_hud_mass is not None:
+            new_val = f"{self._last_hud_mass:.0f}"
+            if self._mass_input.text().strip() != new_val:
+                self._mass_input.setText(new_val)
+                self._auto_mass = new_val
+        if self._last_hud_resistance is not None:
+            new_val = f"{self._last_hud_resistance:.0f}"
+            if self._resistance_input.text().strip() != new_val:
+                self._resistance_input.setText(new_val)
+                self._auto_resistance = new_val
+
+        # Use the value verbatim. The previous behaviour averaged two
+        # consecutive reads when their diff was ≤ max(50, 5%) — for
+        # a 5-digit signature like 7680 that was a 384-unit window,
+        # so a single outlier scan reading 7860 between consistent
+        # 7680s averaged to 7770 and matched the wrong mineral
+        # (Agricium's DB signature is 7770). Database lookups need
+        # exact values: averaging two valid signatures from different
+        # rocks produces a non-signature value or, worse, lands on a
+        # third unrelated rock's exact signature. The upstream
+        # ``_STABLE_SIGNAL`` filter in ``_signal_recognize_pil``
+        # already requires multiple consecutive identical reads
+        # before swapping, so single-frame OCR blips can't reach
+        # this slot in the first place — averaging here was both
+        # redundant and actively harmful.
+        effective_value = value
+        if (
+            self._last_ocr_value == value
+            and value != self._confirmed_value
+        ):
+            # Two consecutive EXACT matches — high-confidence label
+            # for the training collector.
+            self._confirmed_value = value
+            log.info("Confirmed: %d", value)
+            try:
+                from ocr.screen_reader import get_last_capture
+                from ocr.training_collector import collect_training_sample
+                cap = get_last_capture()
+                if cap is not None:
+                    collect_training_sample(cap, value, confidence="consensus")
+            except Exception:
+                pass
+        self._last_ocr_value = value
+
+        self._search_input.setText(str(effective_value))
+        matches = self._matcher.match_all(effective_value, tolerance=10)
+        # Keep every match tied for the smallest delta — this handles
+        # resources that share the exact same signal value (e.g. 6000
+        # = FPS Mineables 2R AND Salvage 3R) while still discarding
+        # nearby-but-not-equal candidates caused by OCR drift.
+        if matches:
+            best_delta = min(m.delta for m in matches)
+            matches = [m for m in matches if m.delta == best_delta]
+            value = effective_value
+            log.info("Matched %d result(s) for %d", len(matches), value)
+            self._last_matched_resource = matches[0].name if matches else ""
+            # Reset the no-match streak on every successful match so
+            # a single bad-read tick doesn't carry hysteresis from
+            # previous misreads into the next batch of valid scans.
+            self._no_match_streak = 0
+            # Same reset for the no-value streak — a real match means
+            # the signature panel IS still on screen and producing
+            # readable data.
+            self._signal_no_value_streak = 0
+
+            # Update inline result label (always visible)
+            parts = []
+            for m in matches:
+                rock_word = "R" if m.rock_count == 1 else "R"
+                parts.append(f"{m.name} ({m.rock_count}{rock_word})")
+            color = RARITY_FG.get(matches[0].rarity, ACCENT)
+            inline_text = " | ".join(parts)
+            self._inline_result.setText(inline_text)
+            self._inline_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 9pt; font-weight: bold;
+                color: {color}; background: transparent;
+            """)
+
+            # Show the quick-glance scan bubble at the user's chosen display
+            # location. (The larger ResourcePopup is only opened on manual
+            # double-click in the table, not during active scanning.)
+            bubble_pos = self._config.get("bubble_position")
+            if bubble_pos:
+                anchor_x = bubble_pos["x"]
+                anchor_y = bubble_pos["y"]
+            else:
+                region = (self._config.get("ocr_region") or {})
+                anchor_x = region.get("x", 500) + region.get("w", 200) + 10
+                anchor_y = region.get("y", 400)
+            try:
+                self._scan_bubble.show_matches(
+                    matches, anchor_x, anchor_y,
+                    scanned_value=effective_value,
+                )
+            except Exception as exc:
+                log.error("Bubble show_matches failed: %s", exc, exc_info=True)
+        else:
+            # Don't tear down the bubble on a single bad-read tick.
+            # Signal OCR can produce one-off misreads (16690 instead
+            # of a real value like 7,680) that don't match any
+            # database entry. Hiding the bubble + re-showing the
+            # scanning placeholder on every miss caused 2 Hz flicker
+            # whenever the signal value alternated between a
+            # canonical match and a misread.
+            #
+            # Track a no-match streak; only clear/hide once we've
+            # seen ``_NO_MATCH_TOLERANCE`` consecutive no-match
+            # results. For genuinely-unknown signatures this just
+            # delays the cleanup by ~1.5 s, which is invisible.
+            _NO_MATCH_TOLERANCE = 3
+            self._no_match_streak = (
+                getattr(self, "_no_match_streak", 0) + 1
+            )
+            log.debug(
+                "No match for confirmed value %d (streak=%d/%d)",
+                value, self._no_match_streak, _NO_MATCH_TOLERANCE,
+            )
+            if self._no_match_streak >= _NO_MATCH_TOLERANCE:
+                self._inline_result.setText("")
+                self._scan_bubble._matches = []
+                self._scan_bubble.hide()
+                self._maybe_show_scanning()
+            # Otherwise leave the previous match visible — the next
+            # tick will either confirm the rock changed (streak
+            # crosses threshold and we clear) or recover the
+            # canonical value (streak resets in the matches branch).
+
+    def _build_gadget_infos(self) -> tuple[list[GadgetInfo], bool]:
+        """Build the available gadget list from config quantities.
+
+        Returns (gadget_infos, always_use_best).
+        """
+        quantities = self._config.get("gadget_quantities", {})
+        always_best = self._config.get("always_use_best_gadget", False)
+        infos: list[GadgetInfo] = []
+        for name, qty in quantities.items():
+            if qty > 0:
+                # Look up resistance value from the UEX gadget database
+                gadgets_db = get_gadget_list()
+                g = gadgets_db.get(name)
+                if g and g.resistance is not None:
+                    infos.append(GadgetInfo(name=name, resistance=g.resistance))
+        return infos, always_best
+
+    def _run_breakability(
+        self, mass: float, resistance: float, configs: list[LaserConfig],
+    ) -> BreakResult:
+        """Run the full breakability calculation with gadgets + active modules."""
+        gadgets, always_best = self._build_gadget_infos()
+        return compute_with_gadgets(
+            mass, resistance, configs, gadgets, always_use_best=always_best,
+        )
+
+    def _build_home_team_breakdown(
+        self, team_configs: list, used_laser_names: list[str],
+    ) -> list[dict]:
+        """Group the user's own team's used lasers by ship for display.
+
+        Mirrors the shape of the substitutes dict list so the same
+        break-bubble helper can render both home team and substitutes
+        with a consistent cluster → team → ship → laser hierarchy.
+        """
+        used_set = set(used_laser_names)
+        by_ship: dict[str, dict] = {}
+        for c in team_configs:
+            if c.name not in used_set:
+                continue
+            sid = c.ship_id or c.ship_display
+            if sid not in by_ship:
+                by_ship[sid] = {
+                    "ship_display": c.ship_display,
+                    "team_name": c.team_name,
+                    "cluster": c.cluster,
+                    "player_names": list(c.player_names),
+                    "used_turrets": [],
+                }
+            by_ship[sid]["used_turrets"].append(c.name)
+        return list(by_ship.values())
+
+    def _show_team_break_result(
+        self,
+        result,
+        mass: float,
+        resistance: float,
+        bx: int,
+        by: int,
+        team_configs: list | None = None,
+    ) -> None:
+        """Map TeamBreakResult to break_bubble.show_team_breakability."""
+        instability = self._last_hud_instability
+        team_configs = team_configs or []
+        # Centralised resource-name resolution — see
+        # ``_resource_name_for_break_bubble`` for the priority chain.
+        # In particular, this no longer falls back to a stale
+        # signal-scanner match when HUD data is present for the
+        # current rock.
+        resource_name = self._resource_name_for_break_bubble()
+
+        def _home(used):
+            return self._build_home_team_breakdown(team_configs, used)
+
+        # Convert breakability.Reallocation objects to dicts for the bubble
+        realloc_dicts = [
+            {
+                "player": r.player_name,
+                "source_ship": r.source_ship_display,
+                "target_ship": r.target_ship_display,
+                "target_turret": r.target_turret_index + 1,
+                "donor_disabled": r.is_mining_donor,
+            }
+            for r in getattr(result, "reallocations", []) or []
+        ]
+
+        if result.user_can_solo and result.solo_result:
+            r = result.solo_result
+            # User can break solo — no need to show team breakdown,
+            # just display the player's own ship info.
+            self._break_bubble.show_team_breakability(
+                bx, by, resource_name=resource_name,
+                mass=mass, resistance=resistance,
+                instability=instability,
+                search_scope="solo", can_break=True,
+                power_percentage=r.percentage,
+                used_lasers=r.used_lasers,
+                active_modules_needed=r.active_modules_needed,
+                gadget_recommendation=r.gadget_used or "",
+                reallocations=realloc_dicts,
+            )
+        elif result.team_can_break and result.team_result:
+            r = result.team_result
+            self._break_bubble.show_team_breakability(
+                bx, by, resource_name=resource_name,
+                mass=mass, resistance=resistance,
+                instability=instability,
+                search_scope="team", can_break=True,
+                power_percentage=r.percentage,
+                used_lasers=r.used_lasers,
+                active_modules_needed=r.active_modules_needed,
+                gadget_recommendation=r.gadget_used or "",
+                home_team=_home(r.used_lasers),
+                reallocations=realloc_dicts,
+            )
+        elif result.substitute_result and not result.substitute_result.insufficient:
+            r = result.substitute_result
+            subs = [
+                {
+                    "ship_display": s.ship_display,
+                    "team_name": s.team_name,
+                    "cluster": s.cluster,
+                    "player_names": list(s.player_names),
+                    "used_turrets": list(s.used_turrets),
+                }
+                for s in result.substitutes
+            ]
+            self._break_bubble.show_team_breakability(
+                bx, by, resource_name=resource_name,
+                mass=mass, resistance=resistance,
+                instability=instability,
+                search_scope=result.search_scope, can_break=True,
+                power_percentage=r.percentage,
+                used_lasers=r.used_lasers,
+                active_modules_needed=r.active_modules_needed,
+                gadget_recommendation=r.gadget_used or "",
+                substitutes=subs,
+                home_team=_home(r.used_lasers),
+                reallocations=realloc_dicts,
+            )
+        else:
+            self._break_bubble.show_team_breakability(
+                bx, by, resource_name=resource_name,
+                mass=mass, resistance=resistance,
+                instability=instability,
+                search_scope="", can_break=False,
+                reallocations=realloc_dicts,
+            )
+
+    @Slot()
+    def _update_break_bubble(self) -> None:
+        """Show/update the breakability HUD bubble from current data."""
+        mass, resistance = self._get_mass_resistance()
+        if mass is None or resistance is None:
+            # No HUD data — the consensus has decayed (5 consecutive
+            # None reads = ~2.5 s off-rock at 500 ms tick). Hide the
+            # break bubble so the user isn't staring at stale data
+            # from the previous rock, then re-show the scanning
+            # placeholder to indicate we're still actively looking.
+            try:
+                self._break_bubble.hide()
+            except Exception:
+                pass
+            self._maybe_show_scanning()
+            return
+
+        # HUD data found — dismiss the "Scanning" placeholder
+        self._dismiss_scanning()
+
+        configs = self.active_laser_configs()
+        if not configs:
+            # No ship loadout loaded. Instead of silently returning
+            # (which leaves the user staring at nothing after the
+            # scanning placeholder disappears), surface a helpful
+            # message in the break bubble.
+            break_pos = self._config.get("break_bubble_position")
+            if break_pos:
+                nx, ny = break_pos["x"], break_pos["y"]
+            else:
+                bubble_pos = self._config.get("bubble_position")
+                if bubble_pos:
+                    nx, ny = bubble_pos["x"], bubble_pos["y"] + 80
+                else:
+                    region = (self._config.get("ocr_region") or {})
+                    nx = region.get("x", 500) + region.get("w", 200) + 10
+                    ny = region.get("y", 400) + 80
+            try:
+                self._break_bubble.show_breakability(
+                    nx, ny,
+                    mass=mass, resistance=resistance,
+                    instability=self._last_hud_instability,
+                    can_break=False, unbreakable=False,
+                    missing_power=0.0,
+                    # Status line reads "CANNOT BREAK" — override via
+                    # gadget_recommendation to hint at the real fix.
+                    gadget_recommendation="Click 'Choose Mining Ship'",
+                )
+            except Exception as exc:
+                log.debug("Break bubble (no-ship) failed: %s", exc)
+            return
+
+        active = self._config.get("active_ship")
+
+        # Position: prefer dedicated break_bubble_position, else fall
+        # back to signal bubble position offset below.
+        break_pos = self._config.get("break_bubble_position")
+        if break_pos:
+            bx = break_pos["x"]
+            by = break_pos["y"]
+        else:
+            bubble_pos = self._config.get("bubble_position")
+            if bubble_pos:
+                bx = bubble_pos["x"]
+                by = bubble_pos["y"] + 80
+            else:
+                region = (self._config.get("ocr_region") or {})
+                bx = region.get("x", 500) + region.get("w", 200) + 10
+                by = region.get("y", 400) + 80
+
+        # NOTE: No hard short-circuit on instability. The game's
+        # IMPOSSIBLE flag is relative to the CURRENT loadout's applied
+        # power — a single overcharging laser can trigger it, while
+        # distributing the load across multiple weaker lasers (team /
+        # cluster / fleet search below) may produce a viable charge
+        # profile. Let the escalating search decide; the regular
+        # breakability math will still report CANNOT BREAK honestly
+        # when no combination has enough power vs the resistance.
+
+        # Team mode: use team_breakability for team-scoped analysis
+        if (active == "fleet" and self._config.get("calc_mode") == "team"
+                and hasattr(self, "_ledger_tab")):
+            scene = self._ledger_tab._scene
+            assigned_user = self._ledger_tab._data.assigned_user
+            if assigned_user:
+                user_team = scene.find_team_for_player(assigned_user)
+                user_ship = scene.find_ship_for_player(assigned_user)
+                user_ship_id = user_ship.loadout_path if user_ship else ""
+
+                team_configs = self.team_laser_configs(user_team) if user_team else []
+                user_cluster = scene.cluster_for_team(user_team) if hasattr(user_team, "cluster") else ""
+
+                cluster_configs = []
+                if user_cluster:
+                    for t_node in scene.teams_in_cluster(user_cluster):
+                        if t_node is user_team:
+                            continue
+                        cfgs = self.team_laser_configs(t_node)
+                        if cfgs:
+                            cluster_configs.append((t_node.team_name, user_cluster, cfgs))
+
+                fleet_cfgs = []
+                for cl in scene.all_clusters():
+                    if cl == user_cluster:
+                        continue
+                    for t_node in scene.teams_in_cluster(cl):
+                        cfgs = self.team_laser_configs(t_node)
+                        if cfgs:
+                            fleet_cfgs.append((t_node.team_name, cl, cfgs))
+                for t_node in scene._teams:
+                    if not t_node.cluster and t_node is not user_team:
+                        cfgs = self.team_laser_configs(t_node)
+                        if cfgs:
+                            fleet_cfgs.append((t_node.team_name, "", cfgs))
+
+                from services.breakability import team_breakability as _team_break
+                gadgets, always_best = self._build_gadget_infos()
+                reassignable = self._build_reassignable_pool()
+                t_result = _team_break(
+                    mass, resistance, user_ship_id,
+                    team_configs, cluster_configs, fleet_cfgs,
+                    available_gadgets=gadgets,
+                    always_use_best_gadget=always_best,
+                    reassignable_pool=reassignable,
+                )
+                self._show_team_break_result(
+                    t_result, mass, resistance, bx, by,
+                    team_configs=team_configs,
+                )
+                return
+
+        # Fleet mode: use fleet_breakability for substitution analysis
+        if active == "fleet" and self._fleet_snapshots:
+            user_ship_id = self._fleet_snapshots[0].source_path
+            gadgets, always_best = self._build_gadget_infos()
+            fleet_result = fleet_breakability(
+                mass, resistance, configs, user_ship_id,
+                available_gadgets=gadgets,
+                always_use_best_gadget=always_best,
+            )
+
+            if fleet_result.user_can_solo:
+                # User's ship can handle it — show normal bubble
+                result = fleet_result.solo_result
+                resource_name = self._resource_name_for_break_bubble()
+                try:
+                    cp = result.charge_profile
+                    self._break_bubble.show_breakability(
+                        bx, by,
+                        resource_name=resource_name,
+                        mass=mass, resistance=resistance,
+                        instability=self._last_hud_instability,
+                        power_percentage=result.percentage if not result.insufficient else None,
+                        can_break=True,
+                        used_lasers=result.used_lasers,
+                        active_modules_needed=result.active_modules_needed,
+                        gadget_recommendation=result.gadget_used or "",
+                        min_throttle=cp.min_throttle_pct if cp else None,
+                        est_crack_time=cp.est_total_time_sec if cp else None,
+                    )
+                except Exception as exc:
+                    log.error("Break bubble (fleet solo) failed: %s", exc, exc_info=True)
+            else:
+                # User can't solo — show substitution tabs
+                solo = fleet_result.solo_result
+                try:
+                    lp_gadget = fleet_result.least_players.gadget_used if fleet_result.least_players else None
+                    ls_gadget = fleet_result.least_ships.gadget_used if fleet_result.least_ships else None
+                    sub_resource_name = self._resource_name_for_break_bubble()
+                    self._break_bubble.show_fleet_substitution(
+                        bx, by,
+                        resource_name=sub_resource_name,
+                        mass=mass,
+                        resistance=resistance,
+                        instability=self._last_hud_instability,
+                        solo_missing_power=solo.missing_power if solo else 0.0,
+                        lp_power_pct=fleet_result.least_players.percentage if fleet_result.least_players else 0,
+                        lp_players=fleet_result.least_players_count,
+                        lp_ships=fleet_result.least_players_ships,
+                        lp_stability=fleet_result.least_players_stability,
+                        lp_gadget=lp_gadget or "",
+                        ls_power_pct=fleet_result.least_ships.percentage if fleet_result.least_ships else 0,
+                        ls_ship_count=fleet_result.least_ships_count,
+                        ls_ships=fleet_result.least_ships_names,
+                        ls_stability=fleet_result.least_ships_stability,
+                        ls_gadget=ls_gadget or "",
+                    )
+                except Exception as exc:
+                    log.error("Break bubble (fleet sub) failed: %s", exc, exc_info=True)
+            return
+
+        # Single ship mode
+        result = self._run_breakability(mass, resistance, configs)
+
+        # Auto-decrement consumables (once per rock, deduped)
+        rock_key = (round(mass), round(resistance))
+        if not hasattr(self, "_consumable_used_rocks"):
+            self._consumable_used_rocks: set = set()
+
+        if rock_key not in self._consumable_used_rocks:
+            changed = False
+
+            # Gadget auto-decrement
+            if result.gadget_used:
+                quantities = self._config.get("gadget_quantities", {})
+                if quantities.get(result.gadget_used, 0) > 0:
+                    quantities[result.gadget_used] -= 1
+                    changed = True
+                    self._refresh_gadget_spinboxes()
+
+            # Active module auto-decrement (per turret that was activated)
+            if result.turrets_activated:
+                module_uses = self._config.setdefault("module_uses_remaining", {})
+                for turret_name in result.turrets_activated:
+                    # Find the matching laser config to get ship_id + turret_index
+                    for c in configs:
+                        if c.name == turret_name and c.ship_id:
+                            ship_uses = module_uses.setdefault(
+                                c.ship_id,
+                                [c.active_module_uses] * 10,  # init from max
+                            )
+                            if c.turret_index >= 0 and c.turret_index < len(ship_uses):
+                                if ship_uses[c.turret_index] > 0:
+                                    ship_uses[c.turret_index] -= 1
+                                    changed = True
+                            break
+
+            if changed:
+                self._consumable_used_rocks.add(rock_key)
+                _save_config(self._config)
+                self._update_consumables_display()
+
+        resource_name = self._resource_name_for_break_bubble()
+
+        try:
+            # Extract charge simulation data if available
+            cp = result.charge_profile
+            self._break_bubble.show_breakability(
+                bx, by,
+                resource_name=resource_name,
+                mass=mass,
+                resistance=resistance,
+                instability=self._last_hud_instability,
+                power_required=result.missing_power if result.insufficient else None,
+                power_percentage=result.percentage if not result.insufficient else None,
+                can_break=not result.insufficient,
+                unbreakable=result.unbreakable,
+                missing_power=result.missing_power,
+                used_lasers=result.used_lasers,
+                active_modules_needed=result.active_modules_needed,
+                gadget_recommendation=result.gadget_used or "",
+                min_throttle=cp.min_throttle_pct if cp else None,
+                est_crack_time=cp.est_total_time_sec if cp else None,
+            )
+        except Exception as exc:
+            log.error("Break bubble failed: %s", exc, exc_info=True)
+
+    # ── Consumable tracking UI ──
+
+    def _update_consumables_display(self) -> None:
+        """No-op — consumables are now managed via Mining Foreman Console on the Gadgets tab."""
+        pass
+
+    def _on_replenish_modules(self) -> None:
+        """Open a popup to replenish active module uses."""
+        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_TranslucentBackground)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+
+        outer = QVBoxLayout(popup)
+        outer.setContentsMargins(1, 1, 1, 1)
+
+        frame = QFrame(popup)
+        frame.setStyleSheet(
+            f"QFrame {{ background: {P.bg_card}; border: 1px solid {ACCENT}; "
+            f"border-radius: 4px; }}"
+        )
+        fl = QVBoxLayout(frame)
+        fl.setContentsMargins(10, 10, 10, 10)
+        fl.setSpacing(6)
+
+        # Header + Refresh All
+        hdr = QWidget(frame)
+        hdr_l = QHBoxLayout(hdr)
+        hdr_l.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Replenish Modules", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas; font-size: 10pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent;"
+        )
+        hdr_l.addWidget(title)
+        hdr_l.addStretch(1)
+        refresh_btn = QPushButton("Refresh All", hdr)
+        refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: {ACCENT}; background: transparent; border: 1px solid {ACCENT}; "
+            f"border-radius: 3px; padding: 3px 8px; }}"
+        )
+        refresh_btn.clicked.connect(lambda: self._replenish_all_modules(popup))
+        hdr_l.addWidget(refresh_btn)
+        fl.addWidget(hdr)
+
+        # Per ship / turret rows
+        module_uses = self._config.get("module_uses_remaining", {})
+        configs = self.active_laser_configs()
+        ships_seen: set[str] = set()
+
+        _spin_style = (
+            f"QSpinBox {{ font-family: Consolas; font-size: 8pt; color: {P.fg}; "
+            f"background: {P.bg_card}; border: 1px solid {P.border}; border-radius: 3px; }}"
+            f"QSpinBox::up-button, QSpinBox::down-button {{ width: 14px; border: none; "
+            f"background: {P.bg_secondary}; }}"
+            f"QSpinBox::up-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-bottom: 4px solid {ACCENT}; }}"
+            f"QSpinBox::down-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-top: 4px solid {ACCENT}; }}"
+        )
+
+        for c in configs:
+            if not c.ship_id or c.active_module_uses == 0:
+                continue
+            if c.ship_id not in ships_seen:
+                ships_seen.add(c.ship_id)
+                ship_lbl = QLabel(c.ship_display, frame)
+                ship_lbl.setStyleSheet(
+                    f"font-family: Consolas; font-size: 8pt; font-weight: bold; "
+                    f"color: {P.fg}; background: transparent; padding-top: 4px;"
+                )
+                fl.addWidget(ship_lbl)
+
+            row = QWidget(frame)
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(16, 0, 0, 0)
+            rl.setSpacing(6)
+
+            mod_label = f"T{c.turret_index+1}"
+            if c.active_module_names:
+                mod_label += f": {c.active_module_names}"
+            mod_label += f" ({c.active_uses_remaining}/{c.active_module_uses})"
+            turret_lbl = QLabel(mod_label, row)
+            turret_lbl.setStyleSheet(
+                f"font-family: Consolas; font-size: 8pt; color: {P.fg_dim}; "
+                f"background: transparent;"
+            )
+            rl.addWidget(turret_lbl, 1)
+
+            spin = QSpinBox(row)
+            spin.setRange(0, c.active_module_uses)
+            spin.setValue(c.active_uses_remaining)
+            spin.setFixedWidth(60)
+            spin.setStyleSheet(_spin_style)
+            spin.valueChanged.connect(
+                lambda val, sid=c.ship_id, tidx=c.turret_index: (
+                    self._set_module_uses(sid, tidx, val)
+                )
+            )
+            rl.addWidget(spin)
+            fl.addWidget(row)
+
+        outer.addWidget(frame)
+        pos = self._btn_replenish_mods.mapToGlobal(
+            self._btn_replenish_mods.rect().bottomLeft()
+        )
+        popup.adjustSize()
+        popup.move(pos)
+        popup.show()
+
+    def _replenish_all_modules(self, popup: QWidget | None = None) -> None:
+        """Reset all module uses to their max values."""
+        configs = self.active_laser_configs()
+        module_uses = self._config.setdefault("module_uses_remaining", {})
+        for c in configs:
+            if c.ship_id and c.active_module_uses > 0 and c.turret_index >= 0:
+                ship_uses = module_uses.setdefault(
+                    c.ship_id, [0] * max(c.turret_index + 1, 3)
+                )
+                while len(ship_uses) <= c.turret_index:
+                    ship_uses.append(0)
+                ship_uses[c.turret_index] = c.active_module_uses
+        _save_config(self._config)
+        self._update_consumables_display()
+        if popup:
+            popup.close()
+
+    def _set_module_uses(self, ship_id: str, turret_index: int, value: int) -> None:
+        """Set the remaining module uses for a specific turret."""
+        module_uses = self._config.setdefault("module_uses_remaining", {})
+        ship_uses = module_uses.setdefault(ship_id, [0] * max(turret_index + 1, 3))
+        while len(ship_uses) <= turret_index:
+            ship_uses.append(0)
+        ship_uses[turret_index] = value
+        _save_config(self._config)
+        self._update_consumables_display()
+
+    def _on_replenish_gadgets(self) -> None:
+        """Open a popup to replenish gadget quantities."""
+        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_TranslucentBackground)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+
+        outer = QVBoxLayout(popup)
+        outer.setContentsMargins(1, 1, 1, 1)
+
+        frame = QFrame(popup)
+        frame.setStyleSheet(
+            f"QFrame {{ background: {P.bg_card}; border: 1px solid {ACCENT}; "
+            f"border-radius: 4px; }}"
+        )
+        fl = QVBoxLayout(frame)
+        fl.setContentsMargins(10, 10, 10, 10)
+        fl.setSpacing(6)
+
+        hdr = QWidget(frame)
+        hdr_l = QHBoxLayout(hdr)
+        hdr_l.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Replenish Gadgets", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas; font-size: 10pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent;"
+        )
+        hdr_l.addWidget(title)
+        hdr_l.addStretch(1)
+        refresh_btn = QPushButton("Refresh All", hdr)
+        refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.setStyleSheet(
+            f"QPushButton {{ font-family: Consolas; font-size: 8pt; font-weight: bold; "
+            f"color: {ACCENT}; background: transparent; border: 1px solid {ACCENT}; "
+            f"border-radius: 3px; padding: 3px 8px; }}"
+        )
+        refresh_btn.clicked.connect(lambda: self._replenish_all_gadgets(popup))
+        hdr_l.addWidget(refresh_btn)
+        fl.addWidget(hdr)
+
+        _spin_style = (
+            f"QSpinBox {{ font-family: Consolas; font-size: 8pt; color: {P.fg}; "
+            f"background: {P.bg_card}; border: 1px solid {P.border}; border-radius: 3px; }}"
+            f"QSpinBox::up-button, QSpinBox::down-button {{ width: 14px; border: none; "
+            f"background: {P.bg_secondary}; }}"
+            f"QSpinBox::up-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-bottom: 4px solid {ACCENT}; }}"
+            f"QSpinBox::down-arrow {{ border-left: 3px solid transparent; "
+            f"border-right: 3px solid transparent; border-top: 4px solid {ACCENT}; }}"
+        )
+
+        quantities = self._config.get("gadget_quantities", {})
+        gadgets_db = get_gadget_list()
+
+        for name in sorted(gadgets_db.keys()):
+            row = QWidget(frame)
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(0, 0, 0, 0)
+            rl.setSpacing(6)
+
+            lbl = QLabel(name, row)
+            lbl.setFixedWidth(100)
+            lbl.setStyleSheet(
+                f"font-family: Consolas; font-size: 8pt; color: {P.fg}; "
+                f"background: transparent;"
+            )
+            rl.addWidget(lbl)
+
+            spin = QSpinBox(row)
+            spin.setRange(0, 99)
+            spin.setValue(quantities.get(name, 0))
+            spin.setFixedWidth(60)
+            spin.setStyleSheet(_spin_style)
+            spin.valueChanged.connect(
+                lambda val, n=name: self._on_gadget_qty_changed(n, val)
+            )
+            rl.addWidget(spin)
+            rl.addStretch(1)
+            fl.addWidget(row)
+
+        outer.addWidget(frame)
+        pos = self._btn_replenish_gadgets.mapToGlobal(
+            self._btn_replenish_gadgets.rect().bottomLeft()
+        )
+        popup.adjustSize()
+        popup.move(pos)
+        popup.show()
+
+    def _replenish_all_gadgets(self, popup: QWidget | None = None) -> None:
+        """Reset all gadget quantities to their max (99)."""
+        gadgets_db = get_gadget_list()
+        quantities = self._config.setdefault("gadget_quantities", {})
+        for name in gadgets_db:
+            quantities[name] = max(quantities.get(name, 0), 10)  # default refill to 10
+        _save_config(self._config)
+        self._refresh_gadget_spinboxes()
+        self._update_consumables_display()
+        if popup:
+            popup.close()
+
+    def _on_show_substitute(self) -> None:
+        """Open a draggable popup showing which fleet ships can substitute."""
+        mass, resistance = self._get_mass_resistance()
+        if mass is None or resistance is None:
+            return
+
+        configs = self.active_laser_configs()
+        if not configs or not self._fleet_snapshots:
+            return
+
+        user_ship_id = self._fleet_snapshots[0].source_path
+        gadgets, always_best = self._build_gadget_infos()
+        fleet_result = fleet_breakability(
+            mass, resistance, configs, user_ship_id,
+            available_gadgets=gadgets, always_use_best_gadget=always_best,
+        )
+
+        if fleet_result.user_can_solo:
+            return  # no substitution needed
+
+        # Build a draggable popup
+        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup._drag_pos = None
+
+        def _mp(event):
+            if event.button() == Qt.LeftButton:
+                popup._drag_pos = event.globalPosition().toPoint() - popup.frameGeometry().topLeft()
+
+        def _mm(event):
+            if popup._drag_pos and event.buttons() & Qt.LeftButton:
+                popup.move(event.globalPosition().toPoint() - popup._drag_pos)
+
+        popup.mousePressEvent = _mp
+        popup.mouseMoveEvent = _mm
+
+        popup.setFixedWidth(360)
+        outer = QVBoxLayout(popup)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        frame = QFrame(popup)
+        frame.setObjectName("sub_frame")
+        frame.setStyleSheet(
+            f"QFrame#sub_frame {{ background: {P.bg_card}; "
+            f"border: 1px solid #ff4444; border-radius: 4px; }}"
+        )
+        fl = QVBoxLayout(frame)
+        fl.setContentsMargins(12, 12, 12, 12)
+        fl.setSpacing(6)
+
+        _ns = f"background: transparent; border: none;"
+
+        # Header + close
+        hdr = QWidget(frame)
+        hl = QHBoxLayout(hdr)
+        hl.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Substitute Ships Needed", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas; font-size: 10pt; "
+            f"font-weight: bold; color: #ff4444; {_ns}"
+        )
+        hl.addWidget(title)
+        hl.addStretch(1)
+        close_btn = QPushButton("\u2716", hdr)
+        close_btn.setFixedSize(32, 28)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setStyleSheet(_CLOSE_BTN_STYLE)
+        close_btn.clicked.connect(popup.close)
+        hl.addWidget(close_btn)
+        fl.addWidget(hdr)
+
+        # Rock info
+        rock_lbl = QLabel(f"Mass: {mass:,.0f} kg  |  Resistance: {resistance:.0f}%", frame)
+        rock_lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {P.fg}; {_ns}")
+        fl.addWidget(rock_lbl)
+
+        deficit = fleet_result.solo_result.missing_power if fleet_result.solo_result else 0
+        def_lbl = QLabel(f"Your ship: +{deficit:,.0f} MW short", frame)
+        def_lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: #ff4444; {_ns}")
+        fl.addWidget(def_lbl)
+
+        # Least Players option
+        if fleet_result.least_players:
+            sep1 = QLabel(f"--- Least Players ({fleet_result.least_players_count}) ---", frame)
+            sep1.setStyleSheet(f"font-family: Consolas; font-size: 8pt; font-weight: bold; color: {ACCENT}; {_ns} padding-top: 6px;")
+            fl.addWidget(sep1)
+            for name in fleet_result.least_players_ships:
+                lbl = QLabel(f"  {name}", frame)
+                lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {P.fg_dim}; {_ns}")
+                fl.addWidget(lbl)
+            pct_lbl = QLabel(f"  Power: {fleet_result.least_players.percentage:.0f}%", frame)
+            pct_lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {ACCENT}; {_ns}")
+            fl.addWidget(pct_lbl)
+
+        # Least Ships option
+        if fleet_result.least_ships:
+            sep2 = QLabel(f"--- Least Ships ({fleet_result.least_ships_count}) ---", frame)
+            sep2.setStyleSheet(f"font-family: Consolas; font-size: 8pt; font-weight: bold; color: {ACCENT}; {_ns} padding-top: 6px;")
+            fl.addWidget(sep2)
+            for name in fleet_result.least_ships_names:
+                lbl = QLabel(f"  {name}", frame)
+                lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {P.fg_dim}; {_ns}")
+                fl.addWidget(lbl)
+            pct_lbl = QLabel(f"  Power: {fleet_result.least_ships.percentage:.0f}%", frame)
+            pct_lbl.setStyleSheet(f"font-family: Consolas; font-size: 8pt; color: {ACCENT}; {_ns}")
+            fl.addWidget(pct_lbl)
+
+        outer.addWidget(frame)
+        popup.adjustSize()
+        popup.move(self.mapToGlobal(self.rect().center()) - popup.rect().center())
+        popup.show()
+
+    def _on_show_consumables_detail(self) -> None:
+        """Open a persistent, draggable popup with full consumable breakdown."""
+        # Close existing if open
+        if hasattr(self, "_consumables_popup") and self._consumables_popup:
+            try:
+                self._consumables_popup.close()
+            except RuntimeError:
+                pass
+
+        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
+        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup.destroyed.connect(lambda: setattr(self, "_consumables_popup", None))
+        self._consumables_popup = popup
+
+        # Make draggable
+        popup._drag_pos = None
+
+        def _mouse_press(event):
+            if event.button() == Qt.LeftButton:
+                popup._drag_pos = event.globalPosition().toPoint() - popup.frameGeometry().topLeft()
+
+        def _mouse_move(event):
+            if popup._drag_pos and event.buttons() & Qt.LeftButton:
+                popup.move(event.globalPosition().toPoint() - popup._drag_pos)
+
+        popup.mousePressEvent = _mouse_press
+        popup.mouseMoveEvent = _mouse_move
+
+        popup.setFixedWidth(320)
+
+        # Use a QFrame as the visual container so the border only applies
+        # to the outer frame, not every child widget.
+        outer_layout = QVBoxLayout(popup)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        frame = QFrame(popup)
+        frame.setStyleSheet(
+            f"QFrame#consumables_frame {{ background: {P.bg_card}; "
+            f"border: 1px solid {ACCENT}; border-radius: 4px; }}"
+        )
+        frame.setObjectName("consumables_frame")
+        outer_layout.addWidget(frame)
+
+        main_layout = QVBoxLayout(frame)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(4)
+
+        # Header + close
+        hdr = QWidget(frame)
+        hdr_l = QHBoxLayout(hdr)
+        hdr_l.setContentsMargins(0, 0, 0, 0)
+        title = QLabel("Fleet Consumables", hdr)
+        title.setStyleSheet(
+            f"font-family: Electrolize, Consolas; font-size: 10pt; "
+            f"font-weight: bold; color: {ACCENT}; background: transparent; border: none;"
+        )
+        hdr_l.addWidget(title)
+        hdr_l.addStretch(1)
+        close_btn = QPushButton("\u2716", hdr)
+        close_btn.setFixedSize(32, 28)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setStyleSheet(_CLOSE_BTN_STYLE)
+        close_btn.clicked.connect(popup.close)
+        hdr_l.addWidget(close_btn)
+        main_layout.addWidget(hdr)
+
+        _item_style = (
+            f"font-family: Consolas; font-size: 8pt; background: transparent; border: none;"
+        )
+
+        # Gadgets section (yellow/orange color to distinguish from modules)
+        quantities = self._config.get("gadget_quantities", {})
+        has_gadgets = any(v > 0 for v in quantities.values())
+        if has_gadgets:
+            g_hdr = QLabel("Gadgets", frame)
+            g_hdr.setStyleSheet(
+                f"font-family: Consolas; font-size: 9pt; font-weight: bold; "
+                f"color: #ffc107; background: transparent; border: none; padding-top: 4px;"
+            )
+            main_layout.addWidget(g_hdr)
+            for name, qty in sorted(quantities.items()):
+                if qty > 0:
+                    lbl = QLabel(f"  {name}: {qty}", frame)
+                    lbl.setStyleSheet(f"{_item_style} color: #ffc107;")
+                    main_layout.addWidget(lbl)
+
+        # Modules section per ship
+        module_uses = self._config.get("module_uses_remaining", {})
+        configs = self.active_laser_configs()
+        ships_seen: set[str] = set()
+        for c in configs:
+            if not c.ship_id or c.active_module_uses == 0:
+                continue
+            if c.ship_id not in ships_seen:
+                ships_seen.add(c.ship_id)
+                s_hdr = QLabel(c.ship_display, frame)
+                s_hdr.setStyleSheet(
+                    f"font-family: Consolas; font-size: 9pt; font-weight: bold; "
+                    f"color: {ACCENT}; background: transparent; border: none; padding-top: 4px;"
+                )
+                main_layout.addWidget(s_hdr)
+
+            color = ACCENT if c.active_uses_remaining > 0 else "#ff4444"
+            turret_label = f"T{c.turret_index+1}"
+            if c.active_module_names:
+                turret_label += f": {c.active_module_names}"
+            lbl = QLabel(
+                f"  {turret_label} ({c.active_uses_remaining}/{c.active_module_uses} uses)",
+                frame,
+            )
+            lbl.setStyleSheet(f"{_item_style} color: {color};")
+            main_layout.addWidget(lbl)
+
+        main_layout.addStretch(1)
+        popup.adjustSize()
+        popup.move(
+            self.mapToGlobal(self.rect().center())
+            - popup.rect().center()
+        )
+        popup.show()
+
+    @Slot()
+    def _dismiss_scanning(self) -> None:
+        """Hide the 'Scanning' placeholder if it's showing.
+
+        MUST be decorated with @Slot() because the signature-scanner
+        worker thread invokes this via ``QMetaObject.invokeMethod(
+        self, "_dismiss_scanning", Qt.QueuedConnection)`` (see
+        ``ui/app.py`` around line 4467).  Without the decorator
+        PyQt's meta-object introspection doesn't expose the method
+        as invokable from cross-thread queued connections and Qt
+        logs ``QMetaObject::invokeMethod: No such method
+        MiningSignalsApp::_dismiss_scanning()`` every time the
+        signature scanner tries to clear its "Scanning..." placeholder
+        bubble.  The visible symptom: the bubble stays on screen
+        and the user thinks the scanner is hung / produces no
+        results, even though the OCR pipeline ran fine downstream.
+        Observed hundreds of times in the v2.2.12 user log
+        (mining_signals (3).log).
+        """
+        if self._scan_bubble.isVisible() and not self._scan_bubble._matches:
+            self._scan_bubble.hide()
+
+    @Slot()
+    def _on_signal_no_value(self) -> None:
+        """Handle a signal scan that ran but returned no usable value.
+
+        When the signature scanner UI disappears from screen but the
+        anchor's hysteresis keeps ``sig_present=True``, the OCR
+        produces no integer to match — so ``_on_scan_result`` never
+        fires and the matches the bubble was last showing stay frozen
+        indefinitely. Track a no-value streak parallel to the
+        no-match streak; once we've seen ``_NO_VALUE_TOLERANCE``
+        consecutive None reads, treat that as "the signature panel
+        is gone" and tear down the bubble.
+
+        Only counts when the bubble currently has a SignalMatch — we
+        don't care about no-value reads when nothing was being
+        displayed anyway. Resets on the next successful match (in
+        ``_on_scan_result``) so brief no-value blips during real
+        scanning don't accumulate.
+        """
+        # Don't count if no match was being displayed.
+        if not self._scan_bubble._matches:
+            return
+        first = self._scan_bubble._matches[0]
+        # Only real SignalMatch instances count — skip the HUD
+        # placeholder sentinel.
+        if not (hasattr(first, "name") and hasattr(first, "rarity")):
+            return
+        _NO_VALUE_TOLERANCE = 3
+        self._signal_no_value_streak = (
+            getattr(self, "_signal_no_value_streak", 0) + 1
+        )
+        if self._signal_no_value_streak >= _NO_VALUE_TOLERANCE:
+            log.info(
+                "scan bubble: clearing matches after %d no-value reads "
+                "(signature panel gone)",
+                self._signal_no_value_streak,
+            )
+            self._inline_result.setText("")
+            self._scan_bubble._matches = []
+            self._scan_bubble.hide()
+            self._maybe_show_scanning()
+            self._signal_no_value_streak = 0
+
+    @Slot()
+    def _show_hud_readings_in_bubble(self) -> None:
+        """Repaint the scan bubble with the live HUD readings.
+
+        Runs on the UI thread (queued from the OCR worker). When the
+        signal scanner isn't matching but the HUD scanner IS, the
+        scan bubble would otherwise sit on "Scanning Please Wait"
+        forever. Filling it with live readings makes the OCR work
+        visible regardless of fleet/loadout configuration.
+        """
+        if self._scan_timer is None:
+            return  # not scanning
+        # Don't overwrite a real signal match. SignalMatch has .name
+        # and .rarity; our HUD-readings placeholder sentinel doesn't.
+        if self._scan_bubble._matches:
+            first = self._scan_bubble._matches[0]
+            if hasattr(first, "name") and hasattr(first, "rarity"):
+                return
+        # Compute anchor (same logic as _maybe_show_scanning)
+        bubble_pos = self._config.get("bubble_position")
+        if bubble_pos:
+            ax, ay = int(bubble_pos["x"]), int(bubble_pos["y"])
+        else:
+            region = (self._config.get("ocr_region") or {})
+            ax = int(region.get("x", 500)) + int(region.get("w", 200)) + 10
+            ay = int(region.get("y", 400))
+        self._scan_bubble.show_hud_readings(
+            mineral=self._last_hud_mineral,
+            mass=self._last_hud_mass,
+            resistance=self._last_hud_resistance,
+            instability=self._last_hud_instability,
+            anchor_x=ax,
+            anchor_y=ay,
+        )
+
+    @Slot(str)
+    def _apply_gate_state(self, state: str) -> None:
+        """Reflect anchor-gate state in the inline status label.
+
+        Called from the worker thread via ``QMetaObject.invokeMethod``
+        each tick after the gate decides which scanner to dispatch.
+        Only the ``armed`` and ``active_hud`` paths set text here —
+        ``active_signature`` results flow through ``_on_scan_result``
+        which writes a richer match string to the same label.
+        """
+        # Race guard: a worker thread queues this slot before the
+        # user clicks Stop; by the time it runs we may no longer be
+        # scanning, in which case the toggle's else branch has already
+        # cleared the label and we mustn't overwrite it.
+        if self._scan_timer is None:
+            return
+
+        # ── Clear stale per-scanner state for whichever scanner is
+        # NOT active this tick. Without this:
+        # • A leftover ``_scan_bubble._matches`` list keeps
+        #   ``_maybe_show_scanning`` from re-showing the placeholder
+        #   when the user looks away from a signal panel — the bubble
+        #   silently disappears with nothing taking its place.
+        # • Cached ``_last_hud_*`` values keep the break bubble
+        #   visible after the SCAN RESULTS panel is gone, so the user
+        #   stares at stale rock data while looking at empty space.
+        # The gate's whole point is "show only what's being scanned
+        # right now"; that requires actively tearing down the other
+        # side's UI, not just refusing to update it.
+        # ``active_both`` means BOTH the signal AND HUD scanners are
+        # firing this tick — preserve both sides' state.
+        _sig_active = state in ("active_signature", "active_both")
+        _hud_active = state in ("active_hud", "active_both")
+
+        # Only run the per-side teardown when the state actually
+        # CHANGED since last tick. The cleanup logic below
+        # unconditionally calls ``self._scan_bubble.hide()`` and sets
+        # ``self._scan_bubble._matches = []`` which, when fired on
+        # every tick, races with the bubble's own show paths and
+        # produces visible flicker as the widget transitions
+        # hidden/shown rapidly. The intent of the cleanup is to
+        # tear down the OTHER side's UI when the gate switches —
+        # that's a transition event, not a per-tick event.
+        _prev_state = getattr(self, "_prev_gate_state", None)
+        _state_changed = state != _prev_state
+        self._prev_gate_state = state
+
+        if _state_changed and not _sig_active:
+            self._scan_bubble._matches = []
+            if _hud_active:
+                # HUD bubble is taking the screen; hide the scan
+                # bubble outright so it doesn't sit behind the break
+                # bubble. In ``armed`` we leave it for
+                # ``_maybe_show_scanning`` to repurpose as the
+                # placeholder a moment later.
+                self._scan_bubble.hide()
+        if _state_changed and not _hud_active:
+            self._last_hud_mass = None
+            self._last_hud_resistance = None
+            self._last_hud_instability = None
+            self._last_hud_mineral = None
+            self._prev_hud_mass = None
+            self._prev_hud_resistance = None
+            self._hud_mass_window.clear()
+            self._hud_resistance_window.clear()
+            self._hud_instability_window.clear()
+            self._hud_mineral_window.clear()
+            self._break_bubble.hide()
+
+        if state == "armed":
+            self._inline_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 11pt; font-weight: bold;
+                color: {P.fg_dim}; background: transparent;
+                padding: 0 6px;
+            """)
+            self._inline_result.setText("Watching…")
+        elif state in ("active_hud", "active_both"):
+            self._inline_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 11pt; font-weight: bold;
+                color: {ACCENT}; background: transparent;
+                padding: 0 6px;
+            """)
+            # Show the live HUD readings inline when we have them —
+            # without a fleet/loadout the break bubble doesn't render,
+            # so this label is the only visible sign that OCR is
+            # actually working. Format mirrors how the panel renders:
+            # mass as integer, resistance as int %, instability as 2dp.
+            parts: list[str] = []
+            if self._last_hud_mass is not None:
+                parts.append(f"M={self._last_hud_mass:.0f}")
+            if self._last_hud_resistance is not None:
+                parts.append(f"R={self._last_hud_resistance:.0f}%")
+            if self._last_hud_instability is not None:
+                parts.append(f"I={self._last_hud_instability:.2f}")
+            if parts:
+                self._inline_result.setText(
+                    "Reading SCAN RESULTS — " + " · ".join(parts)
+                )
+            else:
+                self._inline_result.setText("Reading SCAN RESULTS")
+            # Also populate the mass/resistance text inputs so the
+            # breakability calc has values to chew on. Same logic as
+            # ``_on_scan_result`` — HUD OCR has priority over manual
+            # input in ``_get_mass_resistance``.
+            if self._last_hud_mass is not None:
+                _v = f"{self._last_hud_mass:.0f}"
+                if self._mass_input.text().strip() != _v:
+                    self._mass_input.setText(_v)
+                    self._auto_mass = _v
+            if self._last_hud_resistance is not None:
+                _v = f"{self._last_hud_resistance:.0f}"
+                if self._resistance_input.text().strip() != _v:
+                    self._resistance_input.setText(_v)
+                    self._auto_resistance = _v
+        elif state == "active_signature":
+            # Restore accent color for the upcoming match text written
+            # by ``_on_scan_result``. Don't overwrite any existing text
+            # — a previous tick's match should keep showing until the
+            # new value resolves.
+            self._inline_result.setStyleSheet(f"""
+                font-family: Electrolize, Consolas, monospace;
+                font-size: 11pt; font-weight: bold;
+                color: {ACCENT}; background: transparent;
+                padding: 0 6px;
+            """)
+
+    @Slot()
+    def _maybe_show_scanning(self) -> None:
+        """Re-show the 'Scanning' bubble if we're in scan mode and have no results."""
+        if self._scan_timer is None:
+            return  # not scanning
+        # Only show if no signal match and no HUD data are currently displayed
+        if self._scan_bubble._matches:
+            return  # signal bubble is showing a result
+        if self._break_bubble.isVisible():
+            return  # break bubble is showing
+        # HUD is actively reading — even if the break bubble can't
+        # render (no loadout / no fleet configured), the user is
+        # getting OCR results, so don't claim we're "Scanning Please
+        # Wait". Suppresses the misleading placeholder for users who
+        # only use the HUD scanner without the breakability calc.
+        if (
+            self._last_hud_mass is not None
+            or self._last_hud_resistance is not None
+            or self._last_hud_instability is not None
+        ):
+            return
+        # Re-show the scanning placeholder
+        bubble_pos = self._config.get("bubble_position")
+        if bubble_pos:
+            self._scan_bubble.show_scanning(bubble_pos["x"], bubble_pos["y"])
+        else:
+            region = (self._config.get("ocr_region") or {})
+            self._scan_bubble.show_scanning(
+                region.get("x", 500) + region.get("w", 200) + 10,
+                region.get("y", 400),
+            )
+
+    def _get_mass_resistance(self) -> tuple[float | None, float | None]:
+        """Get mass/resistance for breakability display.
+
+        Priority (HUD OCR wins over stale manual input):
+        1. Live HUD OCR values (``_last_hud_mass`` / ``_last_hud_resistance``)
+           — these reflect the current rock being scanned, so they
+           take precedence whenever the scan pipeline has a result.
+        2. Manual input text fields — only consulted when the HUD
+           OCR has nothing for that field (panel not visible, or
+           OCR couldn't converge on the current frame).
+
+        Previously the priority was reversed (manual first) and
+        stale typed values silently overrode live OCR reads — a
+        confusing UX trap where the bubble would freeze on whatever
+        the user typed last, even though new rocks were being
+        scanned successfully. Swapped so fresh OCR data always wins.
+        """
+        mass = self._last_hud_mass
+        resistance = self._last_hud_resistance
+
+        # Fallback to manual inputs when the corresponding HUD OCR
+        # value is unavailable AND the input was actually typed by the
+        # user. Auto-populated input text (mirrored from HUD reads via
+        # ``_apply_gate_state``) is NOT a fallback — when HUD decays
+        # to None the auto value should decay too, otherwise the
+        # bubble would persist indefinitely on stale data even after
+        # the user moved off the rock. ``_auto_mass`` /
+        # ``_auto_resistance`` track the value we last auto-wrote;
+        # if the input still equals that, treat it as ghost data.
+        if mass is None:
+            try:
+                mt = self._mass_input.text().strip()
+                if mt and mt != getattr(self, "_auto_mass", ""):
+                    mass = float(mt)
+            except (ValueError, AttributeError):
+                pass
+        if resistance is None:
+            try:
+                rt = self._resistance_input.text().strip()
+                if rt and rt != getattr(self, "_auto_resistance", ""):
+                    resistance = float(rt)
+            except (ValueError, AttributeError):
+                pass
+
+        return mass, resistance
+
+    def _sync_table_min_width(self) -> None:
+        """Force the signal table to be at least as wide as the sum of
+        its (content-sized) columns so the break panel next to it
+        can't squeeze the columns behind a horizontal scrollbar.
+
+        Called after every ``set_data`` since column widths change
+        when the row contents change (longer resource names, etc.).
+        """
+        table = getattr(self, "_table", None)
+        if table is None:
+            return
+        header = table.horizontalHeader()
+        total = sum(header.sectionSize(i) for i in range(header.count()))
+        # Room for the vertical scroll bar + a small frame margin.
+        total += 20
+        if total > 0:
+            table.setMinimumWidth(total)
+
+    def _refresh_break_panel(self) -> None:
+        """Push the current rock + loadout state into the side panel.
+
+        Safe to call from any point: input change, HUD OCR, ship
+        swap, calc-mode toggle, etc.  No-ops silently if the panel
+        was never built (e.g. early shutdown).
+        """
+        panel = getattr(self, "_break_panel", None)
+        if panel is None:
+            return
+
+        mass, resistance = self._get_mass_resistance()
+        instability = self._last_hud_instability
+        ship_label = self._active_ship_label()
+        mineral = getattr(self, "_last_hud_mineral", None)
+
+        configs = self.active_laser_configs()
+        if not configs:
+            panel.update_state(
+                mass=mass, resistance=resistance, instability=instability,
+                ship_label=ship_label, result=None, no_ship=True,
+                mineral=mineral,
+            )
+            return
+
+        if mass is None or resistance is None:
+            panel.update_state(
+                mass=mass, resistance=resistance, instability=instability,
+                ship_label=ship_label, result=None,
+                mineral=mineral,
+            )
+            return
+
+        try:
+            result = self._run_breakability(mass, resistance, configs)
+        except Exception:  # pragma: no cover — compute should not raise
+            result = None
+        panel.update_state(
+            mass=mass, resistance=resistance, instability=instability,
+            ship_label=ship_label, result=result,
+            mineral=mineral,
+        )
+
+    def _active_ship_label(self) -> str:
+        """Return a short human-readable description of the active ship."""
+        active = self._config.get("active_ship")
+        if active == "fleet":
+            n = len(self._fleet_snapshots)
+            return f"Fleet — {n} ship{'s' if n != 1 else ''}"
+        if active:
+            display = dict(SHIP_SLOTS).get(active, active.title())
+            snap = self._ship_snapshots.get(active)
+            if snap is not None:
+                try:
+                    desc = describe_snapshot(snap)
+                    if desc:
+                        return f"{display} · {desc}"
+                except Exception:
+                    pass
+            return display
+        return "— no ship —"
+
+    def _on_break_inputs_changed(self, _text: str = "") -> None:
+        """Recompute breakability when the user types mass/resistance."""
+        # Always refresh the side panel alongside the inline result label.
+        self._refresh_break_panel()
+        text = self._format_breakability()
+        if text:
+            cannot = "CANNOT" in text or "UNBREAKABLE" in text
+            color = "#ff4444" if cannot else ACCENT
+            self._break_result.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 9pt; "
+                f"font-weight: bold; color: {color}; background: transparent; "
+                f"padding: 0 8px;"
+            )
+            self._break_result.setText(text)
+
+            # Show Substitute button in fleet mode when the USER's ship
+            # can't solo but the fleet has alternatives
+            show_sub = False
+            if self._config.get("active_ship") == "fleet" and self._fleet_snapshots:
+                mass, resistance = self._get_mass_resistance()
+                if mass is not None and resistance is not None:
+                    user_id = self._fleet_snapshots[0].source_path
+                    configs = self.active_laser_configs()
+                    user_configs = [c for c in configs if c.ship_id == user_id]
+                    if user_configs:
+                        gadgets, always_best = self._build_gadget_infos()
+                        solo = compute_with_gadgets(
+                            mass, resistance, user_configs, gadgets, always_best,
+                        )
+                        show_sub = solo.insufficient and not cannot
+            self._btn_substitute.setVisible(show_sub)
+        else:
+            self._break_result.setStyleSheet(
+                f"font-family: Consolas, monospace; font-size: 9pt; "
+                f"font-weight: bold; color: {P.fg_dim}; background: transparent; "
+                f"padding: 0 8px;"
+            )
+            self._break_result.setText("")
+            self._btn_substitute.setVisible(False)
+
+    def _format_breakability(self) -> str | None:
+        """Compute breakability from current inputs/HUD and return text."""
+        mass, resistance = self._get_mass_resistance()
+        if mass is None or resistance is None:
+            return None
+
+        configs = self.active_laser_configs()
+        if not configs:
+            return "Select a mining ship first"
+
+        result = self._run_breakability(mass, resistance, configs)
+
+        if result.unbreakable:
+            return "UNBREAKABLE at this resistance"
+
+        parts: list[str] = []
+        if result.insufficient:
+            parts.append(f"CANNOT BREAK (+{result.missing_power:,.0f} MW needed)")
+        else:
+            lasers_str = ", ".join(result.used_lasers)
+            parts.append(f"{result.percentage:.0f}% power ({lasers_str})")
+
+        if result.active_modules_needed > 0:
+            parts.append(f"Activate modules ({result.active_modules_needed}x)")
+        if result.gadget_used:
+            parts.append(f"Use {result.gadget_used}")
+
+        return " | ".join(parts)
+
+    def _find_row_by_name(self, name: str) -> dict | None:
+        """Return the table-data row for *name*, or None."""
+        for row in self._all_table_data:
+            if row.get("name") == name:
+                return row
+        return None
+
+    def _teardown(self) -> None:
+        """Idempotent shutdown — runs from closeEvent OR aboutToQuit.
+
+        Either path may fire first depending on how the app is being
+        destroyed (window close vs taskbar end-task vs QApplication.quit).
+        The _torn_down flag ensures we only run cleanup once.
+        """
+        if self._torn_down:
+            return
+        self._torn_down = True
+        # Flush any pending debounced ledger save before tearing down
+        # timers, otherwise edits made within the 500ms debounce window
+        # are lost when the user quits quickly after editing.
+        try:
+            if hasattr(self, "_ledger_tab"):
+                self._ledger_tab.flush_pending_save()
+        except Exception as exc:
+            log.debug("ledger flush on close failed: %s", exc)
+        if self._scan_timer:
+            self._scan_timer.stop()
+        if self._refinery_monitor is not None:
+            self._refinery_monitor.stop()
+        if self._refinery_scan_timer is not None:
+            self._refinery_scan_timer.stop()
+        if self._refinery_countdown_timer is not None:
+            self._refinery_countdown_timer.stop()
+        self._scan_bubble.hide()
+        self._break_bubble.hide()
+        chart_bubble.close_singleton()
+        # Terminate the PaddleOCR sidecar daemon if it was started
+        # during this session. Lazy import keeps the dark-only path
+        # from paying any module-load cost.
+        try:
+            from ocr import paddle_client
+            paddle_client.shutdown()
+        except Exception:
+            pass
+
+    def closeEvent(self, event) -> None:
+        self._teardown()
+        super().closeEvent(event)
+
+
+# ---------------------------------------------------------------------------
+# Entry-point helper
+# ---------------------------------------------------------------------------
+
+def _check_onnxruntime_at_startup(log) -> None:
+    """Surface a user-friendly dialog (instead of silent voter failure)
+    when onnxruntime can't load -- almost always means missing or
+    incompatible Visual C++ Redistributable. Without this, the scanner
+    silently degrades and the user sees only "scan returns nothing"
+    with no explanation. v2.2.11's icon_voter logging tells us WHY in
+    the log; this dialog tells the USER what to do about it."""
+    try:
+        import onnxruntime as ort  # type: ignore
+        # Bare import isn't always enough -- the native DLLs sometimes
+        # only get touched when a provider is enumerated. Force it.
+        _ = ort.get_available_providers()
+    except Exception as exc:
+        log.error(
+            "onnxruntime failed to load at startup (%s: %s) -- "
+            "Mining Signals scanner will be unavailable. Most likely "
+            "cause: missing or outdated Visual C++ Redistributable.",
+            type(exc).__name__, exc,
+        )
+        try:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                None,
+                "Mining Signals — missing dependency",
+                "The Mining Signals OCR engine can't start because the "
+                "Microsoft Visual C++ Runtime is missing or incompatible.\n\n"
+                f"Underlying error:\n  {type(exc).__name__}: {exc}\n\n"
+                "Fix: install the Microsoft Visual C++ Redistributable "
+                "(VS 2015-2022, x64) from:\n"
+                "https://aka.ms/vs/17/release/vc_redist.x64.exe\n\n"
+                "After installing it, restart SC Toolbox.\n\n"
+                "(SC Toolbox will keep running -- non-scanner features still "
+                "work -- but mining-signal OCR will be unavailable until "
+                "this is fixed.)",
+            )
+        except Exception:
+            pass  # Qt unavailable too -- error already logged above
+
+
+def main() -> None:
+    """Launch Mining Signals from the command line."""
+    from shared.crash_logger import init_crash_logging
+    log = init_crash_logging("mining_signals")
+    try:
+        set_dpi_awareness()
+
+        parsed = parse_cli_args(sys.argv[1:], {"w": 980, "h": 960})
+
+        app = QApplication(sys.argv)
+        apply_theme(app)
+
+        # Sanity-check onnxruntime BEFORE creating any scanner threads,
+        # so users with missing VC++ Runtime see a clear dialog instead
+        # of silent scanner failure. See _check_onnxruntime_at_startup
+        # for the failure mode this addresses (the v2.2.10 user crash
+        # where both CNN voters reported "unavailable").
+        _check_onnxruntime_at_startup(log)
+
+        window = MiningSignalsApp(
+            x=parsed["x"],
+            y=parsed["y"],
+            w=parsed["w"],
+            h=parsed["h"],
+            opacity=parsed["opacity"],
+            cmd_file=parsed["cmd_file"],
+        )
+        window.show()
+        window.raise_()
+        window.activateWindow()
+        sys.exit(app.exec())
+    except Exception:
+        log.critical("FATAL crash in mining_signals main()", exc_info=True)
+        sys.exit(1)

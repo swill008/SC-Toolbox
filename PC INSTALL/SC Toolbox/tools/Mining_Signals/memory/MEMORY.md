@@ -1,0 +1,1 @@
+- [Training pipeline is manual hand-labelling](project_training_pipeline.md) — dataset built via dual_capture + label/review/prune scripts, NOT the YouTube harvester
