@@ -310,7 +310,7 @@ def _resize_template(template: np.ndarray, scale: float) -> np.ndarray:
 
 
 # Per-image cache key shape:
-#   (id(img), size, mode, search_centers_key, search_radius)
+#   (id(img), size, mode, search_centers_key, search_radius, title_h)
 # where search_centers_key is None for full-frame calls or a
 # sorted tuple of (name, x, y) triples otherwise. Including the
 # local-search arguments in the key prevents a local-search call
@@ -322,6 +322,7 @@ _LAST_CALL_CACHE: Optional[tuple[
     str,                                                      # img.mode
     Optional[tuple[tuple[str, int, int], ...]],               # search_centers
     int,                                                      # search_radius
+    int,                                                      # title_h (0 if unused)
     dict,                                                     # result
 ]] = None
 
@@ -583,12 +584,20 @@ def find_label_positions(
     search_centers: Optional[dict] = None,
     search_radius: int = _DEFAULT_LOCAL_RADIUS,
     y_min: int = 0,
+    title_h: Optional[float] = None,
 ) -> dict[str, dict]:
     """NCC-match the three label templates against the panel image.
 
     ``y_min`` restricts the search to rows at or below that image-Y
     (e.g. "labels live below the title"). The restriction is applied
     INTERNALLY and the returned coordinates are STILL image-absolute.
+
+    ``title_h`` is the measured SCAN RESULTS title height in pixels
+    (live scale of this capture). When it is a full title (h >= 28),
+    MASS candidates whose NCC scale is within 20% of
+    ``0.8 * title_h / template_h`` are preferred over a higher-scoring
+    oversized scale (field: scale=2.00 on IRON beating scale~1.3 on
+    MASS:). If no in-band candidate exists, behaviour is unchanged.
     This replaces the old pattern where callers cropped the image
     themselves and re-added the offset at every consumer — each
     consumer was a chance for a missed or doubled conversion, and the
@@ -660,6 +669,7 @@ def find_label_positions(
             }
         _out = find_label_positions(
             _sub, search_centers=_sc_shift, search_radius=search_radius,
+            title_h=title_h,
         )
         _shifted: dict[str, dict] = {}
         for _k, _m in _out.items():
@@ -680,9 +690,13 @@ def find_label_positions(
         return _shifted
     sc_key = _normalize_search_centers(search_centers)
     sr_norm = int(search_radius)
-    cache_key = (id(img), img.size, img.mode, sc_key, sr_norm)
-    if _LAST_CALL_CACHE is not None and _LAST_CALL_CACHE[:5] == cache_key:
-        return _LAST_CALL_CACHE[5]
+    try:
+        _th_key = int(round(float(title_h))) if title_h else 0
+    except (TypeError, ValueError):
+        _th_key = 0
+    cache_key = (id(img), img.size, img.mode, sc_key, sr_norm, _th_key)
+    if _LAST_CALL_CACHE is not None and _LAST_CALL_CACHE[:6] == cache_key:
+        return _LAST_CALL_CACHE[6]
 
     templates = _load_templates()
     if not templates:
@@ -881,6 +895,45 @@ def find_label_positions(
     # The conservative gate "swap only if top-1 disagrees AND
     # alternative agrees" is the safer pattern.
     mass_candidates.sort(key=lambda c: -c["score"])
+    # Title-height scale prior: MASS template native height is
+    # ``_templates_height`` (28). On the mining HUD the MASS word is
+    # ~0.8 × SCAN RESULTS title height. Prefer NCC scales in a ±20%
+    # band around that so a scale=2.00 blob on IRON cannot beat a
+    # scale~1.3 hit on MASS:. If the band is empty, keep the full
+    # list (1080p / odd UI scale still works).
+    try:
+        _th = float(title_h) if title_h is not None else 0.0
+    except (TypeError, ValueError):
+        _th = 0.0
+    if _th >= 28 and _templates_height > 0:
+        _exp_scale = (0.8 * _th) / float(_templates_height)
+        _band = [
+            c for c in mass_candidates
+            if abs(float(c["scale"]) / _exp_scale - 1.0) <= 0.20
+        ]
+        if _band:
+            _band.sort(key=lambda c: -c["score"])
+            _ob = mass_candidates[0]
+            log.info(
+                "label_match: title_h=%.0f expected MASS scale=%.2f — "
+                "using %d in-band candidate(s) (best scale=%.2f "
+                "score=%.2f at (%d,%d)); ignoring out-of-band top-1 "
+                "scale=%.2f score=%.2f at (%d,%d)",
+                _th, _exp_scale, len(_band),
+                _band[0]["scale"], _band[0]["score"],
+                _band[0]["x"], _band[0]["y"],
+                _ob["scale"], _ob["score"], _ob["x"], _ob["y"],
+            )
+            mass_candidates = _band
+        else:
+            log.info(
+                "label_match: title_h=%.0f expected MASS scale=%.2f — "
+                "no in-band candidate; keeping unconstrained top-1 "
+                "scale=%.2f score=%.2f",
+                _th, _exp_scale,
+                mass_candidates[0]["scale"],
+                mass_candidates[0]["score"],
+            )
     _rgb_t = _load_rgb_mass_template()
     voting_used = False
     agreement = None
