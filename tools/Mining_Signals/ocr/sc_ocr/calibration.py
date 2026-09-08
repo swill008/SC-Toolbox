@@ -686,23 +686,29 @@ def get_learned_skeleton(region: dict) -> Optional[dict]:
 def teach_learned_skeleton(
     region: dict,
     *,
-    title_y: int,
-    title_h: int,
     boxes: dict,
+    capture_w: Optional[int] = None,
+    capture_h: Optional[int] = None,
+    title_y: int = 0,
+    title_h: int = 0,
 ) -> bool:
-    """Learn row multipliers from user-drawn boxes vs SCAN RESULTS.
+    """Store user-drawn boxes in HUD-region pixels.
 
-    ``boxes`` maps field name → ``{x,y,w,h}`` in HUD-region pixels.
-    Returns True when mass/resistance/instability were taught.
+    Live scans scale these by live_img / capture size (REF_H upscale).
+    Title is optional metadata only — placement does not re-anchor.
+    ``boxes`` maps field name → ``{x,y,w,h}`` in the capture that
+    was drawn on. Returns True when mass/resistance/instability exist.
     """
     try:
-        ty = int(title_y)
-        th = int(title_h)
+        ty = int(title_y or 0)
+        th = int(title_h or 0)
     except (TypeError, ValueError):
-        return False
-    if th < 8:
-        log.warning("teach_learned_skeleton: title_h=%s too small", title_h)
-        return False
+        ty, th = 0, 0
+    try:
+        cw = int(capture_w) if capture_w else int(region.get("w") or 0)
+        ch = int(capture_h) if capture_h else int(region.get("h") or 0)
+    except (TypeError, ValueError):
+        cw, ch = 0, 0
     fields: dict = {}
     for name, box in (boxes or {}).items():
         if not isinstance(box, dict):
@@ -714,13 +720,12 @@ def teach_learned_skeleton(
             continue
         if h < 4:
             continue
-        cy = y + h / 2.0
-        fields[str(name)] = {
-            "mult": round((cy - float(ty)) / float(th), 4),
-            "half_h_frac": round(max(0.15, (h / 2.0) / float(th)), 4),
-            "x": x,
-            "w": max(1, w),
-        }
+        rec = {"x": x, "y": y, "w": max(1, w), "h": h}
+        if th >= 8:
+            cy = y + h / 2.0
+            rec["mult"] = round((cy - float(ty)) / float(th), 4)
+            rec["half_h_frac"] = round(max(0.15, (h / 2.0) / float(th)), 4)
+        fields[str(name)] = rec
     if not all(f in fields for f in ("mass", "resistance", "instability")):
         log.warning(
             "teach_learned_skeleton: need mass+resistance+instability, "
@@ -734,14 +739,18 @@ def teach_learned_skeleton(
     entry[_KEY_LEARNED_SKELETON] = {
         "title_y": ty,
         "title_h": th,
+        "capture_w": cw,
+        "capture_h": ch,
         "fields": fields,
     }
     entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
     _save_all(data)
     log.info(
-        "calibration: learned_skeleton title=(y=%d,h=%d) fields=%s region=%s",
-        ty, th,
-        {k: v["mult"] for k, v in fields.items()},
+        "calibration: learned_skeleton capture=%sx%s title=(y=%d,h=%d) "
+        "fields=%s region=%s",
+        cw, ch, ty, th,
+        {k: (v.get("x"), v.get("y"), v.get("w"), v.get("h"))
+         for k, v in fields.items()},
         _region_key(region),
     )
     return True
