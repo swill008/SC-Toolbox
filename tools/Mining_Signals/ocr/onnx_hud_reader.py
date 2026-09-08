@@ -2930,6 +2930,55 @@ def _log_calibration_state(region: dict, cal_result) -> None:
         )
 
 
+def _label_rows_from_learned_skeleton(
+    region: dict,
+    img_w: int,
+    img_h: int,
+    title_box: "Optional[tuple[int, int, int, int]]",
+) -> dict[str, tuple[int, int, int]]:
+    """Place rows at ``title_y + title_h * taught_mult``.
+
+    X comes from the user's drawn boxes (same HUD region). Y tracks
+    the live SCAN RESULTS title. Returns {} if the skeleton is
+    missing or the title box is unusable.
+    """
+    if not title_box or len(title_box) < 4:
+        return {}
+    try:
+        from .sc_ocr import calibration as _cal_sk
+        sk = _cal_sk.get_learned_skeleton(region)
+    except Exception:
+        return {}
+    if not sk:
+        return {}
+    try:
+        _ty = int(title_box[1])
+        _th = int(title_box[3])
+    except (TypeError, ValueError, IndexError):
+        return {}
+    if _th < 8:
+        return {}
+    out: dict[str, tuple[int, int, int]] = {}
+    fields = sk.get("fields") or {}
+    for _field, spec in fields.items():
+        if not isinstance(spec, dict):
+            continue
+        try:
+            _mult = float(spec["mult"])
+            _hf = float(spec.get("half_h_frac") or 0.35)
+            _x = int(spec.get("x") or 0)
+        except (KeyError, TypeError, ValueError):
+            continue
+        _cy = int(round(_ty + _mult * _th))
+        _half = max(6, int(round(_hf * _th)))
+        _y1 = max(0, _cy - _half)
+        _y2 = min(img_h, _cy + _half)
+        if _y2 - _y1 < 4:
+            continue
+        out[str(_field)] = (_y1, _y2, max(0, min(img_w - 1, _x)))
+    return out
+
+
 def _build_manual_override_label_rows(
     region: dict, img_w: int, img_h: int,
 ) -> dict[str, tuple[int, int, int]]:
@@ -3335,6 +3384,62 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                 )
             except Exception:
                 pass
+
+            # ── LEARNED SKELETON / sticky override (before NCC) ──
+            # User placed Mass/Res/Inst on the zoomed HUD. If we
+            # taught multipliers, slide those rows with the live
+            # SCAN RESULTS title. Else use the drawn boxes as-is.
+            _region_sk = _get_current_region()
+            if _region_sk is not None:
+                try:
+                    from .sc_ocr import calibration as _cal_sk
+                    _sk_rows = _label_rows_from_learned_skeleton(
+                        _region_sk, img.width, img.height,
+                        _get_cached_title_box(),
+                    )
+                    if (
+                        _sk_rows
+                        and "mass" in _sk_rows
+                        and "resistance" in _sk_rows
+                    ):
+                        log.info(
+                            "hud: learned-skeleton title-track "
+                            "title=%s rows=%s — skipping NCC placement",
+                            _get_cached_title_box(),
+                            {k: v[:2] for k, v in _sk_rows.items()},
+                        )
+                        try:
+                            from .sc_ocr import debug_overlay as _dbg_sk
+                            _mn = _sk_rows.get("_mineral_row")
+                            _dbg_sk.set_panel_finder(
+                                top_y=int(_pre_anchor["title_y"]),
+                                mineral_y_top=_mn[0] if _mn else None,
+                                mineral_y_bot=_mn[1] if _mn else None,
+                                mineral_center=(
+                                    (_mn[0] + _mn[1]) // 2 if _mn else None
+                                ),
+                                pitch=int(_pre_anchor["title_h"] * 1.4),
+                                bot_line_y=None,
+                                source="learned_skeleton",
+                                title_box=_get_cached_title_box(),
+                            )
+                        except Exception:
+                            pass
+                        _emit_label_rows_overlay(_sk_rows)
+                        return _sk_rows
+                    if _cal_sk.get_manual_override_mode(_region_sk):
+                        _sticky = _build_manual_override_label_rows(
+                            _region_sk, img.width, img.height,
+                        )
+                        if _result_is_usable(_sticky):
+                            log.info(
+                                "hud: manual override sticky boxes "
+                                "(no learned skeleton) — skipping NCC"
+                            )
+                            _emit_label_rows_overlay(_sticky)
+                            return _sticky
+                except Exception as _sk_exc:
+                    log.debug("learned-skeleton path failed: %s", _sk_exc)
 
             # ── EARLY-DIRECT row finder ──
             # Run label_match against a "below the title" crop. If it
