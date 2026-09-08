@@ -1,7 +1,7 @@
 """
 SCWindow – holographic HUD-style window.
 
-Translucent dark background with glowing cyan border lines, corner brackets,
+Opaque dark background with glowing cyan border lines, corner brackets,
 and scan-line texture.  Looks like a projected MobiGlas interface floating
 over the game.
 """
@@ -173,15 +173,15 @@ _SCANLINE_ALPHA = 8    # 0-255, very subtle
 
 
 class _HoloSurface(QWidget):
-    """Paints the holographic HUD surface: translucent bg, glowing edges,
+    """Paints the holographic HUD surface: opaque bg, glowing edges,
     corner brackets, and scan-line texture."""
 
     def __init__(self, parent=None, accent: str = ""):
         super().__init__(parent)
         self._accent_hex = accent or P.accent
         self._accent = QColor(self._accent_hex)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setStyleSheet("background: transparent;")
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setStyleSheet(f"background: {P.bg_primary};")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -189,10 +189,8 @@ class _HoloSurface(QWidget):
         w, h = self.width(), self.height()
         r = self.rect()
 
-        # ── 1. Translucent dark fill ──
-        bg = QColor(P.bg_primary)
-        bg.setAlpha(210)  # ~82% opaque — game shows through slightly
-        painter.fillRect(r, bg)
+        # ── 1. Opaque dark fill ──
+        painter.fillRect(r, QColor(P.bg_primary))
 
         # ── 2. Scan lines ──
         scan_color = QColor(255, 255, 255, _SCANLINE_ALPHA)
@@ -303,11 +301,11 @@ class SCWindow(QMainWindow):
         if always_on_top:
             flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setWindowTitle(title)
         self.setMinimumSize(QSize(min_w, min_h))
         self.resize(width, height)
-        self.setWindowOpacity(max(0.3, min(1.0, opacity)))
+        self.setWindowOpacity(1.0)
 
         self._central = _HoloSurface(self, accent=accent)
         self.setCentralWidget(self._central)
@@ -347,7 +345,8 @@ class SCWindow(QMainWindow):
         super().closeEvent(event)
 
     def set_opacity(self, value: float) -> None:
-        self.setWindowOpacity(max(0.3, min(1.0, value)))
+        """No-op. Windows are fully opaque; the title-bar slider is gone."""
+        self.setWindowOpacity(1.0)
 
     def reset_layout(self) -> None:
         """Revert the window to its original default size, centred on screen."""
@@ -447,7 +446,7 @@ class SCWindow(QMainWindow):
             y = max(sg.y(), min(y, sg.bottom() - h))
         self.resize(w, h)
         self.move(x, y)
-        self.set_opacity(opacity)
+        self.setWindowOpacity(1.0)
 
     def get_geometry_dict(self, prefix: str = "") -> dict:
         pos = self.pos()
@@ -457,7 +456,7 @@ class SCWindow(QMainWindow):
             f"{prefix}y": pos.y(),
             f"{prefix}w": size.width(),
             f"{prefix}h": size.height(),
-            f"{prefix}opacity": self.windowOpacity(),
+            f"{prefix}opacity": 1.0,
         }
 
     # ── Resize handling ──
