@@ -1311,7 +1311,7 @@ def _label_rows_from_anchor(
             # y_min keeps the search below the title; coordinates come
             # back IMAGE-ABSOLUTE (label_match owns the conversion).
             matches = _lm_rows.find_label_positions(
-                img, y_min=search_origin,
+                img, y_min=search_origin, title_h=title_h,
             )
             matches = _repair_label_match_xs(img, matches)
             if matches and "mass" in matches:
@@ -3386,6 +3386,7 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                     # coordinates come back IMAGE-ABSOLUTE.
                     _cal_matches = _lm_cal.find_label_positions(
                         img, y_min=_search_origin_cal,
+                        title_h=_title_h_int,
                     )
                     _cal_matches = _repair_label_match_xs(
                         img, _cal_matches,
