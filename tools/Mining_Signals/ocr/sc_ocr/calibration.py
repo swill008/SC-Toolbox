@@ -447,6 +447,12 @@ def clear_region(region: dict) -> None:
 #                                  Used only when
 #                                  $manual_override_mode is True.
 #                                  Default {}.
+#   $learned_skeleton     : dict — title-relative row multipliers
+#                                  taught from the user's Override
+#                                  boxes + the SCAN RESULTS title.
+#                                  Live placement is
+#                                  ``row_cy = title_y + title_h * mult``.
+#                                  Default absent.
 #
 # These coexist alongside the existing per-region keys (``rows``,
 # ``saved_at``, ``image_size``, ``value_column_left``) without
@@ -456,6 +462,7 @@ def clear_region(region: dict) -> None:
 _KEY_COLUMN_X_OFFSET = "$column_x_offset"
 _KEY_MANUAL_OVERRIDE_MODE = "$manual_override_mode"
 _KEY_MANUAL_OVERRIDES = "$manual_overrides"
+_KEY_LEARNED_SKELETON = "$learned_skeleton"
 
 
 def _ensure_entry(data: dict, region: dict) -> dict:
@@ -540,6 +547,8 @@ def set_manual_override_mode(region: dict, val: bool) -> None:
     data = _copy.deepcopy(data)
     entry = _ensure_entry(data, region)
     entry[_KEY_MANUAL_OVERRIDE_MODE] = bool(val)
+    if not val:
+        entry.pop(_KEY_LEARNED_SKELETON, None)
     entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
     _save_all(data)
     log.info(
@@ -637,11 +646,105 @@ def clear_manual_overrides(region: dict) -> None:
         return
     entry.pop(_KEY_MANUAL_OVERRIDES, None)
     entry.pop(_KEY_MANUAL_OVERRIDE_MODE, None)
+    entry.pop(_KEY_LEARNED_SKELETON, None)
     entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
     _save_all(data)
     log.info(
         "calibration: cleared manual overrides region=%s", key,
     )
+
+
+
+def get_learned_skeleton(region: dict) -> Optional[dict]:
+    """Return the taught title-relative skeleton, or None.
+
+    Shape::
+        {
+            "title_h": int,
+            "title_y": int,
+            "fields": {
+                "mass": {"mult": float, "half_h_frac": float, "x": int, "w": int},
+                ...
+            },
+        }
+    Requires mass, resistance, and instability. Mineral is optional.
+    """
+    cal = load(region)
+    if not cal:
+        return None
+    sk = cal.get(_KEY_LEARNED_SKELETON)
+    if not isinstance(sk, dict):
+        return None
+    fields = sk.get("fields")
+    if not isinstance(fields, dict):
+        return None
+    if not all(f in fields for f in ("mass", "resistance", "instability")):
+        return None
+    return sk
+
+
+def teach_learned_skeleton(
+    region: dict,
+    *,
+    title_y: int,
+    title_h: int,
+    boxes: dict,
+) -> bool:
+    """Learn row multipliers from user-drawn boxes vs SCAN RESULTS.
+
+    ``boxes`` maps field name → ``{x,y,w,h}`` in HUD-region pixels.
+    Returns True when mass/resistance/instability were taught.
+    """
+    try:
+        ty = int(title_y)
+        th = int(title_h)
+    except (TypeError, ValueError):
+        return False
+    if th < 8:
+        log.warning("teach_learned_skeleton: title_h=%s too small", title_h)
+        return False
+    fields: dict = {}
+    for name, box in (boxes or {}).items():
+        if not isinstance(box, dict):
+            continue
+        try:
+            x = int(box["x"]); y = int(box["y"])
+            w = int(box["w"]); h = int(box["h"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if h < 4:
+            continue
+        cy = y + h / 2.0
+        fields[str(name)] = {
+            "mult": round((cy - float(ty)) / float(th), 4),
+            "half_h_frac": round(max(0.15, (h / 2.0) / float(th)), 4),
+            "x": x,
+            "w": max(1, w),
+        }
+    if not all(f in fields for f in ("mass", "resistance", "instability")):
+        log.warning(
+            "teach_learned_skeleton: need mass+resistance+instability, "
+            "got %s", list(fields),
+        )
+        return False
+    data = _load_all()
+    import copy as _copy
+    data = _copy.deepcopy(data)
+    entry = _ensure_entry(data, region)
+    entry[_KEY_LEARNED_SKELETON] = {
+        "title_y": ty,
+        "title_h": th,
+        "fields": fields,
+    }
+    entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
+    _save_all(data)
+    log.info(
+        "calibration: learned_skeleton title=(y=%d,h=%d) fields=%s region=%s",
+        ty, th,
+        {k: v["mult"] for k, v in fields.items()},
+        _region_key(region),
+    )
+    return True
 
 
 def to_label_rows(
