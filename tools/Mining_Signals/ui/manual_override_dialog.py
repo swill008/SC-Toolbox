@@ -316,10 +316,11 @@ class ManualOverrideDialog(QDialog):
 
         # ── Big red warning banner ──
         banner = QLabel(
-            "<b>MANUAL OVERRIDE MODE</b><br>"
-            "Auto-detection disabled. Draw a box for each field you "
-            "want OCR to read. Saving locks these positions until you "
-            "disable manual mode."
+            "<b>PLACE THE HUD SKELETON</b><br>"
+            "Draw a box on each VALUE: Mineral, Mass (the number), "
+            "Resistance (the %), Instability (the decimal). "
+            "SCAN RESULTS is detected automatically — Auto then "
+            "slides your rows with that title."
         )
         banner.setWordWrap(True)
         banner.setStyleSheet(
@@ -625,6 +626,17 @@ class ManualOverrideDialog(QDialog):
                 "exit without enabling manual override.",
             )
             return
+        missing = [
+            FIELD_LABELS[f] for f in ("mass", "resistance", "instability")
+            if f not in saved
+        ]
+        if missing:
+            QMessageBox.warning(
+                self, "Need all three value rows",
+                "Draw Mass, Resistance, and Instability before saving. "
+                "Missing: " + ", ".join(missing) + ".",
+            )
+            return
 
         try:
             calibration.set_manual_override_mode(self._region, True)
@@ -641,6 +653,34 @@ class ManualOverrideDialog(QDialog):
                 "is not active, re-open this dialog and Save again.",
             )
             return
+
+        # Teach title-relative multipliers so live scans track SCAN
+        # RESULTS instead of sticking at absolute pixels.
+        taught = False
+        if self._hud_pil is not None:
+            try:
+                from ocr.sc_ocr import scan_results_match as _srm
+                _anchor = _srm.find_scan_results_anchor(self._hud_pil)
+            except Exception as _exc:
+                log.debug("skeleton teach: title detect failed: %s", _exc)
+                _anchor = None
+            if _anchor and int(_anchor.get("title_h") or 0) >= 8:
+                try:
+                    taught = bool(calibration.teach_learned_skeleton(
+                        self._region,
+                        title_y=int(_anchor["title_y"]),
+                        title_h=int(_anchor["title_h"]),
+                        boxes=saved,
+                    ))
+                except Exception as _exc:
+                    log.warning("teach_learned_skeleton failed: %s", _exc)
+                    taught = False
+        if taught:
+            log.info("manual override: learned skeleton from title + boxes")
+        else:
+            log.info(
+                "manual override: sticky boxes only (title not taught)"
+            )
 
         self.overrides_saved.emit(saved)
         self.accept()
