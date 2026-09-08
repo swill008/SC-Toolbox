@@ -884,6 +884,7 @@ def find_label_positions(
     _rgb_t = _load_rgb_mass_template()
     voting_used = False
     agreement = None
+    gray_trusted = False
     if _rgb_t is not None:
         rgb_img = np.asarray(
             img.crop((0, 0, search_w, H)), dtype=np.float32,
@@ -935,7 +936,12 @@ def find_label_positions(
                         and float(alt["score"]) <= float(top1["score"])
                     )
                     if _refuse:
-                        agreement = False
+                        # Keep gray top-1. That is a stronger MASS lock
+                        # than an RGB peak on a lower row, so treat it
+                        # as synthesis-eligible (field: 0.649 was 0.001
+                        # under _SYNTH_MASS_FLOOR and agreement=False
+                        # blocked RES/INST geometry).
+                        gray_trusted = True
                         log.warning(
                             "label_match: MASS top-1 DISAGREES with RGB "
                             "(gray=%.2f at (%d,%d), nearest RGB %.1fpx "
@@ -978,6 +984,8 @@ def find_label_positions(
     }
     if voting_used and agreement is not None:
         best_mass["agreement"] = agreement
+    if gray_trusted:
+        best_mass["gray_trusted"] = True
     log.info(
         "label_match: MASS won at polarity=%s scale=%.2f score=%.3f pos=(%d,%d)",
         best_mass["polarity"], best_mass["scale"], best_mass["score"],
@@ -1163,6 +1171,7 @@ def find_label_positions(
             mass_confident = (
                 best_mass["score"] >= _SYNTH_MASS_FLOOR
                 or best_mass.get("agreement") is True
+                or best_mass.get("gray_trusted") is True
             )
             if mass_confident:
                 synth_y = expected_cy - h_scaled_full // 2
