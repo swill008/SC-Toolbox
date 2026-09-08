@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-"""Mining Suite — one window, two tabs (Signals + Loadout).
+"""Mining Suite — native window, two tabs (Signals + Loadout).
 
-Standalone entry for the ``stripped`` branch. Does not go through the
-toolbox skill launcher. Both tools stay in-process so OCR keeps
-running while you are on the Loadout tab.
-
-The two tools each ship a top-level ``ui`` / ``services`` package, so
-Loadout is imported behind a sys.modules snapshot and restored after
-construction.
+Standalone entry for the ``stripped`` branch. Standard OS chrome
+(Fusion dark). Not a toolbox HUD overlay.
 """
 from __future__ import annotations
 
@@ -18,7 +13,6 @@ import sys
 if os.name == "nt" and not os.environ.get("QT_MEDIA_BACKEND"):
     os.environ["QT_MEDIA_BACKEND"] = "windows"
 
-# Standalone: X on the title bar should quit, not hide-for-launcher.
 os.environ.setdefault("SC_TOOLBOX_EXIT_ON_CLOSE", "1")
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,29 +27,60 @@ from shared.app_bootstrap import bootstrap_skill  # noqa: E402
 bootstrap_skill(os.path.join(_SIGNALS_DIR, "mining_signals_app.py"))
 
 from PySide6.QtCore import Qt, QTimer  # noqa: E402
+from PySide6.QtGui import QAction, QColor, QPalette  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
-    QApplication, QTabWidget, QWidget, QVBoxLayout, QLabel,
+    QApplication, QLabel, QMainWindow, QTabWidget,
+    QVBoxLayout, QWidget,
 )
 from shared.crash_logger import init_crash_logging  # noqa: E402
 from shared.platform_utils import set_dpi_awareness  # noqa: E402
 from shared.data_utils import parse_cli_args  # noqa: E402
-from shared.qt.base_window import SCWindow  # noqa: E402
-from shared.qt.theme import P, apply_theme  # noqa: E402
-from shared.qt.title_bar import SCTitleBar  # noqa: E402
 
-ACCENT = "#33dd88"
+
+def _apply_fusion_dark(app: QApplication) -> None:
+    """Plain dark desktop palette — no MobiGlas QSS."""
+    app.setStyle("Fusion")
+    pal = QPalette()
+    bg = QColor("#1e1e1e")
+    panel = QColor("#252526")
+    text = QColor("#d4d4d4")
+    disabled = QColor("#6e6e6e")
+    highlight = QColor("#0e639c")
+    pal.setColor(QPalette.Window, bg)
+    pal.setColor(QPalette.WindowText, text)
+    pal.setColor(QPalette.Base, QColor("#1c1c1c"))
+    pal.setColor(QPalette.AlternateBase, panel)
+    pal.setColor(QPalette.ToolTipBase, panel)
+    pal.setColor(QPalette.ToolTipText, text)
+    pal.setColor(QPalette.Text, text)
+    pal.setColor(QPalette.Button, panel)
+    pal.setColor(QPalette.ButtonText, text)
+    pal.setColor(QPalette.BrightText, QColor("#ffffff"))
+    pal.setColor(QPalette.Highlight, highlight)
+    pal.setColor(QPalette.HighlightedText, QColor("#ffffff"))
+    pal.setColor(QPalette.PlaceholderText, disabled)
+    pal.setColor(QPalette.Disabled, QPalette.WindowText, disabled)
+    pal.setColor(QPalette.Disabled, QPalette.Text, disabled)
+    pal.setColor(QPalette.Disabled, QPalette.ButtonText, disabled)
+    app.setPalette(pal)
+    app.setStyleSheet("")
 
 
 def _strip_inner_chrome(window) -> None:
-    """Hide the nested SCWindow title bar when hosted in a tab."""
+    """Hide nested HUD title bars when hosted in a tab."""
+    try:
+        from shared.qt.title_bar import SCTitleBar
+        for bar in window.findChildren(SCTitleBar):
+            bar.hide()
+    except Exception:
+        pass
     try:
         layout = window.content_layout
-        if layout.count() < 1:
-            return
-        item = layout.itemAt(0)
-        bar = item.widget() if item else None
-        if bar is not None:
-            bar.setVisible(False)
+        if layout.count() >= 1:
+            item = layout.itemAt(0)
+            bar = item.widget() if item else None
+            if bar is not None:
+                bar.setVisible(False)
     except Exception:
         pass
 
@@ -69,6 +94,10 @@ def _as_tab_widget(window, parent: QWidget) -> QWidget:
         window.setWindowFlag(Qt.WindowStaysOnTopHint, False)
     except Exception:
         pass
+    if hasattr(window, "set_plain_embed"):
+        window.set_plain_embed(True)
+    if hasattr(window, "setWindowOpacity"):
+        window.setWindowOpacity(1.0)
     _strip_inner_chrome(window)
     return window
 
@@ -94,60 +123,52 @@ def _import_loadout_window():
         sys.modules.update(saved)
 
 
-class MiningSuiteWindow(SCWindow):
-    """Single chrome window hosting Signals + Loadout as tabs."""
+class MiningSuiteWindow(QMainWindow):
+    """Native OS window hosting Signals + Loadout as tabs."""
 
     def __init__(
         self,
         x: int = 80, y: int = 80,
         w: int = 1200, h: int = 900,
-        opacity: float = 1.0,
     ) -> None:
-        super().__init__(
-            title="Mining",
-            width=w, height=h,
-            min_w=800, min_h=500,
-            opacity=1.0,
-            always_on_top=True,
-            accent=ACCENT,
-        )
-        self.restore_geometry_from_args(x, y, w, h, 1.0)
-
-        self._title_bar = SCTitleBar(
-            self, title="Mining", accent_color=ACCENT,
-        )
-        self._title_bar.close_clicked.connect(self.user_close)
-        self._title_bar.minimize_clicked.connect(self.showMinimized)
-        self.content_layout.addWidget(self._title_bar)
+        super().__init__()
+        self.setWindowTitle("Mining")
+        self.resize(max(800, w), max(500, h))
+        self.move(x, y)
 
         self._tabs = QTabWidget(self)
-        self._tabs.setDocumentMode(True)
-        self._tabs.setStyleSheet(f"""
-            QTabWidget::pane {{
-                border: 1px solid {P.border};
-                background: {P.bg_primary};
-            }}
-            QTabBar::tab {{
-                background: {P.bg_header};
-                color: {P.fg_dim};
-                padding: 8px 18px;
-                margin-right: 2px;
-                font-family: Electrolize, Consolas;
-                font-size: 10pt;
-            }}
-            QTabBar::tab:selected {{
-                background: {P.bg_card};
-                color: {ACCENT};
-                font-weight: bold;
-            }}
-        """)
-        self.content_layout.addWidget(self._tabs, 1)
+        self._tabs.setDocumentMode(False)
+        self.setCentralWidget(self._tabs)
 
         self._signals = None
         self._loadout = None
+        self._build_menu()
         self._build_signals_tab()
         self._build_loadout_tab()
         self._tabs.setCurrentIndex(0)
+
+    def _build_menu(self) -> None:
+        file_menu = self.menuBar().addMenu("&File")
+        quit_act = QAction("E&xit", self)
+        quit_act.setShortcut("Ctrl+Q")
+        quit_act.triggered.connect(self.close)
+        file_menu.addAction(quit_act)
+
+        view_menu = self.menuBar().addMenu("&View")
+        pin = QAction("Always on top", self)
+        pin.setCheckable(True)
+        pin.setChecked(False)
+        pin.toggled.connect(self._set_always_on_top)
+        view_menu.addAction(pin)
+
+    def _set_always_on_top(self, on: bool) -> None:
+        flags = self.windowFlags()
+        if on:
+            flags |= Qt.WindowStaysOnTopHint
+        else:
+            flags &= ~Qt.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
+        self.show()
 
     def _build_signals_tab(self) -> None:
         host = QWidget(self._tabs)
@@ -190,7 +211,7 @@ class MiningSuiteWindow(SCWindow):
                 "skills/Mining_Loadout."
             )
             err.setWordWrap(True)
-            err.setStyleSheet(f"color: {P.fg}; padding: 16px;")
+            err.setStyleSheet("padding: 16px;")
             lay.addWidget(err)
         self._tabs.addTab(host, "Mining Loadout")
 
@@ -201,11 +222,10 @@ def main() -> None:
         set_dpi_awareness()
         parsed = parse_cli_args(sys.argv[1:], {"w": 1200, "h": 900})
         app = QApplication(sys.argv)
-        apply_theme(app)
+        _apply_fusion_dark(app)
         window = MiningSuiteWindow(
             x=parsed["x"], y=parsed["y"],
             w=parsed["w"], h=parsed["h"],
-            opacity=1.0,
         )
         window.show()
         window.raise_()
