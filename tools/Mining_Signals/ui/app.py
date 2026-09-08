@@ -750,14 +750,17 @@ class MiningSignalsApp(SCWindow):
         ocr_layout.addWidget(self._btn_game_res)
 
         # ── Calibrate Mining Crops ──
-        # Draw SCAN RESULTS on screen, then (on mouse-up) the same
-        # box-picker as Emergency Override so Mass/Res/Inst are placed
-        # by hand. Auto then tracks those rows from the title.
+        # Opens a non-modal dialog where the user can confirm each
+        # row's crop coordinates and lock them in. Saved to disk;
+        # the OCR pipeline uses the saved coords directly at runtime
+        # (skipping all detection — zero drift, zero edge-case bugs).
         self._btn_calibrate = QPushButton("Calibrate Mining Crops", self._ocr_row)
         self._btn_calibrate.setCursor(Qt.PointingHandCursor)
         self._btn_calibrate.setToolTip(
-            "Draw a box around the SCAN RESULTS panel, then mark "
-            "Mass / Resistance / Instability on the zoomed shot."
+            "Open the calibration dialog to lock in each row's crop "
+            "coordinates. Once calibrated, the OCR uses your "
+            "confirmed positions instead of auto-detecting (more "
+            "stable, faster, works on any background)."
         )
         self._btn_calibrate.clicked.connect(self._on_calibrate_crops)
         self._btn_calibrate.setStyleSheet(_btn_style)
@@ -3558,7 +3561,7 @@ class MiningSignalsApp(SCWindow):
                 QMessageBox.warning(
                     self, "HUD region saved",
                     "Could not capture that rectangle. Use "
-                    "Calibrate Mining Crops → Emergency Override "
+                    "Set Mining HUD Region again, then draw the rows. "
                     "to place the rows.",
                 )
             except Exception:
@@ -3631,13 +3634,83 @@ class MiningSignalsApp(SCWindow):
         log.info("Break bubble position set: (%d, %d)", pos["x"], pos["y"])
 
     def _on_calibrate_crops(self) -> None:
-        """Draw SCAN RESULTS on screen; on mouse-up open the row picker.
+        """Open the calibration dialog for the current HUD region.
 
-        Same overlay as Set Mining HUD Region. Releasing the mouse
-        saves that rectangle and opens the Emergency Override-style
-        dialog so Mass / Resistance / Instability are placed by hand.
+        Single-instance: only ONE Mining HUD OCR Calibration dialog
+        may be open at a time across the whole machine. If one is
+        already open (in this process or another), bring it to the
+        front instead of creating a duplicate.
         """
-        self._open_hud_region_selector()
+        hud_region = self._config.get("hud_region")
+        if not hud_region or not hud_region.get("w"):
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self, "HUD region not set",
+                "Set the Mining HUD Region first (use the button to "
+                "the left), then come back to calibrate.",
+            )
+            return
+
+        # In-process raise: a dialog already exists in this app.
+        existing = getattr(self, "_calibration_dialog", None)
+        if existing is not None and existing.isVisible():
+            existing.raise_()
+            existing.activateWindow()
+            return
+
+        try:
+            from ui.calibration_dialog import CalibrationDialog
+            from ocr.onnx_hud_reader import scan_hud_onnx
+            # NOTE: package is named ``mining_shared`` (not ``shared``)
+            # to avoid collision with the SC_Toolbox-wide
+            # ``shared/`` package one directory up.  When the launcher
+            # bootstraps ``import shared.path_setup``, it binds the
+            # name ``shared`` to that other package in ``sys.modules``,
+            # and any submodule lookup (``shared.single_instance``)
+            # will only ever consult that package's ``__path__`` —
+            # ``invalidate_caches()`` and ``sys.path`` tweaks cannot
+            # un-shadow it.
+            from mining_shared.single_instance import SingleInstance
+
+            ocr_region = self._config.get("ocr_region")
+            dlg = CalibrationDialog(
+                region=dict(hud_region),
+                scan_callback=scan_hud_onnx,
+                parent=self,
+                signature_region=(
+                    dict(ocr_region) if ocr_region else None
+                ),
+            )
+
+            # Cross-process raise: another app instance may already
+            # have the slot. acquire() pokes that holder to come to
+            # the front. Either way we abort our own open.
+            guard = SingleInstance("calibration_dialog", dlg)
+            if not guard.acquire():
+                dlg.deleteLater()
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.information(
+                    self, "Calibration already open",
+                    "Mining HUD OCR Calibration is already open in "
+                    "another window. It has been brought to the "
+                    "front.",
+                )
+                return
+            # Pin the guard onto the dialog so its lifetime matches
+            # the window's. Slot is released automatically on close.
+            dlg._single_instance = guard
+
+            dlg.show()
+            self._calibration_dialog = dlg  # keep ref so it isn't GC'd
+        except Exception as exc:
+            log.error("calibration dialog failed: %s", exc, exc_info=True)
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self, "Calibration error",
+                f"Could not open calibration dialog:
+
+{exc}",
+            )
 
     def _maybe_show_first_launch_calibration_prompt(self) -> None:
         """If the user hasn't dismissed it AND no calibration exists,
