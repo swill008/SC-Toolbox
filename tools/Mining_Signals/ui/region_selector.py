@@ -106,6 +106,7 @@ class RegionSelector(QWidget):
             | Qt.Tool
         )
         self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setProperty("sc_keep_overlay", True)
         self.setCursor(Qt.CrossCursor)
 
         # Cover the entire virtual desktop (all monitors)
