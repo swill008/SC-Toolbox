@@ -891,7 +891,7 @@ class PanelFinderPopout(QWidget):
         self._flow_active = {"r1": -1, "r2": -1}
         self._flow_order = {"r1": [k for k, _ in _R1_STAGES],
                             "r2": [k for k, _ in _R2_STAGES]}
-        fc = QWidget(self, Qt.Window | Qt.WindowStaysOnTopHint)
+        fc = QWidget(None, Qt.Window)
         fc.setWindowTitle("SC — Scan Pipeline Flow (both routes)")
         fc.setStyleSheet("background:#141414;")
         fc.resize(440, 400)
