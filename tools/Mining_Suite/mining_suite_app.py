@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (  # noqa: E402
 )
 from shared.crash_logger import init_crash_logging  # noqa: E402
 from shared.qt.base_window import install_native_child_filter  # noqa: E402
+from shared.platform_utils import set_dpi_awareness  # noqa: E402
 from shared.data_utils import parse_cli_args  # noqa: E402
 
 
