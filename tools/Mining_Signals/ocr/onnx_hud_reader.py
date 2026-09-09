@@ -2973,15 +2973,15 @@ def _label_rows_from_learned_skeleton(
     img_h: int,
     title_box: "Optional[tuple[int, int, int, int]]" = None,
     live_anchor: "Optional[dict]" = None,
+    img: "Optional[object]" = None,
 ) -> dict[str, tuple[int, int, int]]:
-    """A: place taught native boxes. C: translate as a rigid body.
+    """A: taught native boxes. Panel-square follow when two bars found.
 
-    Boxes are HUD-capture pixels. Live ``scan_hud_onnx`` resizes that
-    capture to REF_H, so we scale by img/capture. Pitch (h) never
-    changes. If a *real* SCAN RESULTS title is present (NCC score
-    >= 0.55) and we stored a title at teach time, shift every row by
-    (live_title - taught_title). Synthesized titles (score ~0.45)
-    are ignored so COMPOSITION cannot drag the skeleton.
+    Boxes are HUD-capture pixels. Live ``scan_hud_onnx`` resizes to
+    REF_H, so we first scale by img/capture. If a SCAN RESULTS square
+    (title underline + EASY underline) is stored and found live, map
+    each box as an offset inside that square. Title NCC is fallback
+    only. Miss → keep taught boxes (do not guess).
     """
     del title_box
     try:
@@ -3014,54 +3014,133 @@ def _label_rows_from_learned_skeleton(
             out[str(_field)] = row
 
     dx = dy = 0
-    live = live_anchor if isinstance(live_anchor, dict) else None
-    live_score = float(live.get("score") or 0.0) if live else 0.0
-    taught_tx = int((sk or {}).get("title_x") or 0)
-    taught_ty = int((sk or {}).get("title_y") or 0)
+    used_square = False
+    taught_panel = (sk or {}).get("panel") if isinstance(sk, dict) else None
     if (
         out
-        and live is not None
-        and live_score >= 0.55
-        and taught_ty >= 0
-        and int((sk or {}).get("title_h") or 0) >= 8
+        and img is not None
+        and isinstance(taught_panel, dict)
+        and int(taught_panel.get("h") or 0) >= 24
     ):
         try:
-            dx = int(round(int(live["title_x"]) - taught_tx * sx))
-            dy = int(round(int(live["title_y"]) - taught_ty * sy))
-        except (KeyError, TypeError, ValueError):
-            dx = dy = 0
-        # Ignore huge jumps — almost always a false title (COMPOSITION).
-        if abs(dx) > 120 or abs(dy) > 120:
-            log.info(
-                "hud: skeleton rigid-follow REJECTED dx=%d dy=%d "
-                "(cap=120) — keeping taught boxes",
-                dx, dy,
-            )
-            dx = dy = 0
-        elif dx or dy:
-            shifted: dict[str, tuple[int, int, int]] = {}
-            for _f, (_y1, _y2, _x) in out.items():
-                ny1 = max(0, min(img_h, _y1 + dy))
-                ny2 = max(0, min(img_h, _y2 + dy))
-                if ny2 - ny1 < 4:
-                    shifted[_f] = (_y1, _y2, _x)
+            from .sc_ocr.scan_results_match import find_scan_results_square
+            hint = {}
+            for _f, spec in fields.items():
+                if not isinstance(spec, dict):
                     continue
-                nx = max(0, min(img_w - 1, _x + dx))
-                shifted[_f] = (ny1, ny2, nx)
-            out = shifted
-            log.info(
-                "hud: skeleton rigid-follow dx=%d dy=%d "
-                "(live_title score=%.2f)",
-                dx, dy, live_score,
-            )
+                try:
+                    hint[_f] = {
+                        "x": int(round(int(spec["x"]) * sx)),
+                        "y": int(round(int(spec["y"]) * sy)),
+                        "w": int(round(int(spec.get("w") or 1) * sx)),
+                        "h": int(round(int(spec["h"]) * sy)),
+                    }
+                except (KeyError, TypeError, ValueError):
+                    continue
+            live_sq = find_scan_results_square(img, hint_boxes=hint or None)
+        except Exception as _sq_exc:
+            log.debug("hud: panel square detect failed: %s", _sq_exc)
+            live_sq = None
+        if isinstance(live_sq, dict) and int(live_sq.get("h") or 0) >= 24:
+            try:
+                tpx = int(taught_panel["x"]) * sx
+                tpy = int(taught_panel["y"]) * sy
+                tpw = max(1.0, int(taught_panel["w"]) * sx)
+                tph = max(1.0, int(taught_panel["h"]) * sy)
+                lpx = float(live_sq["x"])
+                lpy = float(live_sq["y"])
+                lpw = max(1.0, float(live_sq["w"]))
+                lph = max(1.0, float(live_sq["h"]))
+                scale_ok = 0.70 <= (lph / tph) <= 1.40 and 0.70 <= (lpw / tpw) <= 1.40
+                p_sx = (lpw / tpw) if scale_ok else 1.0
+                p_sy = (lph / tph) if scale_ok else 1.0
+                dx = int(round(lpx - tpx))
+                dy = int(round(lpy - tpy))
+                if abs(dx) > 160 or abs(dy) > 160:
+                    log.info(
+                        "hud: panel-square follow REJECTED dx=%d dy=%d "
+                        "(cap=160) — keeping taught boxes",
+                        dx, dy,
+                    )
+                    dx = dy = 0
+                else:
+                    shifted = {}
+                    for _f, spec in fields.items():
+                        if _f not in out or not isinstance(spec, dict):
+                            continue
+                        bx = int(spec["x"]) * sx
+                        by = int(spec["y"]) * sy
+                        bh = int(spec["h"]) * sy
+                        nx = int(round(lpx + (bx - tpx) * p_sx))
+                        ny = int(round(lpy + (by - tpy) * p_sy))
+                        nh = max(4, int(round(bh * p_sy)))
+                        ny1 = max(0, min(img_h, ny))
+                        ny2 = max(0, min(img_h, ny + nh))
+                        if ny2 - ny1 < 4:
+                            shifted[_f] = out[_f]
+                            continue
+                        shifted[_f] = (ny1, ny2, max(0, min(img_w - 1, nx)))
+                    if shifted:
+                        out.update(shifted)
+                        used_square = True
+                        log.info(
+                            "hud: panel-square follow dx=%d dy=%d "
+                            "scale=%.3fx%.3f live=%s taught_scaled=(%.0f,%.0f,%.0f,%.0f)",
+                            dx, dy, p_sx, p_sy,
+                            {k: live_sq.get(k) for k in ("x", "y", "w", "h")},
+                            tpx, tpy, tpw, tph,
+                        )
+            except (KeyError, TypeError, ValueError) as _map_exc:
+                log.debug("hud: panel-square map failed: %s", _map_exc)
+                dx = dy = 0
+
+    if out and not used_square:
+        live = live_anchor if isinstance(live_anchor, dict) else None
+        live_score = float(live.get("score") or 0.0) if live else 0.0
+        taught_tx = int((sk or {}).get("title_x") or 0)
+        taught_ty = int((sk or {}).get("title_y") or 0)
+        if (
+            live is not None
+            and live_score >= 0.55
+            and taught_ty >= 0
+            and int((sk or {}).get("title_h") or 0) >= 8
+        ):
+            try:
+                dx = int(round(int(live["title_x"]) - taught_tx * sx))
+                dy = int(round(int(live["title_y"]) - taught_ty * sy))
+            except (KeyError, TypeError, ValueError):
+                dx = dy = 0
+            if abs(dx) > 120 or abs(dy) > 120:
+                log.info(
+                    "hud: skeleton rigid-follow REJECTED dx=%d dy=%d "
+                    "(cap=120) — keeping taught boxes",
+                    dx, dy,
+                )
+                dx = dy = 0
+            elif dx or dy:
+                shifted = {}
+                for _f, (_y1, _y2, _x) in out.items():
+                    ny1 = max(0, min(img_h, _y1 + dy))
+                    ny2 = max(0, min(img_h, _y2 + dy))
+                    if ny2 - ny1 < 4:
+                        shifted[_f] = (_y1, _y2, _x)
+                        continue
+                    nx = max(0, min(img_w - 1, _x + dx))
+                    shifted[_f] = (ny1, ny2, nx)
+                out = shifted
+                log.info(
+                    "hud: skeleton title-follow dx=%d dy=%d "
+                    "(live_title score=%.2f)",
+                    dx, dy, live_score,
+                )
 
     if out:
         log.info(
             "hud: native skeleton sx=%.3f sy=%.3f "
-            "img=%dx%d capture=%sx%s follow=(%d,%d) rows=%s",
+            "img=%dx%d capture=%sx%s follow=(%d,%d) square=%s rows=%s",
             sx, sy, img_w, img_h,
             region.get("w"), region.get("h"),
-            dx, dy,
+            dx, dy, used_square,
             {k: v[:2] for k, v in out.items()},
         )
     return out
@@ -3475,6 +3554,7 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                 _sk_rows = _label_rows_from_learned_skeleton(
                     _region_sk, img.width, img.height,
                     live_anchor=_pre_anchor,
+                    img=img,
                 )
                 if (
                     _sk_rows

@@ -612,16 +612,20 @@ class ManualOverrideDialog(QDialog):
             )
             return
 
-        # Native boxes (A) plus SCAN RESULTS title for rigid follow (C).
+        # Native boxes + SCAN RESULTS square (two bars) for follow.
         taught = False
         try:
             _cw = int(self._hud_pil.width) if self._hud_pil is not None else int((self._region or {}).get("w") or 0)
             _ch = int(self._hud_pil.height) if self._hud_pil is not None else int((self._region or {}).get("h") or 0)
             _tx = _ty = _th = 0
+            _panel = None
             if self._hud_pil is not None:
                 try:
-                    from ocr.sc_ocr import scan_results_match as _srm_teach
-                    _anc = _srm_teach.find_scan_results_anchor(self._hud_pil)
+                    from ocr.sc_ocr.scan_results_match import (
+                        find_scan_results_anchor as _srm_teach,
+                        find_scan_results_square as _sq_teach,
+                    )
+                    _anc = _srm_teach(self._hud_pil)
                     if (
                         isinstance(_anc, dict)
                         and float(_anc.get("score") or 0) >= 0.55
@@ -629,8 +633,11 @@ class ManualOverrideDialog(QDialog):
                         _tx = int(_anc.get("title_x") or 0)
                         _ty = int(_anc.get("title_y") or 0)
                         _th = int(_anc.get("title_h") or 0)
+                    _panel = _sq_teach(
+                        self._hud_pil, hint_boxes=saved,
+                    )
                 except Exception as _t_exc:
-                    log.debug("teach title lookup failed: %s", _t_exc)
+                    log.debug("teach panel/title lookup failed: %s", _t_exc)
             taught = bool(calibration.teach_learned_skeleton(
                 self._region,
                 boxes=saved,
@@ -639,6 +646,7 @@ class ManualOverrideDialog(QDialog):
                 title_x=_tx,
                 title_y=_ty,
                 title_h=_th,
+                panel=_panel,
             ))
         except Exception as _exc:
             log.warning("teach_learned_skeleton failed: %s", _exc)
@@ -646,8 +654,8 @@ class ManualOverrideDialog(QDialog):
         if taught:
             log.info(
                 "manual override: stored native skeleton "
-                "capture=%sx%s title=(%d,%d,h=%d) fields=%s",
-                _cw, _ch, _tx, _ty, _th, list(saved),
+                "capture=%sx%s title=(%d,%d,h=%d) panel=%s fields=%s",
+                _cw, _ch, _tx, _ty, _th, _panel, list(saved),
             )
         else:
             log.info("manual override: sticky boxes only (teach failed)")

@@ -692,12 +692,13 @@ def teach_learned_skeleton(
     title_x: int = 0,
     title_y: int = 0,
     title_h: int = 0,
+    panel: Optional[dict] = None,
 ) -> bool:
     """Store user-drawn boxes in HUD-region (native capture) pixels.
 
-    Live placement uses those x/y/w/h (A). If a real SCAN RESULTS
-    title is stored, live scans may translate the whole skeleton by
-    (live_title - taught_title) without changing pitch (C).
+    Live placement uses those x/y/w/h (A). If ``panel`` (SCAN RESULTS
+    square from the two bars) is stored, live scans map boxes as
+    offsets inside the live square. Title is fallback only.
     """
     try:
         tx = int(title_x or 0)
@@ -705,6 +706,17 @@ def teach_learned_skeleton(
         th = int(title_h or 0)
     except (TypeError, ValueError):
         tx, ty, th = 0, 0, 0
+    panel_rec = None
+    if isinstance(panel, dict):
+        try:
+            panel_rec = {
+                "x": int(panel["x"]),
+                "y": int(panel["y"]),
+                "w": max(1, int(panel["w"])),
+                "h": max(1, int(panel["h"])),
+            }
+        except (KeyError, TypeError, ValueError):
+            panel_rec = None
     try:
         cw = int(capture_w) if capture_w else int(region.get("w") or 0)
         ch = int(capture_h) if capture_h else int(region.get("h") or 0)
@@ -743,14 +755,15 @@ def teach_learned_skeleton(
         "title_h": th,
         "capture_w": cw,
         "capture_h": ch,
+        "panel": panel_rec,
         "fields": fields,
     }
     entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
     _save_all(data)
     log.info(
         "calibration: learned_skeleton capture=%sx%s title=(x=%d,y=%d,h=%d) "
-        "fields=%s region=%s",
-        cw, ch, tx, ty, th,
+        "panel=%s fields=%s region=%s",
+        cw, ch, tx, ty, th, panel_rec,
         {k: (v.get("x"), v.get("y"), v.get("w"), v.get("h"))
          for k, v in fields.items()},
         _region_key(region),

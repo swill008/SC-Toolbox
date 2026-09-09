@@ -971,3 +971,157 @@ def find_scan_results_anchor(
         anchor = raw_anchor
     _LAST_CALL_CACHE = (*cache_key, anchor)
     return anchor
+
+
+def find_scan_results_square(
+    img: Image.Image,
+    *,
+    hint_boxes: Optional[dict] = None,
+    search_top: Optional[tuple[int, int]] = None,
+    search_bot: Optional[tuple[int, int]] = None,
+) -> Optional[dict]:
+    """Locate the SCAN RESULTS card from its two horizontal bars.
+
+    Top bar = underline under SCAN RESULTS (incl. right hook).
+    Bottom bar = line under EASY / just above COMPOSITION.
+
+    Returns ``{"x","y","w","h","top_y","bot_y","score"}`` in *img*
+    pixels, or None if both bars cannot be found. COMPOSITION is
+    excluded by taking the *first* strong line below the value rows,
+    not the last line in the capture.
+    """
+    if img is None:
+        return None
+    try:
+        gray = np.asarray(img.convert("L"), dtype=np.uint8)
+    except Exception:
+        return None
+    H, W = gray.shape[:2]
+    if H < 40 or W < 40:
+        return None
+    if float(np.median(gray)) > 130:
+        gray = 255 - gray
+
+    thr = max(70, int(np.percentile(gray, 78)))
+    binary = gray >= thr
+    min_run = max(24, int(0.38 * W))
+    cands: list[dict] = []
+    for y in range(H):
+        row = binary[y]
+        best = 0
+        best_s = 0
+        cur_s: Optional[int] = None
+        for i, v in enumerate(row):
+            if v:
+                if cur_s is None:
+                    cur_s = i
+            elif cur_s is not None:
+                run = i - cur_s
+                if run > best:
+                    best = run
+                    best_s = cur_s
+                cur_s = None
+        if cur_s is not None:
+            run = W - cur_s
+            if run > best:
+                best = run
+                best_s = cur_s
+        if best < min_run:
+            continue
+        cands.append({
+            "y": y,
+            "x": int(best_s),
+            "w": int(best),
+            "score": float(best) / float(W),
+        })
+    if not cands:
+        return None
+
+    # Keep local-max rows (thin bars, not filled blocks).
+    peaks: list[dict] = []
+    by_y = {c["y"]: c for c in cands}
+    for c in cands:
+        y = c["y"]
+        left = by_y.get(y - 1)
+        right = by_y.get(y + 1)
+        if left and left["w"] > c["w"]:
+            continue
+        if right and right["w"] > c["w"]:
+            continue
+        peaks.append(c)
+    if not peaks:
+        peaks = cands
+
+    y_top_max = int(0.48 * H)
+    y_bot_min = int(0.42 * H)
+    if hint_boxes:
+        tops: list[int] = []
+        bots: list[int] = []
+        for box in hint_boxes.values():
+            if not isinstance(box, dict):
+                continue
+            try:
+                by = int(box["y"])
+                bh = int(box.get("h") or 0)
+            except (KeyError, TypeError, ValueError):
+                continue
+            tops.append(by)
+            bots.append(by + max(0, bh))
+        if tops:
+            y_top_max = min(tops) + 8
+        if bots:
+            y_bot_min = max(bots) - 8
+    if search_top is not None:
+        y_top_max = max(y_top_max, int(search_top[1]))
+    if search_bot is not None:
+        y_bot_min = min(y_bot_min, int(search_bot[0]))
+
+    def _in_win(c, win, default_ok: bool) -> bool:
+        if win is None:
+            return default_ok
+        return int(win[0]) <= c["y"] <= int(win[1])
+
+    top_pool = [
+        c for c in peaks
+        if c["y"] <= y_top_max and _in_win(c, search_top, True)
+    ]
+    bot_pool = [
+        c for c in peaks
+        if c["y"] >= y_bot_min and _in_win(c, search_bot, True)
+    ]
+    if not top_pool:
+        top_pool = [c for c in peaks if c["y"] < int(0.5 * H)]
+    if not bot_pool:
+        bot_pool = [c for c in peaks if c["y"] >= int(0.45 * H)]
+    if not top_pool or not bot_pool:
+        log.info(
+            "scan_results_square: missing bar top=%d bot=%d (peaks=%d)",
+            len(top_pool), len(bot_pool), len(peaks),
+        )
+        return None
+
+    top = max(top_pool, key=lambda c: c["score"])
+    # First strong line below the values — skip COMPOSITION further down.
+    bot_pool_after = [c for c in bot_pool if c["y"] > top["y"] + 12]
+    if not bot_pool_after:
+        return None
+    bot = min(bot_pool_after, key=lambda c: c["y"])
+
+    x = min(int(top["x"]), int(bot["x"]))
+    x1 = max(int(top["x"] + top["w"]), int(bot["x"] + bot["w"]))
+    y = int(top["y"])
+    y2 = int(bot["y"])
+    h = y2 - y
+    w = x1 - x
+    if h < 24 or w < 24:
+        return None
+    score = 0.5 * (float(top["score"]) + float(bot["score"]))
+    out = {
+        "x": x, "y": y, "w": w, "h": h,
+        "top_y": y, "bot_y": y2, "score": score,
+    }
+    log.info(
+        "scan_results_square: top_y=%d bot_y=%d x=%d w=%d h=%d score=%.2f",
+        y, y2, x, w, h, score,
+    )
+    return out
