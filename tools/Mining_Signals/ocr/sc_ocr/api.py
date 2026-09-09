@@ -16741,6 +16741,19 @@ def scan_hud_onnx(
     # NCC anchor mis-fired.  If a real, large panel move happens, the
     # user re-opens the calibration dialog and re-locks; that's
     # explicit and predictable.
+    _has_learned_sk = False
+    try:
+        from . import calibration as _cal_sk_gate
+        _sk_gate = _cal_sk_gate.get_learned_skeleton(region)
+        _sk_f = (_sk_gate or {}).get("fields") if isinstance(_sk_gate, dict) else None
+        _has_learned_sk = (
+            isinstance(_sk_f, dict)
+            and "mass" in _sk_f
+            and "resistance" in _sk_f
+        )
+    except Exception:
+        _has_learned_sk = False
+
     _cal_drift_y = 0
     _ncc_label_positions: dict = {}
     try:
@@ -16748,8 +16761,16 @@ def scan_hud_onnx(
         _saved_cal = _cal_drift_mod.load(region)
         _saved_mass = (_saved_cal or {}).get("rows", {}).get("mass") if _saved_cal else None
         from . import label_match as _lm_drift
-        _ncc_label_positions = _lm_drift.find_label_positions(img)
-        _mass_match = _ncc_label_positions.get("mass")
+        if _has_learned_sk:
+            log.info(
+                "sc_ocr.hud: learned skeleton present — skipping Auto "
+                "label_match"
+            )
+            _ncc_label_positions = {}
+            _mass_match = None
+        else:
+            _ncc_label_positions = _lm_drift.find_label_positions(img)
+            _mass_match = _ncc_label_positions.get("mass")
         if (
             _saved_mass is not None
             and _mass_match is not None
@@ -16780,7 +16801,7 @@ def scan_hud_onnx(
         _cal_drift_y = 0
         _ncc_label_positions = {}
 
-    if mineral_row is None:
+    if mineral_row is None and not _has_learned_sk:
         # No panel visible — reset consensus buffers AND drop any
         # locked field values for this region. The user looked away
         # from the rock; next rock starts fresh.
