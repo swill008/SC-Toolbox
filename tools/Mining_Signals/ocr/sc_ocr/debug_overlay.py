@@ -249,6 +249,7 @@ def set_panel_finder(
     bot_line_y: Optional[int] = None,
     source: str = "",
     title_box: Optional[tuple[int, int, int, int]] = None,
+    panel_box: Optional[tuple[int, int, int, int]] = None,
 ) -> None:
     """Push panel-finder telemetry for the debug overlay.
 
@@ -295,6 +296,9 @@ def set_panel_finder(
         "source": source,  # "by_position" or "tesseract_fallback"
         "title_box": kept_title_box,
         "title_box_ts": kept_ts,
+        "panel_box": (
+            tuple(int(v) for v in panel_box) if panel_box else None
+        ),
     }
 
 
@@ -519,11 +523,29 @@ def write() -> None:
                 "SCAN RESULTS", fill=(255, 200, 0),
             )
 
-        # ── Top line marker (orange) ──
+        # SCAN RESULTS square (green) + lock bars
+        panel_box = pf.get("panel_box")
+        if panel_box is not None:
+            px, py, pw, ph = panel_box
+            px2 = min(W - 1, px + pw)
+            py2 = min(H - 1, py + ph)
+            draw.rectangle(
+                [(px, py), (px2, py2)],
+                outline=(50, 255, 80), width=2,
+            )
+            draw.text(
+                (px + 4, max(0, py - 12)),
+                "PANEL LOCK", fill=(50, 255, 80),
+            )
+
+        # ── Top lock (gold underline) ──
         if pf.get("top_line_y") is not None:
             ty = pf["top_line_y"]
-            draw.line([(0, ty), (W - 1, ty)], fill=(255, 140, 0), width=1)
-            draw.text((4, ty + 1), "TOP_LINE", fill=(255, 140, 0))
+            x0, x1 = 0, W - 1
+            if panel_box is not None:
+                x0, x1 = int(panel_box[0]), min(W - 1, int(panel_box[0] + panel_box[2]))
+            draw.line([(x0, ty), (x1, ty)], fill=(255, 200, 0), width=3)
+            draw.text((x0 + 4, ty + 2), "TOP LOCK", fill=(255, 200, 0))
 
         # ── Mineral name band (green) + OCR'd name ──
         if pf.get("mineral_y_top") is not None and pf.get("mineral_y_bot") is not None:
@@ -537,11 +559,14 @@ def write() -> None:
                 _label = f"→ {_mineral_ocr['text']}"
                 draw.text((W // 2 - 60, mt - 11), _label, fill=(0, 230, 100))
 
-        # ── Bottom line marker (orange) ──
+        # ── Bottom lock (cyan, under EASY) ──
         if pf.get("bot_line_y") is not None:
             by = pf["bot_line_y"]
-            draw.line([(0, by), (W - 1, by)], fill=(255, 140, 0), width=1)
-            draw.text((4, by - 11), "BOT_LINE", fill=(255, 140, 0))
+            x0, x1 = 0, W - 1
+            if panel_box is not None:
+                x0, x1 = int(panel_box[0]), min(W - 1, int(panel_box[0] + panel_box[2]))
+            draw.line([(x0, by), (x1, by)], fill=(0, 220, 220), width=3)
+            draw.text((x0 + 4, by - 12), "BOT LOCK", fill=(0, 220, 220))
 
         # ── Pitch annotation ──
         pitch = pf.get("pitch")

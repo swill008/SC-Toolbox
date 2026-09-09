@@ -2802,6 +2802,14 @@ def _get_cached_title_box() -> Optional[tuple[int, int, int, int]]:
     return getattr(_thread_local, "cached_title_box", None)
 
 
+def _set_cached_panel_square(sq: Optional[dict]) -> None:
+    _thread_local.cached_panel_square = sq
+
+
+def _get_cached_panel_square() -> Optional[dict]:
+    return getattr(_thread_local, "cached_panel_square", None)
+
+
 def _emit_anchor_only_overlay() -> None:
     """Push a final ``set_panel_finder`` with the cached title_box so the
     overlay viewer STILL shows the gold SCAN RESULTS box even when every
@@ -3044,6 +3052,7 @@ def _label_rows_from_learned_skeleton(
             log.debug("hud: panel square detect failed: %s", _sq_exc)
             live_sq = None
         if isinstance(live_sq, dict) and int(live_sq.get("h") or 0) >= 24:
+            _set_cached_panel_square(live_sq)
             try:
                 tpx = int(taught_panel["x"]) * sx
                 tpy = int(taught_panel["y"]) * sy
@@ -3417,6 +3426,7 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
     # below when the SCAN RESULTS anchor is detected. Eager reset (not
     # lazy) is required because the 64-worker pool reuses threads.
     _set_cached_title_box(None)
+    _set_cached_panel_square(None)
 
     # Diagnostic: log function entry with image dimensions and any
     # available region info. INFO level so it's visible without DEBUG.
@@ -3573,11 +3583,19 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                         _mn = _sk_rows.get("_mineral_row")
                         _mass = _sk_rows.get("mass")
                         _tb = _get_cached_title_box()
+                        _sq = _get_cached_panel_square()
+                        _pbox = None
+                        _top = _tb[1] if _tb else (_mn[0] if _mn else (_mass[0] if _mass else 0))
+                        _bot = None
+                        if isinstance(_sq, dict) and int(_sq.get("h") or 0) >= 24:
+                            _pbox = (
+                                int(_sq["x"]), int(_sq["y"]),
+                                int(_sq["w"]), int(_sq["h"]),
+                            )
+                            _top = int(_sq.get("top_y") or _sq["y"])
+                            _bot = int(_sq.get("bot_y") or (_sq["y"] + _sq["h"]))
                         _dbg_sk.set_panel_finder(
-                            top_y=(
-                                _tb[1] if _tb
-                                else (_mn[0] if _mn else (_mass[0] if _mass else 0))
-                            ),
+                            top_y=_top,
                             mineral_y_top=_mn[0] if _mn else None,
                             mineral_y_bot=_mn[1] if _mn else None,
                             mineral_center=(
@@ -3586,9 +3604,10 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                             pitch=(
                                 (_mass[1] - _mass[0]) if _mass else None
                             ),
-                            bot_line_y=None,
+                            bot_line_y=_bot,
                             source="learned_skeleton",
                             title_box=_tb,
+                            panel_box=_pbox,
                         )
                     except Exception:
                         pass
