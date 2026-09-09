@@ -83,10 +83,11 @@ class _NativeChildFilter(QObject):
                     if obj.__class__.__name__ in _KEEP_OVERLAY:
                         return super().eventFilter(obj, event)
                     flags = obj.windowFlags()
-                    if (
-                        flags & Qt.FramelessWindowHint
-                        or obj.testAttribute(Qt.WA_TranslucentBackground)
-                    ):
+                    # Only rewrite true frameless HUD windows. A
+                    # translucent flag on an already-native window
+                    # must not call setWindowFlags (that recreates
+                    # the HWND and kills QTimers / auto-refresh).
+                    if flags & Qt.FramelessWindowHint:
                         was_visible = obj.isVisible()
                         apply_native_chrome(obj)
                         if was_visible or True:
