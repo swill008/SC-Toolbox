@@ -535,22 +535,12 @@ class _RowControl(QGroupBox):
             "Set a starting crop rectangle when auto-detection failed. "
             "Then use ← ↑ ↓ → and W± H± to position, click Lock to save."
         )
-        self._btn_seed_manual.setStyleSheet(
-            "QPushButton { background: #335577; color: #cce0ff; padding: 2px 6px; "
-            "border: none; font-size: 9pt; }"
-            "QPushButton:hover { background: #4477aa; }"
-        )
         self._btn_seed_manual.clicked.connect(self._on_seed_manual)
         nudge.addWidget(self._btn_seed_manual)
 
         self._btn_reset_live = QPushButton("↻ Auto")
         self._btn_reset_live.setToolTip(
             "Discard manual adjustments, return to live auto-detection"
-        )
-        self._btn_reset_live.setStyleSheet(
-            "QPushButton { background: #444; color: #ccc; padding: 2px 6px; "
-            "border: none; font-size: 9pt; }"
-            "QPushButton:hover { background: #666; }"
         )
         self._btn_reset_live.clicked.connect(self._on_reset_to_live)
         nudge.addWidget(self._btn_reset_live)
@@ -560,9 +550,6 @@ class _RowControl(QGroupBox):
         # ── Status + lock row ──
         row = QHBoxLayout()
         self._status = QLabel("Waiting for crop…")
-        self._status.setStyleSheet(
-            f"color: {TEXT_DIM}; font-family: Consolas; font-size: 9pt;"
-        )
         row.addWidget(self._status, 1)
 
         self._lock_btn = QPushButton("🔒 Lock")
@@ -576,9 +563,6 @@ class _RowControl(QGroupBox):
 
     def _make_nudge_label(self, text: str) -> QLabel:
         lbl = QLabel(text)
-        lbl.setStyleSheet(
-            f"color: {TEXT_DIM}; font-family: Consolas; font-size: 8pt;"
-        )
         return lbl
 
     def _make_nudge_btn(
@@ -587,13 +571,6 @@ class _RowControl(QGroupBox):
         btn = QPushButton(text)
         btn.setFixedSize(32, 26)
         btn.setToolTip(tooltip)
-        btn.setStyleSheet(
-            f"QPushButton {{ background: {LOCK_GRAY}; color: white; "
-            "border: none; font-family: Consolas; font-size: 10pt; "
-            "font-weight: bold; }}"
-            "QPushButton:hover { background: #777; }"
-            "QPushButton:pressed { background: #444; }"
-        )
         btn.setAutoRepeat(True)
         btn.setAutoRepeatInterval(60)
         btn.setAutoRepeatDelay(350)
@@ -980,30 +957,13 @@ class _RowControl(QGroupBox):
         except Exception:
             pass
         if locked:
-            self._lock_btn.setText("🔓 Unlock")
-            self._lock_btn.setStyleSheet(
-                f"QPushButton {{ background: {LOCK_GREEN}; color: white; "
-                "font-weight: bold; padding: 6px; border: none; }}"
-                f"QPushButton:hover {{ background: #3b9; }}"
-            )
-            self.setStyleSheet(
-                f"QGroupBox {{ border: 2px solid {LOCK_GREEN}; "
-                "border-radius: 4px; margin-top: 6px; padding-top: 4px; }}"
-                f"QGroupBox::title {{ color: {LOCK_GREEN}; "
-                "font-weight: bold; }}"
-            )
+            self._lock_btn.setText("Unlock")
+            self._lock_btn.setStyleSheet("")
+            self.setStyleSheet("")
         else:
-            self._lock_btn.setText("🔒 Lock")
-            self._lock_btn.setStyleSheet(
-                f"QPushButton {{ background: {LOCK_GRAY}; color: white; "
-                "padding: 6px; border: none; }}"
-                f"QPushButton:hover {{ background: #777; }}"
-            )
-            self.setStyleSheet(
-                "QGroupBox { border: 1px solid #444; border-radius: 4px; "
-                "margin-top: 6px; padding-top: 4px; }"
-                f"QGroupBox::title {{ color: {TEXT_PRIMARY}; }}"
-            )
+            self._lock_btn.setText("Lock")
+            self._lock_btn.setStyleSheet("")
+            self.setStyleSheet("")
 
 
 class _LiveCropSignaler(QObject):
@@ -1064,6 +1024,7 @@ class CalibrationDialog(QDialog):
         """
         super().__init__(parent)
         self.setWindowTitle("Mining HUD OCR Calibration")
+        self.setProperty("sc_native_chrome", True)
         # Lowered from 720×720 so the dialog can occupy a corner of
         # the screen instead of half of it. The Calibrate tab wraps
         # its rows in a QScrollArea, so anything that doesn't fit at
@@ -1082,18 +1043,13 @@ class CalibrationDialog(QDialog):
 
         # Top header — region info + completion banner
         self._header = QLabel("")
-        self._header.setStyleSheet(
-            f"font-family: Electrolize, Consolas; font-size: 12pt; "
-            f"color: {ACCENT}; padding: 4px 8px;"
-        )
+        self._header.setStyleSheet("padding: 4px 8px;")
         v.addWidget(self._header)
 
         self._completion_banner = QLabel("")
         self._completion_banner.setAlignment(Qt.AlignCenter)
         self._completion_banner.setStyleSheet(
-            f"font-family: Electrolize, Consolas; font-size: 22pt; "
-            f"font-weight: bold; color: {LOCK_GREEN}; padding: 10px; "
-            "background: rgba(42, 136, 0, 0.12); border-radius: 6px;"
+            "font-size: 16pt; font-weight: bold; padding: 10px;"
         )
         self._completion_banner.setVisible(False)
         v.addWidget(self._completion_banner)
@@ -1289,7 +1245,6 @@ class CalibrationDialog(QDialog):
 
         # ── Voice tutorial bar (front-and-center on the Calibrate tab) ──
         voice_bar = QWidget()
-        voice_bar.setStyleSheet(f"background: {PANEL_BG}; padding: 6px;")
         vh = QHBoxLayout(voice_bar)
         vh.setContentsMargins(8, 6, 8, 6)
         vh.setSpacing(8)
@@ -1297,13 +1252,6 @@ class CalibrationDialog(QDialog):
         self._voice_btn.setCursor(Qt.PointingHandCursor)
         self._voice_btn.setToolTip(
             "Audio walkthrough of how to calibrate the mining HUD crops"
-        )
-        self._voice_btn.setStyleSheet(
-            f"QPushButton {{ background: {ACCENT}; color: black; "
-            "padding: 8px 18px; font-weight: bold; font-size: 10pt; "
-            "border: none; }}"
-            "QPushButton:hover { background: #5e8; }"
-            "QPushButton:disabled { background: #444; color: #888; }"
         )
         self._voice_btn.clicked.connect(self._on_voice_play)
         vh.addWidget(self._voice_btn)
@@ -1314,32 +1262,18 @@ class CalibrationDialog(QDialog):
         # whenever there's nothing to act on (idle / stopped).
         self._voice_pause_btn = QPushButton("⏸ Pause")
         self._voice_pause_btn.setCursor(Qt.PointingHandCursor)
-        self._voice_pause_btn.setStyleSheet(
-            "QPushButton { background: #444; color: white; padding: 8px 14px; "
-            "border: none; font-size: 10pt; }"
-            "QPushButton:hover { background: #666; }"
-            "QPushButton:disabled { background: #2a2a2a; color: #555; }"
-        )
         self._voice_pause_btn.setEnabled(False)
         self._voice_pause_btn.clicked.connect(self._on_voice_pause)
         vh.addWidget(self._voice_pause_btn)
 
         self._voice_stop_btn = QPushButton("⏹ Stop")
         self._voice_stop_btn.setCursor(Qt.PointingHandCursor)
-        self._voice_stop_btn.setStyleSheet(
-            "QPushButton { background: #444; color: white; padding: 8px 14px; "
-            "border: none; font-size: 10pt; }"
-            "QPushButton:hover { background: #666; }"
-            "QPushButton:disabled { background: #2a2a2a; color: #555; }"
-        )
         self._voice_stop_btn.setEnabled(False)
         self._voice_stop_btn.clicked.connect(self._on_voice_stop)
         vh.addWidget(self._voice_stop_btn)
 
         self._voice_status = QLabel("")
-        self._voice_status.setStyleSheet(
-            f"color: {TEXT_DIM}; font-family: Consolas; font-size: 9pt;"
-        )
+        self._voice_status.setStyleSheet("")
         vh.addWidget(self._voice_status, 1)
 
         # Panel Finder popout — opens a separate, resizable window
@@ -1350,12 +1284,6 @@ class CalibrationDialog(QDialog):
             "Open the SC-OCR Panel Finder in a separate window. "
             "Resizable from small to large; shows the live annotated "
             "panel as a visual reference while you calibrate."
-        )
-        self._panel_finder_btn.setStyleSheet(
-            "QPushButton { background: #2a4a6a; color: white; "
-            "padding: 8px 14px; font-weight: bold; font-size: 10pt; "
-            "border: none; }"
-            "QPushButton:hover { background: #3b5d7a; }"
         )
         self._panel_finder_btn.clicked.connect(self._on_open_panel_finder)
         vh.addWidget(self._panel_finder_btn)
@@ -1372,12 +1300,6 @@ class CalibrationDialog(QDialog):
             "diagnostic for the signal scanner — shows the captured "
             "scan region, the NCC icon anchor (red box), the digit "
             "crop (green box), and the OCR result for every poll."
-        )
-        self._signature_finder_btn.setStyleSheet(
-            "QPushButton { background: #2a6a4a; color: white; "
-            "padding: 8px 14px; font-weight: bold; font-size: 10pt; "
-            "border: none; }"
-            "QPushButton:hover { background: #3b7a5d; }"
         )
         self._signature_finder_btn.clicked.connect(
             self._on_open_signature_finder
@@ -1396,12 +1318,6 @@ class CalibrationDialog(QDialog):
             "the classifier's output and confidence — the visual "
             "companion to the sc_ocr.diag log lines."
         )
-        self._glyph_reader_btn.setStyleSheet(
-            "QPushButton { background: #6a4a2a; color: white; "
-            "padding: 8px 14px; font-weight: bold; font-size: 10pt; "
-            "border: none; }"
-            "QPushButton:hover { background: #7a5d3b; }"
-        )
         self._glyph_reader_btn.clicked.connect(self._on_open_glyph_reader)
         vh.addWidget(self._glyph_reader_btn)
 
@@ -1419,12 +1335,6 @@ class CalibrationDialog(QDialog):
             "without leaving the high-cost diagnostic dump on all the "
             "time."
         )
-        self._record_next_btn.setStyleSheet(
-            "QPushButton { background: #6a2a4a; color: white; "
-            "padding: 8px 14px; font-weight: bold; font-size: 10pt; "
-            "border: none; }"
-            "QPushButton:hover { background: #7a3b5d; }"
-        )
         self._record_next_btn.clicked.connect(self._on_record_next_scan)
         vh.addWidget(self._record_next_btn)
 
@@ -1437,14 +1347,10 @@ class CalibrationDialog(QDialog):
             "<b>How it works:</b> Each row shows the live crop being "
             "fed to the OCR pipeline. When a row's crop looks correct "
             "(value clearly visible, no label leakage), click "
-            "<b style='color:#2a8'>🔒 Lock</b>. Locked rows are saved "
+            "<b>🔒 Lock</b>. Locked rows are saved "
             "immediately and used at runtime instead of detection."
         )
         info.setWordWrap(True)
-        info.setStyleSheet(
-            f"background: {PANEL_BG}; color: {TEXT_PRIMARY}; "
-            "padding: 8px; border-radius: 4px; font-size: 9pt;"
-        )
         v.addWidget(info)
 
         # ── Global column x-offset (one shift applied to ALL HUD rows) ──
@@ -1461,16 +1367,10 @@ class CalibrationDialog(QDialog):
         # live in one place. The shift it applies is unchanged — still
         # global, still affects all HUD rows.
         col_bar = QWidget()
-        col_bar.setStyleSheet(
-            f"background: {PANEL_BG}; padding: 4px; border-radius: 4px;"
-        )
         ch = QHBoxLayout(col_bar)
         ch.setContentsMargins(8, 6, 8, 6)
         ch.setSpacing(6)
         col_title = QLabel("Column x-offset (all rows):")
-        col_title.setStyleSheet(
-            f"color: {TEXT_PRIMARY}; font-family: Consolas; font-size: 10pt;"
-        )
         ch.addWidget(col_title)
 
         self._col_left_btn = QPushButton("←")
@@ -1478,11 +1378,6 @@ class CalibrationDialog(QDialog):
         self._col_left_btn.setToolTip(
             "Shift the value column 1 px LEFT (Shift+click = 5 px). "
             "Affects mass / resistance / instability simultaneously."
-        )
-        self._col_left_btn.setStyleSheet(
-            f"QPushButton {{ background: {LOCK_GRAY}; color: white; "
-            "border: none; font-weight: bold; }}"
-            "QPushButton:hover { background: #777; }"
         )
         self._col_left_btn.clicked.connect(
             lambda: self._on_col_nudge(-1)
@@ -1508,20 +1403,12 @@ class CalibrationDialog(QDialog):
             "Shift the value column 1 px RIGHT (Shift+click = 5 px). "
             "Affects mass / resistance / instability simultaneously."
         )
-        self._col_right_btn.setStyleSheet(
-            f"QPushButton {{ background: {LOCK_GRAY}; color: white; "
-            "border: none; font-weight: bold; }}"
-            "QPushButton:hover { background: #777; }"
-        )
         self._col_right_btn.clicked.connect(
             lambda: self._on_col_nudge(+1)
         )
         ch.addWidget(self._col_right_btn)
 
         self._col_status = QLabel("")
-        self._col_status.setStyleSheet(
-            f"color: {TEXT_DIM}; font-family: Consolas; font-size: 9pt;"
-        )
         ch.addWidget(self._col_status, 1)
         self._refresh_col_status()
         # NOTE: col_bar is NOT added to the top-level layout `v` — it is
@@ -1597,12 +1484,6 @@ class CalibrationDialog(QDialog):
             "can verify the result without closing the dialog. Does "
             "not change the Start/Stop Scan state in the main window."
         )
-        self._scan_now_btn.setStyleSheet(
-            f"QPushButton {{ background: {ACCENT}; color: black; "
-            "padding: 6px 14px; font-weight: bold; border: none; }}"
-            "QPushButton:hover { background: #5e8; }"
-            "QPushButton:disabled { background: #2a4a35; color: #888; }"
-        )
         self._scan_now_btn.clicked.connect(self._on_scan_now)
         actions.addWidget(self._scan_now_btn)
 
@@ -1620,29 +1501,14 @@ class CalibrationDialog(QDialog):
             "leading 1 that won't go away). The next scan starts "
             "fresh. Does not touch saved calibration."
         )
-        reset_consensus_btn.setStyleSheet(
-            "QPushButton { background: #b56000; color: white; padding: 6px 14px; "
-            "border: none; }"
-            "QPushButton:hover { background: #d97a1a; }"
-        )
         reset_consensus_btn.clicked.connect(self._on_reset_consensus)
         actions.addWidget(reset_consensus_btn)
 
         reset_btn = QPushButton("Reset all calibration")
-        reset_btn.setStyleSheet(
-            "QPushButton { background: #722; color: white; padding: 6px 14px; "
-            "border: none; }"
-            "QPushButton:hover { background: #944; }"
-        )
         reset_btn.clicked.connect(self._on_reset_all)
         actions.addWidget(reset_btn)
 
         close_btn = QPushButton("Close")
-        close_btn.setStyleSheet(
-            f"QPushButton {{ background: {ACCENT}; color: black; "
-            "padding: 6px 14px; font-weight: bold; border: none; }}"
-            "QPushButton:hover { background: #5e8; }"
-        )
         close_btn.clicked.connect(self.accept)
         actions.addWidget(close_btn)
 
@@ -1657,7 +1523,7 @@ class CalibrationDialog(QDialog):
 
         self._override_status_lbl = QLabel("")
         self._override_status_lbl.setStyleSheet(
-            "color: #ff8888; font-weight: bold; font-family: Electrolize, Consolas;"
+            "color: #c44; font-weight: bold;"
         )
         emergency_row.addWidget(self._override_status_lbl)
 
@@ -1665,11 +1531,6 @@ class CalibrationDialog(QDialog):
         self._disable_override_btn.setToolTip(
             "Turn off manual override mode for this region. The OCR "
             "pipeline returns to using auto-detection / row locks."
-        )
-        self._disable_override_btn.setStyleSheet(
-            "QPushButton { background: #555; color: #ffd0d0; "
-            "padding: 6px 14px; border: none; }"
-            "QPushButton:hover { background: #777; }"
         )
         self._disable_override_btn.clicked.connect(self._on_disable_override)
         self._disable_override_btn.setVisible(False)
@@ -1679,13 +1540,6 @@ class CalibrationDialog(QDialog):
         self._emergency_btn.setToolTip(
             "Manual selection only. Disables auto-detection. Opens a "
             "dialog where you draw each field's box on a live HUD shot."
-        )
-        self._emergency_btn.setStyleSheet(
-            "QPushButton { background: #aa1a1a; color: white; "
-            "padding: 8px 18px; font-weight: bold; font-size: 10pt; "
-            "border: 2px solid #ff4040; }"
-            "QPushButton:hover { background: #cc2222; }"
-            "QPushButton:pressed { background: #881010; }"
         )
         self._emergency_btn.clicked.connect(self._on_open_emergency_override)
         emergency_row.addWidget(self._emergency_btn)
@@ -1711,10 +1565,7 @@ class CalibrationDialog(QDialog):
         # Tutorial text only — voice button lives on the Calibrate
         # tab now (front-and-center where users actually start).
         browser = QTextBrowser()
-        browser.setStyleSheet(
-            f"background: {PANEL_BG}; color: {TEXT_PRIMARY}; "
-            "padding: 12px; font-family: Consolas; font-size: 10pt;"
-        )
+        browser.setStyleSheet("")
         browser.setOpenExternalLinks(False)
         browser.setHtml(self._tutorial_html())
         v.addWidget(browser, 1)
