@@ -3058,6 +3058,7 @@ def _refine_value_band_to_ink(
     y2: int,
     x_left: int,
     x_right: int,
+    pad_frac: float = 0.55,
 ) -> tuple[int, int]:
     """Snap a label-derived value band onto the ACTUAL digit-ink rows.
 
@@ -3095,11 +3096,12 @@ def _refine_value_band_to_ink(
         xr = min(int(x_right), W)
         if xr - xl < 6:
             return y1, y2
-        # Window: ~0.55 band-height beyond each edge — enough to recover a
-        # value rendered above OR below its label baseline, short of the
-        # adjacent row. The overlap test below is the real guard against
-        # grabbing a neighbour's ink, so the window can be generous.
-        pad = max(3, int(bh * 0.55))
+        # Window: pad_frac of band-height beyond each edge. Auto/label
+        # path uses 0.55 to recover a value off its label baseline.
+        # Learned-skeleton boxes already enclose the value — pass a
+        # small pad_frac so we tighten onto digits without grabbing
+        # the row above/below.
+        pad = max(2, int(bh * float(pad_frac)))
         wy1 = max(0, y1i - pad)
         wy2 = min(H, y2i + pad)
         if wy2 - wy1 < 6:
@@ -3459,6 +3461,40 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
                             )
                         except Exception:
                             pass
+                        # Tighten drawn (often padded) boxes onto the
+                        # actual digit ink so CRNN sees ~30px glyphs
+                        # instead of a 70px band. Width still comes
+                        # from _find_value_crop (grows/shrinks with
+                        # the number). Search stays inside the box.
+                        try:
+                            from .sc_ocr import frame_context as _fc_sk
+                            _gray_sk = _fc_sk.max_channel(img)
+                        except Exception:
+                            _gray_sk = None
+                        if _gray_sk is not None:
+                            _snapped: dict[str, tuple[int, int, int]] = {}
+                            for _fld, _row in _sk_rows.items():
+                                if _fld not in (
+                                    "mass", "resistance", "instability",
+                                ):
+                                    _snapped[_fld] = _row
+                                    continue
+                                _y1s, _y2s, _xvs = _row
+                                _ny1, _ny2 = _refine_value_band_to_ink(
+                                    _gray_sk, _y1s, _y2s,
+                                    _xvs, img.width,
+                                    pad_frac=0.08,
+                                )
+                                if (_ny2 - _ny1) < 0.4 * max(1, _y2s - _y1s):
+                                    _ny1, _ny2 = _y1s, _y2s
+                                log.info(
+                                    "hud: ink-snap %s band %d-%d h=%d "
+                                    "-> %d-%d h=%d",
+                                    _fld, _y1s, _y2s, _y2s - _y1s,
+                                    _ny1, _ny2, _ny2 - _ny1,
+                                )
+                                _snapped[_fld] = (_ny1, _ny2, _xvs)
+                            _sk_rows = _snapped
                         _emit_label_rows_overlay(_sk_rows)
                         return _sk_rows
                     if _cal_sk.get_manual_override_mode(_region_sk):
