@@ -23,6 +23,93 @@ from shared.qt.theme import P
 
 log = logging.getLogger(__name__)
 
+NATIVE_WINDOW_FLAGS = (
+    Qt.Window
+    | Qt.WindowTitleHint
+    | Qt.WindowSystemMenuHint
+    | Qt.WindowCloseButtonHint
+    | Qt.WindowMinMaxButtonsHint
+)
+
+
+_KEEP_OVERLAY = frozenset({
+    "RegionSelector",
+    "ScanBubble",
+    "BreakBubble",
+    "ChartBubble",
+    "DisplayPlacer",
+    "BreakBubblePlacer",
+})
+
+
+def apply_native_chrome(widget: QWidget, title: str | None = None) -> None:
+    """Give *widget* a normal OS title bar. Idempotent.
+
+    Fullscreen region-pick overlays set property ``sc_keep_overlay``
+    to skip this. Changing flags hides the widget; the caller / the
+    Show event filter re-shows it.
+    """
+    if widget is None:
+        return
+    if widget.property("sc_keep_overlay"):
+        return
+    if widget.__class__.__name__ in _KEEP_OVERLAY:
+        return
+    if widget.property("sc_native_chrome"):
+        return
+    widget.setProperty("sc_native_chrome", True)
+    widget.setAttribute(Qt.WA_TranslucentBackground, False)
+    try:
+        widget.setWindowOpacity(1.0)
+    except Exception:
+        pass
+    if title:
+        widget.setWindowTitle(title)
+    widget.setWindowFlags(NATIVE_WINDOW_FLAGS)
+    if hasattr(widget, "set_plain_embed"):
+        try:
+            widget.set_plain_embed(True)
+        except Exception:
+            pass
+
+
+class _NativeChildFilter(QObject):
+    """On Show, strip frameless/translucent skin from child windows."""
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Show and isinstance(obj, QWidget):
+            try:
+                if obj.isWindow() and not obj.property("sc_keep_overlay"):
+                    if obj.__class__.__name__ in _KEEP_OVERLAY:
+                        return super().eventFilter(obj, event)
+                    flags = obj.windowFlags()
+                    if (
+                        flags & Qt.FramelessWindowHint
+                        or obj.testAttribute(Qt.WA_TranslucentBackground)
+                    ):
+                        was_visible = obj.isVisible()
+                        apply_native_chrome(obj)
+                        if was_visible or True:
+                            obj.show()
+            except Exception:
+                pass
+        return super().eventFilter(obj, event)
+
+
+_native_filter_installed = False
+
+
+def install_native_child_filter(app: Optional[QApplication] = None) -> None:
+    """Install once on the QApplication so every child window is native."""
+    global _native_filter_installed
+    if _native_filter_installed:
+        return
+    app = app or QApplication.instance()
+    if app is None:
+        return
+    app.installEventFilter(_NativeChildFilter(app))
+    _native_filter_installed = True
+
 # ── Per-window geometry persistence ──────────────────────────────────────────
 # Each SCWindow saves its geometry (x, y, w, h, opacity) to a small JSON file
 # in the project's logs/ directory when it closes.  The launcher reads this
@@ -182,7 +269,7 @@ class _HoloSurface(QWidget):
         self._accent = QColor(self._accent_hex)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setStyleSheet(f"background: {P.bg_primary};")
-        self._plain = False
+        self._plain = True
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -286,7 +373,7 @@ class _HoloSurface(QWidget):
 
 
 class SCWindow(QMainWindow):
-    """Frameless, always-on-top holographic HUD window."""
+    """Native OS window with a dark Fusion surface (no HUD chrome)."""
 
     def __init__(
         self,
@@ -296,16 +383,13 @@ class SCWindow(QMainWindow):
         min_w: int = 400,
         min_h: int = 200,
         opacity: float = 0.95,
-        always_on_top: bool = True,
+        always_on_top: bool = False,
         accent: str = "",
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
-        flags = Qt.FramelessWindowHint
-        if always_on_top:
-            flags |= Qt.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
+        self.setWindowFlags(NATIVE_WINDOW_FLAGS)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
         self.setWindowTitle(title)
         self.setMinimumSize(QSize(min_w, min_h))
@@ -313,23 +397,17 @@ class SCWindow(QMainWindow):
         self.setWindowOpacity(1.0)
 
         self._central = _HoloSurface(self, accent=accent)
+        self._central._plain = True
         self.setCentralWidget(self._central)
         self._layout = QVBoxLayout(self._central)
-        self._layout.setContentsMargins(1, 1, 1, 1)  # 1px inside the border
+        self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
 
         self._resizing = False
         self._resize_edge = None
         self._drag_pos = QPoint()
         self.setMouseTracking(True)
-
-        # Install the app-wide edge resize filter once
-        global _edge_filter_installed
-        if not _edge_filter_installed:
-            app = QApplication.instance()
-            if app:
-                app.installEventFilter(_EdgeResizeFilter(app))
-                _edge_filter_installed = True
+        self.setProperty("sc_native_chrome", True)
 
         # ── Default size (for reset layout) ──
         self._default_width = width
@@ -339,7 +417,7 @@ class SCWindow(QMainWindow):
         self._collapsed = False
         self._expanded_height = height
         self._original_min_h = min_h
-        self._plain_embed = False
+        self._plain_embed = True
 
     def set_plain_embed(self, on: bool = True) -> None:
         """Drop HUD chrome when this window is hosted inside another."""
