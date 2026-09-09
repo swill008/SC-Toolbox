@@ -173,6 +173,7 @@ class PanelFinderPopout(QWidget):
         # only for clean shutdown.
         super().__init__(parent, Qt.Window)
         self.setWindowTitle("SC-OCR Panel Finder")
+        self.setProperty("sc_native_chrome", True)
         self._overlay_path = overlay_path or DEFAULT_OVERLAY_PATH
         self._cached_pil: Optional[Image.Image] = None
         self._last_mtime = 0.0
