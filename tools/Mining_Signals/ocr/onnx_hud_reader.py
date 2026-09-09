@@ -3062,6 +3062,7 @@ def _refine_value_band_to_ink(
     x_left: int,
     x_right: int,
     pad_frac: float = 0.55,
+    tight: bool = False,
 ) -> tuple[int, int]:
     """Snap a label-derived value band onto the ACTUAL digit-ink rows.
 
@@ -3104,7 +3105,7 @@ def _refine_value_band_to_ink(
         # Learned-skeleton boxes already enclose the value — pass a
         # small pad_frac so we tighten onto digits without grabbing
         # the row above/below.
-        pad = max(2, int(bh * float(pad_frac)))
+        pad = max(0 if tight else 2, int(bh * float(pad_frac)))
         wy1 = max(0, y1i - pad)
         wy2 = min(H, y2i + pad)
         if wy2 - wy1 < 6:
@@ -3113,11 +3114,13 @@ def _refine_value_band_to_ink(
         # Canonical polarity: ink bright (bright background -> invert).
         if float(np.median(col)) > 140.0:
             col = 255.0 - col
-        prof = np.percentile(col, 90, axis=1)
+        perc = 96.0 if tight else 90.0
+        prof = np.percentile(col, perc, axis=1)
         lo, hi = float(prof.min()), float(prof.max())
         if hi - lo < 12.0:
             return y1, y2  # flat strip, no resolvable ink
-        thr = lo + 0.33 * (hi - lo)
+        thr_frac = 0.50 if tight else 0.33
+        thr = lo + thr_frac * (hi - lo)
         mask = prof > thr
         # Enumerate contiguous ink runs (window-relative row indices).
         runs: list[tuple[int, int]] = []
@@ -3143,7 +3146,7 @@ def _refine_value_band_to_ink(
         if _overlap(best[0], best[1]) < 2 or (best[1] - best[0]) < 4:
             return y1, y2  # nothing meaningfully overlaps -> keep label band
         rs, re = best
-        margin = max(2, int((re - rs) * 0.18))
+        margin = 2 if tight else max(2, int((re - rs) * 0.18))
         ny1 = max(0, wy1 + rs - margin)
         ny2 = min(H, wy1 + re + margin)
         if ny2 - ny1 < 6:
@@ -3181,7 +3184,7 @@ def _ink_snap_label_rows(
             continue
         y1, y2, xv = row
         ny1, ny2 = _refine_value_band_to_ink(
-            gray, y1, y2, xv, img.width, pad_frac=0.08,
+            gray, y1, y2, xv, img.width, pad_frac=0.0, tight=True,
         )
         if (ny2 - ny1) < 0.4 * max(1, y2 - y1):
             ny1, ny2 = y1, y2
