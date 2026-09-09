@@ -9847,11 +9847,6 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
                 if (
                     _cons
                     and _cons != _hudr_digits
-                    and not (
-                        field == "resistance"
-                        and _hudr_digits in ("0", "0.")
-                        and _hudr_mean >= 0.75
-                    )
                 ):
                     log.info(
                         "sc_ocr.hud: field=%s CRNN read=%r mean=%.2f "
@@ -10072,19 +10067,21 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
                                 ):
                                     continue
                                 # Width fusion: any span whose width
-                                # is ≥2.0× the median is likely a
-                                # fused-digit tile. A lone '4'/'0'/'8'
-                                # next to a '1' is ~1.5-1.7× median
-                                # and must NOT count as fused
-                                # (2026-09-08: 14.19 → 144.114).
+                                # is ≥1.6× the median is likely a
+                                # fused-digit tile. We use a wide
+                                # tolerance (1.6×) because the "1"
+                                # digit is genuinely narrow and the
+                                # median can be pulled toward it on
+                                # rows like "1XX"; setting the
+                                # threshold at 1.6× the median avoids
+                                # flagging legit wide digits ("0",
+                                # "8") on those rows. Cap each tile's
+                                # contribution at +3 extras so a
+                                # spurious mega-blob doesn't blow up
+                                # expected_count.
                                 if _median_w > 0:
                                     _ratio = _cw / float(_median_w)
-                                    # 2.0×: a '4'/'0'/'8' next to a '1'
-                                    # is ~1.5-1.7× median, not a fusion.
-                                    # Live 2026-09-08: 14.19's '4' at
-                                    # 1.63× median was counted as fused
-                                    # and COUNT ORACLE split 5→7 → 144.114.
-                                    if _ratio >= 2.0:
+                                    if _ratio >= 1.6:
                                         _cm_width_extra += min(
                                             3, int(round(_ratio)) - 1,
                                         )
@@ -10324,11 +10321,6 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
             _legacy_override = bool(
                 _legacy_cons
                 and _legacy_cons != _legacy_digits
-                and not (
-                    field == "resistance"
-                    and _legacy_digits in ("0", "0.")
-                    and _hud_crnn_pre_mean >= 0.75
-                )
             )
             if _legacy_override:
                 log.info(
@@ -10471,7 +10463,7 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
                         _wf_visible_count += 1
                     if _wf_median_w > 0:
                         _ratio = _cw / float(_wf_median_w)
-                        if _ratio >= 2.0:
+                        if _ratio >= 1.6:
                             _wf_width_extra += min(
                                 3, int(round(_ratio)) - 1,
                             )
@@ -10777,9 +10769,6 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
                 field == "instability"
                 and _hud_expected_count is not None
                 and _primary_boxes
-                # Segmenter cascade target already includes the '.'
-                # span. Only add +1 when the oracle is CRNN digits.
-                and _hud_count_from_segmenter is None
             ):
                 _seg_ws = sorted(int(_b[2]) for _b in _primary_boxes)
                 _seg_med = _seg_ws[len(_seg_ws) // 2] if _seg_ws else 0
@@ -10813,7 +10802,7 @@ def _ocr_value_crop(value_crop: Image.Image, field: str = "") -> tuple[str, list
                             int(_b[2]) for _b in _primary_boxes
                         )
                         _sw_med = _split_ws[len(_split_ws) // 2]
-                        if _sw_med > 0 and _split_ws[-1] >= 2.0 * _sw_med:
+                        if _sw_med > 0 and _split_ws[-1] >= 1.45 * _sw_med:
                             _new_boxes = (
                                 _seg_helpers.split_wide_spans_to_count(
                                     _primary_boxes,
@@ -16741,19 +16730,6 @@ def scan_hud_onnx(
     # NCC anchor mis-fired.  If a real, large panel move happens, the
     # user re-opens the calibration dialog and re-locks; that's
     # explicit and predictable.
-    _has_learned_sk = False
-    try:
-        from . import calibration as _cal_sk_gate
-        _sk_gate = _cal_sk_gate.get_learned_skeleton(region)
-        _sk_f = (_sk_gate or {}).get("fields") if isinstance(_sk_gate, dict) else None
-        _has_learned_sk = (
-            isinstance(_sk_f, dict)
-            and "mass" in _sk_f
-            and "resistance" in _sk_f
-        )
-    except Exception:
-        _has_learned_sk = False
-
     _cal_drift_y = 0
     _ncc_label_positions: dict = {}
     try:
@@ -16761,16 +16737,8 @@ def scan_hud_onnx(
         _saved_cal = _cal_drift_mod.load(region)
         _saved_mass = (_saved_cal or {}).get("rows", {}).get("mass") if _saved_cal else None
         from . import label_match as _lm_drift
-        if _has_learned_sk:
-            log.info(
-                "sc_ocr.hud: learned skeleton present — skipping Auto "
-                "label_match"
-            )
-            _ncc_label_positions = {}
-            _mass_match = None
-        else:
-            _ncc_label_positions = _lm_drift.find_label_positions(img)
-            _mass_match = _ncc_label_positions.get("mass")
+        _ncc_label_positions = _lm_drift.find_label_positions(img)
+        _mass_match = _ncc_label_positions.get("mass")
         if (
             _saved_mass is not None
             and _mass_match is not None
@@ -16801,7 +16769,7 @@ def scan_hud_onnx(
         _cal_drift_y = 0
         _ncc_label_positions = {}
 
-    if mineral_row is None and not _has_learned_sk:
+    if mineral_row is None:
         # No panel visible — reset consensus buffers AND drop any
         # locked field values for this region. The user looked away
         # from the rock; next rock starts fresh.

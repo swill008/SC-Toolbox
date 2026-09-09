@@ -2972,7 +2972,6 @@ def _label_rows_from_learned_skeleton(
     img_w: int,
     img_h: int,
     title_box: "Optional[tuple[int, int, int, int]]" = None,
-    img: "Optional[Image.Image]" = None,
 ) -> dict[str, tuple[int, int, int]]:
     """Place rows from HUD-region boxes scaled onto the live image.
 
@@ -3018,8 +3017,6 @@ def _label_rows_from_learned_skeleton(
             region.get("w"), region.get("h"),
             {k: v[:2] for k, v in out.items()},
         )
-        if img is not None:
-            out = _ink_snap_label_rows(img, out)
     return out
 
 
@@ -3061,8 +3058,6 @@ def _refine_value_band_to_ink(
     y2: int,
     x_left: int,
     x_right: int,
-    pad_frac: float = 0.55,
-    tight: bool = False,
 ) -> tuple[int, int]:
     """Snap a label-derived value band onto the ACTUAL digit-ink rows.
 
@@ -3100,12 +3095,11 @@ def _refine_value_band_to_ink(
         xr = min(int(x_right), W)
         if xr - xl < 6:
             return y1, y2
-        # Window: pad_frac of band-height beyond each edge. Auto/label
-        # path uses 0.55 to recover a value off its label baseline.
-        # Learned-skeleton boxes already enclose the value — pass a
-        # small pad_frac so we tighten onto digits without grabbing
-        # the row above/below.
-        pad = max(0 if tight else 2, int(bh * float(pad_frac)))
+        # Window: ~0.55 band-height beyond each edge — enough to recover a
+        # value rendered above OR below its label baseline, short of the
+        # adjacent row. The overlap test below is the real guard against
+        # grabbing a neighbour's ink, so the window can be generous.
+        pad = max(3, int(bh * 0.55))
         wy1 = max(0, y1i - pad)
         wy2 = min(H, y2i + pad)
         if wy2 - wy1 < 6:
@@ -3114,13 +3108,11 @@ def _refine_value_band_to_ink(
         # Canonical polarity: ink bright (bright background -> invert).
         if float(np.median(col)) > 140.0:
             col = 255.0 - col
-        perc = 96.0 if tight else 90.0
-        prof = np.percentile(col, perc, axis=1)
+        prof = np.percentile(col, 90, axis=1)
         lo, hi = float(prof.min()), float(prof.max())
         if hi - lo < 12.0:
             return y1, y2  # flat strip, no resolvable ink
-        thr_frac = 0.50 if tight else 0.33
-        thr = lo + thr_frac * (hi - lo)
+        thr = lo + 0.33 * (hi - lo)
         mask = prof > thr
         # Enumerate contiguous ink runs (window-relative row indices).
         runs: list[tuple[int, int]] = []
@@ -3146,7 +3138,7 @@ def _refine_value_band_to_ink(
         if _overlap(best[0], best[1]) < 2 or (best[1] - best[0]) < 4:
             return y1, y2  # nothing meaningfully overlaps -> keep label band
         rs, re = best
-        margin = 2 if tight else max(2, int((re - rs) * 0.18))
+        margin = max(2, int((re - rs) * 0.18))
         ny1 = max(0, wy1 + rs - margin)
         ny2 = min(H, wy1 + re + margin)
         if ny2 - ny1 < 6:
@@ -3154,64 +3146,6 @@ def _refine_value_band_to_ink(
         return ny1, ny2
     except Exception:
         return y1, y2
-
-
-def _ink_snap_label_rows(
-    img: Image.Image,
-    rows: dict[str, tuple[int, int, int]],
-) -> dict[str, tuple[int, int, int]]:
-    """Tighten mass/resistance/instability bands onto digit ink.
-
-    Learned-skeleton boxes are user-drawn and usually padded. OCR
-    rejects / mis-segments bands taller than ~50px (8→0, extra
-    digits). Search stays inside the box (pad_frac=0.08) so a
-    neighbor row cannot steal the band. Width is unchanged —
-    ``_find_value_crop`` still grows/shrinks with the number.
-    """
-    if not rows:
-        return rows
-    try:
-        from .sc_ocr import frame_context as _fc_sk
-        gray = _fc_sk.max_channel(img)
-    except Exception:
-        return rows
-    if gray is None:
-        return rows
-    snapped: dict[str, tuple[int, int, int]] = {}
-    for fld, row in rows.items():
-        if fld not in ("mass", "resistance", "instability"):
-            snapped[fld] = row
-            continue
-        y1, y2, xv = row
-        ny1, ny2 = _refine_value_band_to_ink(
-            gray, y1, y2, xv, img.width, pad_frac=0.0, tight=True,
-        )
-        if (ny2 - ny1) < 0.4 * max(1, y2 - y1):
-            ny1, ny2 = y1, y2
-        log.info(
-            "hud: ink-snap %s band %d-%d h=%d -> %d-%d h=%d",
-            fld, y1, y2, y2 - y1, ny1, ny2, ny2 - ny1,
-        )
-        snapped[fld] = (ny1, ny2, xv)
-    return snapped
-
-
-def _region_has_learned_skeleton() -> bool:
-    """True when this HUD region has taught Mass+Resistance boxes."""
-    region = _get_current_region()
-    if not region:
-        return False
-    try:
-        from .sc_ocr import calibration as _cal_sk
-        sk = _cal_sk.get_learned_skeleton(region)
-        fields = (sk or {}).get("fields") if isinstance(sk, dict) else None
-        return bool(
-            isinstance(fields, dict)
-            and "mass" in fields
-            and "resistance" in fields
-        )
-    except Exception:
-        return False
 
 
 def _find_label_rows(img: Image.Image) -> dict[str, tuple[int, int, int]]:
@@ -3225,13 +3159,8 @@ def _find_label_rows(img: Image.Image) -> dict[str, tuple[int, int, int]]:
     sweep cost. Any fingerprint break, image-size change, or the
     periodic forced re-verify falls through to ``_find_label_rows_impl``
     and re-fingerprints its result. ``SC_POSE_HOLD=0`` disables holding.
-    Pose-hold is skipped when a learned skeleton exists so ink-snap
-    can run every frame on the drawn boxes.
     """
-    _pose_on = (
-        os.environ.get("SC_POSE_HOLD") != "0"
-        and not _region_has_learned_skeleton()
-    )
+    _pose_on = os.environ.get("SC_POSE_HOLD") != "0"
     if _pose_on:
         try:
             from .sc_ocr import panel_pose as _pose_mod
@@ -3489,64 +3418,63 @@ def _find_label_rows_impl_body(img: Image.Image) -> dict[str, tuple[int, int, in
             except Exception:
                 pass
 
-        # Learned skeleton does not need SCAN RESULTS — it is the
-        # user's drawn boxes scaled onto this image. Keep it outside
-        # the pre-anchor gate so a missed title cannot fall through
-        # to Auto label_match.
-        _region_sk = _get_current_region()
-        if _region_sk is not None:
-            try:
-                from .sc_ocr import calibration as _cal_sk
-                _sk_rows = _label_rows_from_learned_skeleton(
-                    _region_sk, img.width, img.height, img=img,
-                )
-                if (
-                    _sk_rows
-                    and "mass" in _sk_rows
-                    and "resistance" in _sk_rows
-                ):
-                    log.info(
-                        "hud: learned-skeleton region-scale "
-                        "rows=%s — skipping NCC placement",
-                        {k: v[:2] for k, v in _sk_rows.items()},
-                    )
-                    try:
-                        from .sc_ocr import debug_overlay as _dbg_sk
-                        _mn = _sk_rows.get("_mineral_row")
-                        _mass = _sk_rows.get("mass")
-                        _dbg_sk.set_panel_finder(
-                            top_y=_mass[0] if _mass else 0,
-                            mineral_y_top=_mn[0] if _mn else None,
-                            mineral_y_bot=_mn[1] if _mn else None,
-                            mineral_center=(
-                                (_mn[0] + _mn[1]) // 2 if _mn else None
-                            ),
-                            pitch=(
-                                (_mass[1] - _mass[0]) if _mass else None
-                            ),
-                            bot_line_y=None,
-                            source="learned_skeleton",
-                            title_box=_get_cached_title_box(),
-                        )
-                    except Exception:
-                        pass
-                    _emit_label_rows_overlay(_sk_rows)
-                    return _sk_rows
-                if _cal_sk.get_manual_override_mode(_region_sk):
-                    _sticky = _build_manual_override_label_rows(
+            # ── LEARNED SKELETON / sticky override (before NCC) ──
+            # User placed Mass/Res/Inst on the zoomed HUD. If we
+            # taught multipliers, slide those rows with the live
+            # SCAN RESULTS title. Else use the drawn boxes as-is.
+            _region_sk = _get_current_region()
+            if _region_sk is not None:
+                try:
+                    from .sc_ocr import calibration as _cal_sk
+                    _sk_rows = _label_rows_from_learned_skeleton(
                         _region_sk, img.width, img.height,
                     )
-                    if _result_is_usable(_sticky):
+                    if (
+                        _sk_rows
+                        and "mass" in _sk_rows
+                        and "resistance" in _sk_rows
+                    ):
                         log.info(
-                            "hud: manual override sticky boxes "
-                            "(no learned skeleton) — skipping NCC"
+                            "hud: learned-skeleton region-scale "
+                            "rows=%s — skipping NCC placement",
+                            {k: v[:2] for k, v in _sk_rows.items()},
                         )
-                        _emit_label_rows_overlay(_sticky)
-                        return _sticky
-            except Exception as _sk_exc:
-                log.debug("learned-skeleton path failed: %s", _sk_exc)
+                        try:
+                            from .sc_ocr import debug_overlay as _dbg_sk
+                            _mn = _sk_rows.get("_mineral_row")
+                            _mass = _sk_rows.get("mass")
+                            _dbg_sk.set_panel_finder(
+                                top_y=_mass[0] if _mass else 0,
+                                mineral_y_top=_mn[0] if _mn else None,
+                                mineral_y_bot=_mn[1] if _mn else None,
+                                mineral_center=(
+                                    (_mn[0] + _mn[1]) // 2 if _mn else None
+                                ),
+                                pitch=(
+                                    (_mass[1] - _mass[0]) if _mass else None
+                                ),
+                                bot_line_y=None,
+                                source="learned_skeleton",
+                                title_box=_get_cached_title_box(),
+                            )
+                        except Exception:
+                            pass
+                        _emit_label_rows_overlay(_sk_rows)
+                        return _sk_rows
+                    if _cal_sk.get_manual_override_mode(_region_sk):
+                        _sticky = _build_manual_override_label_rows(
+                            _region_sk, img.width, img.height,
+                        )
+                        if _result_is_usable(_sticky):
+                            log.info(
+                                "hud: manual override sticky boxes "
+                                "(no learned skeleton) — skipping NCC"
+                            )
+                            _emit_label_rows_overlay(_sticky)
+                            return _sticky
+                except Exception as _sk_exc:
+                    log.debug("learned-skeleton path failed: %s", _sk_exc)
 
-        if _pre_anchor is not None:
             # ── EARLY-DIRECT row finder ──
             # Run label_match against a "below the title" crop. If it
             # finds all three numeric labels (mass / resistance /
