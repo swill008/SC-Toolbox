@@ -4164,6 +4164,8 @@ class MiningSignalsApp(SCWindow):
 
         def _run():
             try:
+                if getattr(self, "_torn_down", False):
+                    return
                 # ── ANCHOR GATE ──
                 # Capture each configured region with a SINGLE frame
                 # (not the 300 ms averaged composite the OCR pipeline
@@ -4554,6 +4556,14 @@ class MiningSignalsApp(SCWindow):
                     # function's own ``mass is None or resistance is
                     # None`` branch already handles the hide-and-
                     # placeholder path.
+                    if getattr(self, "_torn_down", False):
+                        return
+                    try:
+                        from shiboken6 import isValid as _isValid
+                        if not _isValid(self):
+                            return
+                    except Exception:
+                        pass
                     QMetaObject.invokeMethod(
                         self, "_update_break_bubble",
                         Qt.QueuedConnection,
@@ -4573,7 +4583,10 @@ class MiningSignalsApp(SCWindow):
                             Qt.QueuedConnection,
                         )
             finally:
-                self._scan_in_progress = False
+                try:
+                    self._scan_in_progress = False
+                except RuntimeError:
+                    pass
 
         threading.Thread(target=_run, daemon=True).start()
 
