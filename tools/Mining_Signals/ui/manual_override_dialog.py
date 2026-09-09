@@ -324,9 +324,7 @@ class ManualOverrideDialog(QDialog):
         )
         banner.setWordWrap(True)
         banner.setStyleSheet(
-            "background: #aa1a1a; color: #fff; padding: 10px; "
-            "border-radius: 4px; font-family: Electrolize, Consolas; "
-            "font-size: 11pt;"
+            "background: #5a1a1a; color: #fff; padding: 10px;"
         )
         v.addWidget(banner)
 
@@ -338,10 +336,6 @@ class ManualOverrideDialog(QDialog):
                 "disabled until a region exists."
             )
             note.setWordWrap(True)
-            note.setStyleSheet(
-                "background: #5a3a1a; color: #ffd28a; padding: 8px; "
-                "border-radius: 4px;"
-            )
             v.addWidget(note)
 
         # ── Field selector row ──
@@ -379,9 +373,6 @@ class ManualOverrideDialog(QDialog):
         # the layout from collapsing on small HUD captures.
         draw_frame = QFrame()
         draw_frame.setFrameShape(QFrame.StyledPanel)
-        draw_frame.setStyleSheet(
-            "QFrame { background: #050505; border: 1px solid #333; }"
-        )
         df_layout = QVBoxLayout(draw_frame)
         df_layout.setContentsMargins(4, 4, 4, 4)
         self._draw = _DrawArea()
@@ -395,33 +386,16 @@ class ManualOverrideDialog(QDialog):
         sidebar = QVBoxLayout()
         sidebar.setSpacing(4)
         sidebar_label = QLabel("Current boxes")
-        sidebar_label.setStyleSheet(
-            f"color: {ACCENT}; font-weight: bold; padding: 2px;"
-        )
         sidebar.addWidget(sidebar_label)
         self._box_list = QListWidget()
-        self._box_list.setStyleSheet(
-            "QListWidget { background: #181818; color: #cccccc; "
-            "font-family: Consolas; font-size: 9pt; border: 1px solid #333; }"
-        )
         self._box_list.setMinimumWidth(220)
         sidebar.addWidget(self._box_list, 1)
 
         clear_one_btn = QPushButton("Clear selected")
-        clear_one_btn.setStyleSheet(
-            "QPushButton { background: #553333; color: #ffd0d0; "
-            "padding: 4px; border: none; }"
-            "QPushButton:hover { background: #774444; }"
-        )
         clear_one_btn.clicked.connect(self._on_clear_selected)
         sidebar.addWidget(clear_one_btn)
 
         clear_all_btn = QPushButton("Clear all boxes")
-        clear_all_btn.setStyleSheet(
-            "QPushButton { background: #663333; color: #ffd0d0; "
-            "padding: 4px; border: none; }"
-            "QPushButton:hover { background: #884444; }"
-        )
         clear_all_btn.clicked.connect(self._on_clear_all)
         sidebar.addWidget(clear_all_btn)
 
@@ -430,11 +404,6 @@ class ManualOverrideDialog(QDialog):
             "Pre-populate the boxes with whatever is currently saved as "
             "calibration locks for this region. You can then nudge / "
             "redraw individual fields."
-        )
-        load_btn.setStyleSheet(
-            "QPushButton { background: #335577; color: #cce0ff; "
-            "padding: 4px; border: none; }"
-            "QPushButton:hover { background: #4477aa; }"
         )
         load_btn.clicked.connect(self._on_load_from_locks)
         sidebar.addWidget(load_btn)
@@ -447,21 +416,10 @@ class ManualOverrideDialog(QDialog):
         actions.addStretch(1)
 
         cancel_btn = QPushButton("Cancel")
-        cancel_btn.setStyleSheet(
-            "QPushButton { background: #444; color: #ddd; "
-            "padding: 8px 18px; border: none; }"
-            "QPushButton:hover { background: #666; }"
-        )
         cancel_btn.clicked.connect(self.reject)
         actions.addWidget(cancel_btn)
 
-        self._save_btn = QPushButton("💾 Save Manual Override")
-        self._save_btn.setStyleSheet(
-            "QPushButton { background: #aa1a1a; color: white; "
-            "padding: 8px 18px; font-weight: bold; border: none; }"
-            "QPushButton:hover { background: #cc2222; }"
-            "QPushButton:disabled { background: #553333; color: #888; }"
-        )
+        self._save_btn = QPushButton("Save Manual Override")
         self._save_btn.clicked.connect(self._on_save)
         if self._region is None:
             self._save_btn.setEnabled(False)
