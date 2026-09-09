@@ -689,21 +689,22 @@ def teach_learned_skeleton(
     boxes: dict,
     capture_w: Optional[int] = None,
     capture_h: Optional[int] = None,
+    title_x: int = 0,
     title_y: int = 0,
     title_h: int = 0,
 ) -> bool:
-    """Store user-drawn boxes in HUD-region pixels.
+    """Store user-drawn boxes in HUD-region (native capture) pixels.
 
-    Live scans scale these by live_img / capture size (REF_H upscale).
-    Title is optional metadata only — placement does not re-anchor.
-    ``boxes`` maps field name → ``{x,y,w,h}`` in the capture that
-    was drawn on. Returns True when mass/resistance/instability exist.
+    Live placement uses those x/y/w/h (A). If a real SCAN RESULTS
+    title is stored, live scans may translate the whole skeleton by
+    (live_title - taught_title) without changing pitch (C).
     """
     try:
+        tx = int(title_x or 0)
         ty = int(title_y or 0)
         th = int(title_h or 0)
     except (TypeError, ValueError):
-        ty, th = 0, 0
+        tx, ty, th = 0, 0, 0
     try:
         cw = int(capture_w) if capture_w else int(region.get("w") or 0)
         ch = int(capture_h) if capture_h else int(region.get("h") or 0)
@@ -737,6 +738,7 @@ def teach_learned_skeleton(
     data = _copy.deepcopy(data)
     entry = _ensure_entry(data, region)
     entry[_KEY_LEARNED_SKELETON] = {
+        "title_x": tx,
         "title_y": ty,
         "title_h": th,
         "capture_w": cw,
@@ -746,9 +748,9 @@ def teach_learned_skeleton(
     entry["saved_at"] = datetime.utcnow().isoformat(timespec="seconds")
     _save_all(data)
     log.info(
-        "calibration: learned_skeleton capture=%sx%s title=(y=%d,h=%d) "
+        "calibration: learned_skeleton capture=%sx%s title=(x=%d,y=%d,h=%d) "
         "fields=%s region=%s",
-        cw, ch, ty, th,
+        cw, ch, tx, ty, th,
         {k: (v.get("x"), v.get("y"), v.get("w"), v.get("h"))
          for k, v in fields.items()},
         _region_key(region),

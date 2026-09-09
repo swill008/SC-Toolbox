@@ -612,27 +612,42 @@ class ManualOverrideDialog(QDialog):
             )
             return
 
-        # Store boxes in HUD-region pixels + the capture size they
-        # were drawn on. Live OCR upscales to REF_H; placement scales
-        # these boxes by img/capture. No live title re-anchor.
+        # Native boxes (A) plus SCAN RESULTS title for rigid follow (C).
         taught = False
         try:
             _cw = int(self._hud_pil.width) if self._hud_pil is not None else int((self._region or {}).get("w") or 0)
             _ch = int(self._hud_pil.height) if self._hud_pil is not None else int((self._region or {}).get("h") or 0)
+            _tx = _ty = _th = 0
+            if self._hud_pil is not None:
+                try:
+                    from ocr.sc_ocr import scan_results_match as _srm_teach
+                    _anc = _srm_teach.find_scan_results_anchor(self._hud_pil)
+                    if (
+                        isinstance(_anc, dict)
+                        and float(_anc.get("score") or 0) >= 0.55
+                    ):
+                        _tx = int(_anc.get("title_x") or 0)
+                        _ty = int(_anc.get("title_y") or 0)
+                        _th = int(_anc.get("title_h") or 0)
+                except Exception as _t_exc:
+                    log.debug("teach title lookup failed: %s", _t_exc)
             taught = bool(calibration.teach_learned_skeleton(
                 self._region,
                 boxes=saved,
                 capture_w=_cw,
                 capture_h=_ch,
+                title_x=_tx,
+                title_y=_ty,
+                title_h=_th,
             ))
         except Exception as _exc:
             log.warning("teach_learned_skeleton failed: %s", _exc)
             taught = False
         if taught:
             log.info(
-                "manual override: stored region-pixel skeleton "
-                "capture=%sx%s fields=%s",
-                _cw, _ch, list(saved),
+                "manual override: stored native skeleton "
+                "capture=%sx%s title=(%d,%d,h=%d) fields=%s",
+                _cw, _ch, _tx, _ty, _th, list(saved),
             )
         else:
             log.info("manual override: sticky boxes only (teach failed)")

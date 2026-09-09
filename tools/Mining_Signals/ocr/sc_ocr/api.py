@@ -16730,46 +16730,55 @@ def scan_hud_onnx(
     # NCC anchor mis-fired.  If a real, large panel move happens, the
     # user re-opens the calibration dialog and re-locks; that's
     # explicit and predictable.
+    #
+    # Native skeleton (A+C) owns placement — skip Auto NCC here.
+    _has_learned_sk = False
+    try:
+        from . import calibration as _cal_sk_gate
+        _has_learned_sk = _cal_sk_gate.get_learned_skeleton(region) is not None
+    except Exception:
+        _has_learned_sk = False
     _cal_drift_y = 0
     _ncc_label_positions: dict = {}
-    try:
-        from . import calibration as _cal_drift_mod
-        _saved_cal = _cal_drift_mod.load(region)
-        _saved_mass = (_saved_cal or {}).get("rows", {}).get("mass") if _saved_cal else None
-        from . import label_match as _lm_drift
-        _ncc_label_positions = _lm_drift.find_label_positions(img)
-        _mass_match = _ncc_label_positions.get("mass")
-        if (
-            _saved_mass is not None
-            and _mass_match is not None
-            and _mass_match.get("score", 0) >= 0.50
-        ):
-            _cur_mass_y = int(_mass_match["y"])
-            _cal_mass_y = int(_saved_mass["y"])
-            _proposed_drift = _cur_mass_y - _cal_mass_y
-            if abs(_proposed_drift) <= 25:
-                _cal_drift_y = _proposed_drift
-                if _cal_drift_y != 0:
-                    log.info(
-                        "sc_ocr: MASS-anchor drift %+d px "
-                        "(cur=%d, cal=%d, ncc=%.2f) — drift-"
-                        "correcting locked crops",
-                        _cal_drift_y, _cur_mass_y, _cal_mass_y,
-                        _mass_match["score"],
+    if not _has_learned_sk:
+        try:
+            from . import calibration as _cal_drift_mod
+            _saved_cal = _cal_drift_mod.load(region)
+            _saved_mass = (_saved_cal or {}).get("rows", {}).get("mass") if _saved_cal else None
+            from . import label_match as _lm_drift
+            _ncc_label_positions = _lm_drift.find_label_positions(img)
+            _mass_match = _ncc_label_positions.get("mass")
+            if (
+                _saved_mass is not None
+                and _mass_match is not None
+                and _mass_match.get("score", 0) >= 0.50
+            ):
+                _cur_mass_y = int(_mass_match["y"])
+                _cal_mass_y = int(_saved_mass["y"])
+                _proposed_drift = _cur_mass_y - _cal_mass_y
+                if abs(_proposed_drift) <= 25:
+                    _cal_drift_y = _proposed_drift
+                    if _cal_drift_y != 0:
+                        log.info(
+                            "sc_ocr: MASS-anchor drift %+d px "
+                            "(cur=%d, cal=%d, ncc=%.2f) — drift-"
+                            "correcting locked crops",
+                            _cal_drift_y, _cur_mass_y, _cal_mass_y,
+                            _mass_match["score"],
+                        )
+                else:
+                    log.debug(
+                        "sc_ocr: MASS-anchor drift %+d px exceeds ±25 px "
+                        "cap (cur=%d, cal=%d) — likely an NCC false "
+                        "positive; keeping saved Y verbatim",
+                        _proposed_drift, _cur_mass_y, _cal_mass_y,
                     )
-            else:
-                log.debug(
-                    "sc_ocr: MASS-anchor drift %+d px exceeds ±25 px "
-                    "cap (cur=%d, cal=%d) — likely an NCC false "
-                    "positive; keeping saved Y verbatim",
-                    _proposed_drift, _cur_mass_y, _cal_mass_y,
-                )
-    except Exception as _drift_exc:
-        log.debug("anchor-drift compute failed: %s", _drift_exc)
-        _cal_drift_y = 0
-        _ncc_label_positions = {}
+        except Exception as _drift_exc:
+            log.debug("anchor-drift compute failed: %s", _drift_exc)
+            _cal_drift_y = 0
+            _ncc_label_positions = {}
 
-    if mineral_row is None:
+    if mineral_row is None and not _has_learned_sk:
         # No panel visible — reset consensus buffers AND drop any
         # locked field values for this region. The user looked away
         # from the rock; next rock starts fresh.
