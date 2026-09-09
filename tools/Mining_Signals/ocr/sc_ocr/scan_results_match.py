@@ -979,16 +979,17 @@ def find_scan_results_square(
     hint_boxes: Optional[dict] = None,
     search_top: Optional[tuple[int, int]] = None,
     search_bot: Optional[tuple[int, int]] = None,
+    title: Optional[dict] = None,
 ) -> Optional[dict]:
-    """Locate the SCAN RESULTS card from its two horizontal bars.
+    """Locate the SCAN RESULTS card from the title + the two bars.
 
-    Top bar = underline under SCAN RESULTS (incl. right hook).
-    Bottom bar = line under EASY / just above COMPOSITION.
+    Top lock = the underline sitting immediately under the words
+    ``SCAN RESULTS`` (not any long line in the frame). Bottom lock =
+    first strong line below the value rows (EASY / above COMPOSITION).
 
-    Returns ``{"x","y","w","h","top_y","bot_y","score"}`` in *img*
-    pixels, or None if both bars cannot be found. COMPOSITION is
-    excluded by taking the *first* strong line below the value rows,
-    not the last line in the capture.
+    ``title`` is the dict from ``find_scan_results_anchor`` when the
+    NCC score is real (>= 0.55). Fragments (tiny right-side chips)
+    still give the correct underline Y; panel X comes from the line.
     """
     if img is None:
         return None
@@ -1002,9 +1003,27 @@ def find_scan_results_square(
     if float(np.median(gray)) > 130:
         gray = 255 - gray
 
+    title_ok = (
+        isinstance(title, dict)
+        and float(title.get("score") or 0) >= 0.55
+        and int(title.get("title_h") or 0) >= 8
+    )
+    if not title_ok and title is None:
+        try:
+            _anc = find_scan_results_anchor(img)
+        except Exception:
+            _anc = None
+        title = _anc if isinstance(_anc, dict) else None
+        title_ok = (
+            isinstance(title, dict)
+            and float(title.get("score") or 0) >= 0.55
+            and int(title.get("title_h") or 0) >= 8
+        )
+
     thr = max(70, int(np.percentile(gray, 78)))
     binary = gray >= thr
     min_run = max(24, int(0.38 * W))
+    underline_run = max(16, int(0.22 * W))
     cands: list[dict] = []
     for y in range(H):
         row = binary[y]
@@ -1026,7 +1045,7 @@ def find_scan_results_square(
             if run > best:
                 best = run
                 best_s = cur_s
-        if best < min_run:
+        if best < underline_run:
             continue
         cands.append({
             "y": y,
@@ -1037,7 +1056,6 @@ def find_scan_results_square(
     if not cands:
         return None
 
-    # Keep local-max rows (thin bars, not filled blocks).
     peaks: list[dict] = []
     by_y = {c["y"]: c for c in cands}
     for c in cands:
@@ -1051,6 +1069,20 @@ def find_scan_results_square(
         peaks.append(c)
     if not peaks:
         peaks = cands
+
+    # Underline window from the title glyphs, not the whole frame.
+    ul_lo = ul_hi = None
+    if title_ok:
+        ty = int(title["title_y"])
+        th = max(8, int(title["title_h"]))
+        ul_lo = max(0, ty + int(0.25 * th))
+        ul_hi = min(H - 1, ty + int(2.2 * th) + 8)
+        log.info(
+            "scan_results_square: title lock y=%d h=%d w=%d score=%.2f "
+            "underline_win=%d-%d",
+            ty, th, int(title.get("title_w") or 0),
+            float(title.get("score") or 0), ul_lo, ul_hi,
+        )
 
     y_top_max = int(0.48 * H)
     y_bot_min = int(0.42 * H)
@@ -1081,27 +1113,40 @@ def find_scan_results_square(
             return default_ok
         return int(win[0]) <= c["y"] <= int(win[1])
 
-    top_pool = [
-        c for c in peaks
-        if c["y"] <= y_top_max and _in_win(c, search_top, True)
-    ]
+    if ul_lo is not None:
+        top_pool = [
+            c for c in peaks
+            if ul_lo <= c["y"] <= ul_hi
+        ]
+        if not top_pool:
+            top_pool = [
+                c for c in cands
+                if ul_lo <= c["y"] <= ul_hi and c["w"] >= underline_run
+            ]
+    else:
+        top_pool = [
+            c for c in peaks
+            if c["y"] <= y_top_max and c["w"] >= min_run
+            and _in_win(c, search_top, True)
+        ]
+        if not top_pool:
+            top_pool = [c for c in peaks if c["y"] < int(0.5 * H) and c["w"] >= min_run]
+
     bot_pool = [
         c for c in peaks
-        if c["y"] >= y_bot_min and _in_win(c, search_bot, True)
+        if c["y"] >= y_bot_min and c["w"] >= min_run
+        and _in_win(c, search_bot, True)
     ]
-    if not top_pool:
-        top_pool = [c for c in peaks if c["y"] < int(0.5 * H)]
     if not bot_pool:
-        bot_pool = [c for c in peaks if c["y"] >= int(0.45 * H)]
+        bot_pool = [c for c in peaks if c["y"] >= int(0.45 * H) and c["w"] >= min_run]
     if not top_pool or not bot_pool:
         log.info(
-            "scan_results_square: missing bar top=%d bot=%d (peaks=%d)",
-            len(top_pool), len(bot_pool), len(peaks),
+            "scan_results_square: missing bar top=%d bot=%d (peaks=%d title=%s)",
+            len(top_pool), len(bot_pool), len(peaks), title_ok,
         )
         return None
 
     top = max(top_pool, key=lambda c: c["score"])
-    # First strong line below the values — skip COMPOSITION further down.
     bot_pool_after = [c for c in bot_pool if c["y"] > top["y"] + 12]
     if not bot_pool_after:
         return None
@@ -1109,6 +1154,13 @@ def find_scan_results_square(
 
     x = min(int(top["x"]), int(bot["x"]))
     x1 = max(int(top["x"] + top["w"]), int(bot["x"] + bot["w"]))
+    # Full SCAN RESULTS is wide. A tiny right-side chip is not the panel left.
+    if title_ok:
+        tw = int(title.get("title_w") or 0)
+        tx = int(title.get("title_x") or 0)
+        if tw >= int(0.35 * W):
+            x = min(x, tx)
+            x1 = max(x1, tx + tw)
     y = int(top["y"])
     y2 = int(bot["y"])
     h = y2 - y
@@ -1120,8 +1172,15 @@ def find_scan_results_square(
         "x": x, "y": y, "w": w, "h": h,
         "top_y": y, "bot_y": y2, "score": score,
     }
+    if title_ok:
+        out["title_x"] = int(title.get("title_x") or 0)
+        out["title_y"] = int(title.get("title_y") or 0)
+        out["title_w"] = int(title.get("title_w") or 0)
+        out["title_h"] = int(title.get("title_h") or 0)
     log.info(
-        "scan_results_square: top_y=%d bot_y=%d x=%d w=%d h=%d score=%.2f",
+        "scan_results_square: top_y=%d bot_y=%d x=%d w=%d h=%d score=%.2f "
+        "via=%s",
         y, y2, x, w, h, score,
+        "title+underline" if title_ok else "bars-only",
     )
     return out

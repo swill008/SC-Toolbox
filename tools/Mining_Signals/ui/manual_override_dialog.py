@@ -634,7 +634,7 @@ class ManualOverrideDialog(QDialog):
                         _ty = int(_anc.get("title_y") or 0)
                         _th = int(_anc.get("title_h") or 0)
                     _panel = _sq_teach(
-                        self._hud_pil, hint_boxes=saved,
+                        self._hud_pil, hint_boxes=saved, title=_anc if isinstance(_anc, dict) else None,
                     )
                 except Exception as _t_exc:
                     log.debug("teach panel/title lookup failed: %s", _t_exc)

@@ -3037,7 +3037,9 @@ def _label_rows_from_learned_skeleton(
                     }
                 except (KeyError, TypeError, ValueError):
                     continue
-            live_sq = find_scan_results_square(img, hint_boxes=hint or None)
+            live_sq = find_scan_results_square(
+                img, hint_boxes=hint or None, title=live_anchor,
+            )
         except Exception as _sq_exc:
             log.debug("hud: panel square detect failed: %s", _sq_exc)
             live_sq = None
