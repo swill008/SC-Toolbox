@@ -504,6 +504,7 @@ class RegionSelector(QWidget):
             # below for why this matters specifically for the signature
             # scanner UI.
             too_small: tuple[int, int] | None = None
+            region = None
 
             if self._origin_native:
                 ox, oy = self._origin_native
@@ -522,19 +523,20 @@ class RegionSelector(QWidget):
                 # threshold).  Anything smaller than 4x4 is almost
                 # certainly an accidental click, not a real drag.
                 if w > 4 and h > 4:
-                    self.region_selected.emit({
-                        "x": x, "y": y, "w": w, "h": h,
-                    })
+                    region = {"x": x, "y": y, "w": w, "h": h}
                 else:
                     too_small = (w, h)
+
+            # Hide/close BEFORE emit. HUD handler opens a modal
+            # ManualOverrideDialog; if this fullscreen overlay is still
+            # on top, mouse-up lands on a window the user cannot click.
+            self.hide()
             self.close()
             event.accept()
-            # Surface sub-floor drops AFTER closing the overlay so the
-            # user sees the warning instead of the selector silently
-            # disappearing.  Defensive try/except: if the message box
-            # itself fails for any reason (rare), at least don't crash
-            # the selector — the bumped save-failure logging in
-            # ``_save_config`` will still surface the rejection.
+            try:
+                QApplication.processEvents()
+            except Exception:
+                pass
             if too_small is not None:
                 try:
                     QMessageBox.warning(
@@ -547,6 +549,8 @@ class RegionSelector(QWidget):
                     )
                 except Exception:
                     pass
+            elif region is not None:
+                self.region_selected.emit(region)
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key_Escape:

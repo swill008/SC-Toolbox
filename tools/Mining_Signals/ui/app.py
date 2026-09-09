@@ -3592,7 +3592,18 @@ class MiningSignalsApp(SCWindow):
             hud_pil=hud_pil,
             parent=self,
         )
-        dlg.exec()
+        # Overlay just closed; wait a tick so it is gone before the
+        # modal starts, and raise so it is not under Star Citizen.
+        def _show_skeleton() -> None:
+            try:
+                dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+                dlg.show()
+                dlg.raise_()
+                dlg.activateWindow()
+                dlg.exec()
+            except Exception as exc:
+                log.error("HUD skeleton dialog failed: %s", exc)
+        QTimer.singleShot(0, _show_skeleton)
 
     def _effective_game_resolution(self) -> Optional[dict]:
         """Resolved game resolution ({"w","h","source"}) for the region
