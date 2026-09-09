@@ -142,10 +142,8 @@ class ResourcePopup(QDialog):
         self._pinned = False
 
         self.setWindowTitle(resource.get("name", "Resource"))
-        self.setWindowFlags(
-            Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-        )
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        from shared.qt.base_window import apply_native_chrome
+        apply_native_chrome(self)
         self.resize(320, 260)
         self.setMinimumSize(280, 220)
 
@@ -184,12 +182,12 @@ class ResourcePopup(QDialog):
         frame_lay.setContentsMargins(0, 0, 0, 0)
         frame_lay.setSpacing(0)
 
-        # ── Title bar
+        # Title bar — pin only (OS frame provides close / drag)
         title_bar = QWidget(frame)
         title_bar.setFixedHeight(34)
         title_bar.setStyleSheet(f"background-color: {P.bg_header};")
         tb_lay = QHBoxLayout(title_bar)
-        tb_lay.setContentsMargins(12, 0, 4, 0)
+        tb_lay.setContentsMargins(12, 0, 8, 0)
         tb_lay.setSpacing(8)
 
         name = self._resource.get("name", "").upper()
@@ -209,11 +207,6 @@ class ResourcePopup(QDialog):
         self._pin_btn.setStyleSheet(_pin_btn_qss(False, self._accent))
         self._pin_btn.clicked.connect(self._toggle_pin)
         tb_lay.addWidget(self._pin_btn)
-
-        # Close button
-        close_btn = _ModalCloseBtn(title_bar)
-        close_btn.clicked.connect(self.close)
-        tb_lay.addWidget(close_btn)
 
         frame_lay.addWidget(title_bar)
 
@@ -350,48 +343,8 @@ class ResourcePopup(QDialog):
             ResourcePopup._pinned_dialogs.remove(self)
         super().closeEvent(event)
 
-    # ── Paint: border + corner brackets ─────────────────────────────────
-
     def paintEvent(self, event):
         super().paintEvent(event)
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, False)
-        w, h = self.width(), self.height()
-
-        edge = QColor(self._accent)
-        edge.setAlpha(100)
-        painter.setPen(QPen(edge, 1))
-        painter.drawRect(0, 0, w - 1, h - 1)
-
-        bl = POPUP_BRACKET_LEN
-        bracket = QColor(self._accent)
-        bracket.setAlpha(200)
-        painter.setPen(QPen(bracket, 2))
-        painter.drawLine(0, 0, bl, 0)
-        painter.drawLine(0, 0, 0, bl)
-        painter.drawLine(w - 1, 0, w - 1 - bl, 0)
-        painter.drawLine(w - 1, 0, w - 1, bl)
-        painter.drawLine(0, h - 1, bl, h - 1)
-        painter.drawLine(0, h - 1, 0, h - 1 - bl)
-        painter.drawLine(w - 1, h - 1, w - 1 - bl, h - 1)
-        painter.drawLine(w - 1, h - 1, w - 1, h - 1 - bl)
-        painter.end()
-
-    # ── Drag support ─────────────────────────────────────────────────────
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.pos()
-            event.accept()
-
-    def mouseMoveEvent(self, event):
-        if self._drag_pos is not None and event.buttons() & Qt.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_pos)
-            event.accept()
-
-    def mouseReleaseEvent(self, event):
-        self._drag_pos = None
-        super().mouseReleaseEvent(event)
 
     @classmethod
     def close_all_unpinned(cls):
