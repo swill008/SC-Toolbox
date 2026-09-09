@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from shared.qt.theme import P, apply_theme
-from shared.qt.base_window import SCWindow
+from shared.qt.base_window import SCWindow, apply_native_chrome
 from shared.qt.title_bar import SCTitleBar
 from shared.qt.data_table import SCTable, ColumnDef, SCTableModel
 from shared.qt.ipc_thread import IPCWatcher
@@ -26,6 +26,18 @@ from shared.platform_utils import set_dpi_awareness
 from shared.data_utils import parse_cli_args
 
 from services.sheet_fetcher import SheetFetcher
+
+
+def _child_dialog(parent, title: str) -> QDialog:
+    """Normal OS-framed child window (Fusion, not HUD overlay)."""
+    dlg = QDialog(parent)
+    dlg.setWindowTitle(title)
+    dlg.setModal(False)
+    dlg.setAttribute(Qt.WA_DeleteOnClose)
+    apply_native_chrome(dlg)
+    return dlg
+
+
 from services.signal_matcher import SignalMatcher, SignalMatch
 from services.loadout_loader import (
     load_loadout_file, describe_snapshot, LoadoutSnapshot,
@@ -2146,8 +2158,7 @@ class MiningSignalsApp(SCWindow):
             except RuntimeError:
                 pass
 
-        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup = _child_dialog(self, "Mining Foreman Console")
         popup.destroyed.connect(lambda: setattr(self, "_admiral_popup", None))
         self._admiral_popup = popup
 
@@ -2414,9 +2425,7 @@ class MiningSignalsApp(SCWindow):
         if not self._fleet_snapshots:
             return
 
-        dialog = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
-        dialog.setAttribute(Qt.WA_TranslucentBackground)
-        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        dialog = _child_dialog(self, "Fleet")
 
         outer = QVBoxLayout(dialog)
         outer.setContentsMargins(1, 1, 1, 1)
@@ -2994,9 +3003,7 @@ class MiningSignalsApp(SCWindow):
             pass
         self._ship_popup = None
 
-        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_TranslucentBackground)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup = _child_dialog(self, "Choose Mining Ship")
         popup.destroyed.connect(lambda: setattr(self, "_ship_popup", None))
         self._ship_popup = popup
 
@@ -5176,9 +5183,7 @@ class MiningSignalsApp(SCWindow):
 
     def _on_replenish_modules(self) -> None:
         """Open a popup to replenish active module uses."""
-        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_TranslucentBackground)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup = _child_dialog(self, "Replenish modules")
 
         outer = QVBoxLayout(popup)
         outer.setContentsMargins(1, 1, 1, 1)
@@ -5308,9 +5313,7 @@ class MiningSignalsApp(SCWindow):
 
     def _on_replenish_gadgets(self) -> None:
         """Open a popup to replenish gadget quantities."""
-        popup = QWidget(self, Qt.Popup | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_TranslucentBackground)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup = _child_dialog(self, "Replenish gadgets")
 
         outer = QVBoxLayout(popup)
         outer.setContentsMargins(1, 1, 1, 1)
@@ -5425,9 +5428,8 @@ class MiningSignalsApp(SCWindow):
         if fleet_result.user_can_solo:
             return  # no substitution needed
 
-        # Build a draggable popup
-        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        # Build a child window
+        popup = _child_dialog(self, "Fleet breakability")
         popup._drag_pos = None
 
         def _mp(event):
@@ -5526,8 +5528,7 @@ class MiningSignalsApp(SCWindow):
             except RuntimeError:
                 pass
 
-        popup = QWidget(None, Qt.WindowStaysOnTopHint | Qt.Tool | Qt.FramelessWindowHint)
-        popup.setAttribute(Qt.WA_DeleteOnClose)
+        popup = _child_dialog(self, "Consumables")
         popup.destroyed.connect(lambda: setattr(self, "_consumables_popup", None))
         self._consumables_popup = popup
 
