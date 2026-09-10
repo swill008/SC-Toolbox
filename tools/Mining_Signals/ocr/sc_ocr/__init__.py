@@ -16,8 +16,11 @@ from .api import (  # noqa: E402
 try:
     from . import card_lock_boot as _card_lock_boot
     _card_lock_boot.install()
-except Exception:
-    pass
+except Exception as _boot_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "card_lock_boot install skipped: %s", _boot_exc,
+    )
 
 try:
     from . import scan_cadence as _scan_cadence
