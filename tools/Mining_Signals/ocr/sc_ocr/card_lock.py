@@ -17,7 +17,8 @@ _square: Optional[dict] = None
 _last_good_square: Optional[dict] = None
 
 GLOW_PAD = 6
-HEIGHT_CAP = 48
+BOTTOM_PAD = 12
+HEIGHT_CAP = 72
 WIDTH_SPAN_MULT = 2.6
 
 
@@ -86,19 +87,23 @@ def pad_box(
     pad: int = GLOW_PAD,
     height_cap: int = HEIGHT_CAP,
 ) -> tuple[int, int, int, int]:
+    """Pad taught crop. Extra pad goes DOWN so glyph feet stay in frame.
+
+    If the padded height exceeds ``height_cap``, trim the TOP, never
+    the bottom (center-crop was cutting 6/8/9 in half).
+    """
     x, y, w, h = (int(v) for v in box)
     p = max(0, int(pad))
+    bp = max(p, int(BOTTOM_PAD))
     x0 = max(0, x - p)
-    y0 = max(0, y - p)
+    y0 = max(0, y - max(1, p // 3))
     x1 = min(int(img_w), x + w + p)
-    y1 = min(int(img_h), y + h + p)
+    y1 = min(int(img_h), y + h + bp)
+    cap = max(8, int(height_cap))
     nh = y1 - y0
-    if nh > int(height_cap):
-        extra = nh - int(height_cap)
-        y0 += extra // 2
-        y1 = y0 + int(height_cap)
-        y0 = max(0, y0)
-        y1 = min(int(img_h), y1)
+    if nh > cap:
+        y0 = max(0, y1 - cap)
+        y1 = min(int(img_h), y0 + cap)
     return (x0, y0, max(1, x1 - x0), max(1, y1 - y0))
 
 
