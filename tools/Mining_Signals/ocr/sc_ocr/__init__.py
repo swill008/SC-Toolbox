@@ -34,4 +34,10 @@ from .api import (  # noqa: E402
     scan_refinery,
 )
 
+try:
+    from . import card_lock_boot as _card_lock_boot
+    _card_lock_boot.install()
+except Exception:
+    pass
+
 __all__ = ["scan_region", "scan_hud_onnx", "scan_refinery"]
