@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Mining Suite — native window, two tabs (Signals + Loadout).
-
-Standalone entry for the ``stripped`` branch. Standard OS chrome
-(Fusion dark). Not a toolbox HUD overlay.
-"""
+"""Mining Suite — native window, two tabs (Signals + Loadout)."""
 from __future__ import annotations
 
 import os
@@ -39,7 +35,6 @@ from shared.data_utils import parse_cli_args  # noqa: E402
 
 
 def _apply_fusion_dark(app: QApplication) -> None:
-    """Plain dark desktop palette — no MobiGlas QSS."""
     app.setStyle("Fusion")
     pal = QPalette()
     bg = QColor("#1e1e1e")
@@ -68,7 +63,6 @@ def _apply_fusion_dark(app: QApplication) -> None:
 
 
 def _strip_inner_chrome(window) -> None:
-    """Hide nested HUD title bars when hosted in a tab."""
     try:
         from shared.qt.title_bar import SCTitleBar
         for bar in window.findChildren(SCTitleBar):
@@ -87,7 +81,6 @@ def _strip_inner_chrome(window) -> None:
 
 
 def _as_tab_widget(window, parent: QWidget) -> QWidget:
-    """Reparent an SCWindow so it can live inside a QTabWidget."""
     window.setParent(parent)
     window.setWindowFlags(Qt.Widget)
     window.setAttribute(Qt.WA_TranslucentBackground, False)
@@ -109,7 +102,6 @@ def _as_tab_widget(window, parent: QWidget) -> QWidget:
 
 
 def _import_loadout_window():
-    """Load MiningLoadoutWindow without permanently stealing ``ui``."""
     saved = {}
     prefixes = ("ui", "services", "models", "controllers")
     for key in list(sys.modules):
@@ -130,22 +122,14 @@ def _import_loadout_window():
 
 
 class MiningSuiteWindow(QMainWindow):
-    """Native OS window hosting Signals + Loadout as tabs."""
-
-    def __init__(
-        self,
-        x: int = 80, y: int = 80,
-        w: int = 1200, h: int = 900,
-    ) -> None:
+    def __init__(self, x: int = 80, y: int = 80, w: int = 1200, h: int = 900) -> None:
         super().__init__()
         self.setWindowTitle("Mining")
         self.resize(max(800, w), max(500, h))
         self.move(x, y)
-
         self._tabs = QTabWidget(self)
         self._tabs.setDocumentMode(False)
         self.setCentralWidget(self._tabs)
-
         self._signals = None
         self._loadout = None
         self._build_menu()
@@ -159,7 +143,6 @@ class MiningSuiteWindow(QMainWindow):
         quit_act.setShortcut("Ctrl+Q")
         quit_act.triggered.connect(self.close)
         file_menu.addAction(quit_act)
-
         view_menu = self.menuBar().addMenu("&View")
         pin = QAction("Always on top", self)
         pin.setCheckable(True)
@@ -183,7 +166,7 @@ class MiningSuiteWindow(QMainWindow):
         lay.setContentsMargins(0, 0, 0, 0)
         from ui.app import MiningSignalsApp
         try:
-            from ocr.sc_ocr.card_lock_boot import patch_ui_scan_timer
+            from ocr.sc_ocr.scan_cadence import patch_ui_scan_timer
             patch_ui_scan_timer()
         except Exception:
             pass
