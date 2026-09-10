@@ -19,6 +19,11 @@ from shared.app_bootstrap import bootstrap_skill  # noqa: E402
 bootstrap_skill(__file__)
 
 from ui.app import main  # noqa: E402
+try:
+    from ocr.sc_ocr.card_lock_boot import patch_ui_scan_timer
+    patch_ui_scan_timer()
+except Exception:
+    pass
 
 
 if __name__ == "__main__":
