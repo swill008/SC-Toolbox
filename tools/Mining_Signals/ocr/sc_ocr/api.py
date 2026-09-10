@@ -798,6 +798,10 @@ def get_last_signal_crop_box() -> Optional[dict]:
     x, y, w, h = _LAST_SIGNAL_CROP_BOX
     return {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
 
+
+def reset_last_signal_crop_box() -> None:
+    """Drop the last signature crop box (region changed / cold start)."""
+    _LAST_SIGNAL_CROP_BOX[:] = []
 # Known-signature value set, populated from the mining chart data via
 # ``set_known_signal_values()``. Used as a tie-breaker AND as a sanity
 # floor in the variant voter: if ANY variant's read exact-matches a

@@ -3517,6 +3517,32 @@ class MiningSignalsApp(SCWindow):
         _save_config(self._config)
         self._update_ocr_status()
         log.info("Scanning region set: %s", region)
+        # New box = old pin cache is lies. Drop it so the next tick
+        # has to re-find the icon in THIS rectangle.
+        self._sig_recent_hits = 0
+        try:
+            from ocr.sc_ocr.signal_anchor import reset_anchor_cache
+            reset_anchor_cache()
+        except Exception:
+            pass
+        try:
+            from ocr.sc_ocr.api import reset_last_signal_crop_box
+            reset_last_signal_crop_box()
+        except Exception:
+            pass
+        # If Mining HUD OCR Calibration is already open, it was built
+        # with a snapshot of ocr_region (or None). Push the new box in
+        # so the Signature row actually updates.
+        dlg = getattr(self, "_calibration_dialog", None)
+        if dlg is not None:
+            try:
+                if dlg.isVisible() and hasattr(dlg, "set_signature_region"):
+                    dlg.set_signature_region(dict(region))
+            except Exception as exc:
+                log.warning(
+                    "calibration dialog signature-region push failed: %s",
+                    exc,
+                )
 
     def _on_set_hud_region(self) -> None:
         """Open the region selector for the mining HUD (mass / resistance)."""
@@ -3657,26 +3683,37 @@ class MiningSignalsApp(SCWindow):
         log.info("Break bubble position set: (%d, %d)", pos["x"], pos["y"])
 
     def _on_calibrate_crops(self) -> None:
-        """Open the calibration dialog for the current HUD region.
+        """Open the calibration dialog.
 
-        Single-instance: only ONE Mining HUD OCR Calibration dialog
-        may be open at a time across the whole machine. If one is
-        already open (in this process or another), bring it to the
-        front instead of creating a duplicate.
+        Needs at least one region: Mining HUD (SCAN RESULTS) and/or
+        Scanning Region (radar signature). HUD-only still works; so
+        does signature-only so the radar path is usable without a HUD
+        box. If the dialog is already open, push the latest regions
+        in instead of raising a stale snapshot.
         """
         hud_region = self._config.get("hud_region")
-        if not hud_region or not hud_region.get("w"):
+        ocr_region = self._config.get("ocr_region")
+        hud_ok = bool(hud_region and hud_region.get("w"))
+        sig_ok = bool(ocr_region and ocr_region.get("w"))
+        if not hud_ok and not sig_ok:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(
-                self, "HUD region not set",
-                "Set the Mining HUD Region first (use the button to "
-                "the left), then come back to calibrate.",
+                self, "No region set",
+                "Set the Scanning Region (radar signature) and/or the "
+                "Mining HUD Region first, then come back to calibrate.",
             )
             return
 
         # In-process raise: a dialog already exists in this app.
         existing = getattr(self, "_calibration_dialog", None)
         if existing is not None and existing.isVisible():
+            try:
+                if sig_ok and hasattr(existing, "set_signature_region"):
+                    existing.set_signature_region(dict(ocr_region))
+            except Exception as exc:
+                log.warning(
+                    "calibration dialog signature refresh failed: %s", exc,
+                )
             existing.raise_()
             existing.activateWindow()
             return
@@ -3695,13 +3732,16 @@ class MiningSignalsApp(SCWindow):
             # un-shadow it.
             from mining_shared.single_instance import SingleInstance
 
-            ocr_region = self._config.get("ocr_region")
+            hud_arg = (
+                dict(hud_region) if hud_ok
+                else {"x": 0, "y": 0, "w": 0, "h": 0}
+            )
             dlg = CalibrationDialog(
-                region=dict(hud_region),
-                scan_callback=scan_hud_onnx,
+                region=hud_arg,
+                scan_callback=scan_hud_onnx if hud_ok else None,
                 parent=self,
                 signature_region=(
-                    dict(ocr_region) if ocr_region else None
+                    dict(ocr_region) if sig_ok else None
                 ),
             )
 

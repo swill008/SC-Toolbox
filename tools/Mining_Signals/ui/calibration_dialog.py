@@ -1200,7 +1200,11 @@ class CalibrationDialog(QDialog):
 
         def _bg() -> None:
             try:
-                if self._scan_callback is not None:
+                if (
+                    self._scan_callback is not None
+                    and self._region
+                    and int(self._region.get("w") or 0) > 0
+                ):
                     try:
                         self._scan_callback(self._region)
                     except Exception as exc:
@@ -1228,10 +1232,119 @@ class CalibrationDialog(QDialog):
                 "running synchronously, may freeze UI briefly", exc,
             )
             try:
-                if self._scan_callback is not None:
+                if (
+                    self._scan_callback is not None
+                    and self._region
+                    and int(self._region.get("w") or 0) > 0
+                ):
                     self._scan_callback(self._region)
             except Exception:
                 pass
+
+    def set_signature_region(self, region: Optional[dict]) -> None:
+        """Pick up a newly drawn Scanning Region while this dialog is open.
+
+        ``_signature_region`` is snapshotted at construct time. Set
+        Scanning Region used to write config and leave this window
+        holding None / the old rectangle, so the Signature row never
+        updated. Call this from the main window after the user
+        finishes drawing the radar box.
+        """
+        if region and int(region.get("w") or 0) > 0 and int(region.get("h") or 0) > 0:
+            self._signature_region = {
+                "x": int(region["x"]),
+                "y": int(region["y"]),
+                "w": int(region["w"]),
+                "h": int(region["h"]),
+            }
+        else:
+            self._signature_region = None
+
+        try:
+            from ocr.sc_ocr.api import reset_last_signal_crop_box
+            reset_last_signal_crop_box()
+        except Exception:
+            pass
+
+        sig_ctrl = self._row_controls.get("signature")
+        if sig_ctrl is not None:
+            try:
+                sig_ctrl.reset()
+            except Exception:
+                pass
+
+        # Restore a lock if this exact region was calibrated before.
+        if self._signature_region is not None and sig_ctrl is not None:
+            try:
+                cal = calibration.load(self._signature_region) or {}
+                box = (cal.get("rows") or {}).get("signature")
+                if box:
+                    from pathlib import Path as _P
+                    crop_path = (
+                        _P(__file__).resolve().parent.parent
+                        / "debug_value_signature_crop.png"
+                    )
+                    pil = None
+                    if crop_path.is_file():
+                        try:
+                            pil = Image.open(crop_path).convert("RGB")
+                        except Exception:
+                            pil = None
+                    sig_ctrl.display_locked(pil, box)
+            except Exception as exc:
+                log.debug("set_signature_region restore lock failed: %s", exc)
+
+        self._refresh_header()
+        self._refresh_completion_banner()
+        if self._signature_region is None:
+            self._status_bar.showMessage(
+                "Signature region cleared", 4000,
+            )
+            return
+        r = self._signature_region
+        self._status_bar.showMessage(
+            f"Signature region set: {r['w']}×{r['h']} at ({r['x']},{r['y']}) "
+            "— capturing…",
+            6000,
+        )
+        # Immediate grab so the row is not empty until the next 1.5 s
+        # live-refresh tick. Full-region preview if no crop box yet.
+        self._show_signature_capture_now()
+        self._live_refresh_in_flight = False
+        QTimer.singleShot(0, self._run_bootstrap_scans)
+        QTimer.singleShot(80, self._live_refresh_tick)
+
+    def _show_signature_capture_now(self) -> None:
+        """Grab the radar box now and put it in the Signature preview."""
+        region = self._signature_region
+        ctrl = self._row_controls.get("signature")
+        if region is None or ctrl is None:
+            return
+
+        def _grab() -> None:
+            pil = None
+            try:
+                from ocr import screen_reader as _sr
+                pil = _sr.capture_region(dict(region))
+            except Exception as exc:
+                log.debug("signature capture-now failed: %s", exc)
+                pil = None
+            try:
+                self._live_refresh_signaler.result_ready.emit(
+                    getattr(self, "latest_hud_pil", None),
+                    pil,
+                    {},
+                )
+            except Exception as exc:
+                log.debug("signature capture-now emit failed: %s", exc)
+
+        try:
+            import threading as _threading
+            _threading.Thread(
+                target=_grab, daemon=True, name="cal_sig_capture",
+            ).start()
+        except Exception as exc:
+            log.debug("signature capture-now thread failed: %s", exc)
 
     # ──────────────────────────────────────────
     # Calibrate tab
@@ -2109,9 +2222,16 @@ so you can switch between setups without losing your work.</p>
                 box = None
 
         if box is None:
+            # Fresh region, no pin crop yet: show the whole capture so
+            # the user can see the box they just drew instead of
+            # "(no crop yet)".
+            if not ctrl.is_locked():
+                ctrl.refresh_preview_image(sig_pil)
             return
         cropped = self._crop_safely(sig_pil, box)
         if cropped is None:
+            if not ctrl.is_locked():
+                ctrl.refresh_preview_image(sig_pil)
             return
         ctrl.refresh_preview_image(cropped)
 
@@ -2558,11 +2678,23 @@ so you can switch between setups without losing your work.</p>
             self._completion_banner.setVisible(False)
 
     def _refresh_header(self) -> None:
-        r = self._region
-        self._header.setText(
-            f"HUD region: x={r.get('x')}, y={r.get('y')}, "
-            f"w={r.get('w')}, h={r.get('h')}"
-        )
+        r = self._region or {}
+        if int(r.get("w") or 0) > 0:
+            hud = (
+                f"HUD: {r.get('w')}×{r.get('h')} "
+                f"at ({r.get('x')},{r.get('y')})"
+            )
+        else:
+            hud = "HUD: not set"
+        s = self._signature_region or {}
+        if int(s.get("w") or 0) > 0:
+            sig = (
+                f"Signature: {s.get('w')}×{s.get('h')} "
+                f"at ({s.get('x')},{s.get('y')})"
+            )
+        else:
+            sig = "Signature: not set"
+        self._header.setText(f"{hud}   ·   {sig}")
 
     def _reload_locked_state_from_disk(self) -> None:
         """On open, read existing calibration and mark locked rows.
