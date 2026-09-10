@@ -182,6 +182,11 @@ class MiningSuiteWindow(QMainWindow):
         lay = QVBoxLayout(host)
         lay.setContentsMargins(0, 0, 0, 0)
         from ui.app import MiningSignalsApp
+        try:
+            from ocr.sc_ocr.card_lock_boot import patch_ui_scan_timer
+            patch_ui_scan_timer()
+        except Exception:
+            pass
         self._signals = MiningSignalsApp(
             x=0, y=0, w=980, h=960, opacity=1.0,
         )
