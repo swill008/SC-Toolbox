@@ -17,11 +17,6 @@ See plan at ``.claude/plans/bright-swimming-piglet.md``.
 """
 from __future__ import annotations
 
-# Cap BLAS threads BEFORE importing numpy (via any downstream). The
-# previous Paddle pipeline spun up OMP thread pools per BLAS call and
-# used all available CPU cores, which hit 90% on user machines during
-# scans. 28×28 NCC does not benefit from threading — the overhead
-# dominates. Single-threaded numpy is fastest for our glyph sizes.
 import os as _os
 for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS",
              "OPENBLAS_NUM_THREADS", "VECLIB_MAXIMUM_THREADS",
@@ -37,6 +32,12 @@ from .api import (  # noqa: E402
 try:
     from . import card_lock_boot as _card_lock_boot
     _card_lock_boot.install()
+except Exception:
+    pass
+
+try:
+    from . import scan_cadence as _scan_cadence
+    _scan_cadence.quiet_diag()
 except Exception:
     pass
 
