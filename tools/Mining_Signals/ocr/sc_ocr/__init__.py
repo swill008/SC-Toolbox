@@ -4,7 +4,7 @@ from __future__ import annotations
 import os as _os
 for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS",
              "OPENBLAS_NUM_THREADS", "VECLIB_MAXIMUM_THREADS",
-             "NUMEXPR_NUM_THREADS"):
+             "NUMEXPR_MAXIMUM_THREADS"):
     _os.environ.setdefault(_var, "1")
 
 from .api import (  # noqa: E402
@@ -20,6 +20,15 @@ except Exception as _boot_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning(
         "card_lock_boot install skipped: %s", _boot_exc,
+    )
+
+try:
+    from . import taught_lock as _taught_lock
+    _taught_lock.install()
+except Exception as _taught_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "taught_lock install skipped: %s", _taught_exc,
     )
 
 try:
