@@ -1,20 +1,4 @@
-"""SC-OCR: custom OCR engine for Star Citizen HUD/terminal text.
-
-Replaces the previous three-engine stack (Tesseract + ONNX CNN +
-PaddleOCR sidecar) with a single surgical pipeline of cheap
-deterministic stages. Designed for a constrained alphabet on a
-known sci-fi font at user-defined rectangles.
-
-Pipeline:
-    capture → preprocess → segment → classify → validate → (learn)
-
-Public API preserves the legacy call signatures so ``ui/app.py``
-doesn't need to change:
-
-    from ocr.sc_ocr.api import scan_region, scan_hud_onnx, scan_refinery
-
-See plan at ``.claude/plans/bright-swimming-piglet.md``.
-"""
+"""SC-OCR: custom OCR engine for Star Citizen HUD/terminal text."""
 from __future__ import annotations
 
 import os as _os
@@ -38,6 +22,12 @@ except Exception:
 try:
     from . import scan_cadence as _scan_cadence
     _scan_cadence.quiet_diag()
+except Exception:
+    pass
+
+try:
+    from . import debug_levels as _debug_levels
+    _debug_levels.install()
 except Exception:
     pass
 
