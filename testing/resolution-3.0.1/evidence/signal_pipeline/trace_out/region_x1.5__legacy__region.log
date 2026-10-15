@@ -1,0 +1,14 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(12,11,32,31) score=0.87 (skipped gray NCC)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_s5_rxnxu_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_s5_rxnxu', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_o5z722dp_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_o5z722dp', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_u2jy6soq_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_u2jy6soq', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_wusbv9wb_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_wusbv9wb', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_xv4h0ewm_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_xv4h0ewm', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_rvy3h98i_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_rvy3h98i', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_icvddf9q_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_icvddf9q', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG ocr.screen_reader: OCR A=None B=None C=None
+DEBUG ocr.screen_reader: screen_reader: no digits found by any engine
+INFO ocr.screen_reader: scan_region: legacy 3-engine read=None (Paddle unavailable)

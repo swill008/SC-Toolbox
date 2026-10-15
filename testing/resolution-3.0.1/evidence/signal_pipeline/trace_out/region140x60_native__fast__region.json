@@ -1,0 +1,850 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": null,
+ "matches": null,
+ "secs": 0.12,
+ "silent": [
+  "WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 7 NCC candidates failed the single-shape check \u2014 falling back to all candidates",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 8 NCC candidates failed the single-shape check \u2014 falling back to all candidates",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (37, 12, 77, 54) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}"
+ ],
+ "gate_lines": [
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: SCANNING TIMEOUT (29334.2s since last icon detection > 3.0s threshold) \u2014 returning None so UI shows 'scanning' state"
+ ],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['53', '24', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['48', '19', '20', '20']",
+    "score": 0.6149,
+    "details": {
+     "scale": 0.7,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "4",
+     "template_used": "'real_1'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "signal_anchor._cnn_filter_icon_candidates",
+   "depth": 1,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2",
+    "list[7]: [\"tuple[6]: [1.0497, '52', '28', '64', '41', '12']\", \"tuple[6]: [0.8859, '51', '25', '67', '42', '16']\", \"tuple[6]: [0.8356, '52', '22', '72', '43', '20']\", \"tuple[6]: [0.8361, '51', '20', '75', '45', '24']\", \"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\"]"
+   ],
+   "kw": {
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": "list[3]: [\"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\", \"tuple[6]: [0.5775, '41', '12', '77', '50', '36']\"]"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['38', '20', '66', '49']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.839] mean=0.19"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['22', '11', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['35', '19', '67', '52']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.808] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['26', '13', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['41', '12', '77', '50']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0588,0.784] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['21', '21', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "screen_reader.scan_region",
+   "depth": 0,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader.capture_region_averaged",
+   "depth": 1,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": "PIL RGB (140, 60)"
+  },
+  {
+   "stage": "api._signal_recognize_pil",
+   "depth": 1,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {
+    "region": {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   },
+   "out": null
+  },
+  {
+   "stage": "frame_context.max_channel",
+   "depth": 2,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "ndarray(60, 140) uint8 [12,227] mean=35.2"
+  },
+  {
+   "stage": "api._load_region2_world_model_for_api",
+   "depth": 2,
+   "in": [],
+   "kw": {},
+   "out": {
+    "source_dir": "'C:\\\\Users\\\\_user\\\\AppData\\\\Roaming\\\\ShipBit\\\\WingmanAI\\\\custom_skills\\\\SC_Toolbox_Beta_V1.2\\\\tools\\\\Mining_Signals\\\\training_data_panels\\\\user_20260418_154408\\...",
+    "reference": "'pill'",
+    "captures_total": "62",
+    "captures_used": "51",
+    "captures_skipped_no_pill": "list[4]: [\"'cap_20260418_160432_487.boxes.json'\", \"'cap_20260418_160445_195.boxes.json'\", \"'cap_20260425_094906_439.boxes.json'\", \"'cap_20260425_094955_777.boxes.json'\"]",
+    "captures_skipped_bad_pill": "list[3]: ['dict(2)', 'dict(2)', 'dict(2)']",
+    "captures_skipped_outliers": "list[4]: ['dict(2)', 'dict(2)', 'dict(2)', 'dict(2)']",
+    "feature_capture_counts": {
+     "pill": "51",
+     "icon": "49",
+     "value": "51"
+    },
+    "features": {
+     "pill": "dict(5)",
+     "icon": "dict(5)",
+     "value": "dict(5)"
+    },
+    "worst_std_per_feature": {
+     "icon": "dict(2)",
+     "value": "dict(2)"
+    },
+    "variance_verdict": {
+     "icon": "'problem'",
+     "value": "'workable'"
+    },
+    "per_capture": "list[51]: ['dict(4)', 'dict(4)', 'dict(4)', 'dict(4)', 'dict(4)', 'dict(4)']"
+   }
+  },
+  {
+   "stage": "api._find_pill_for_signal",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._find_pill_for_signal",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 3,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['53', '24', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 3,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['48', '19', '20', '20']",
+    "score": 0.6149,
+    "details": {
+     "scale": 0.7,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "4",
+     "template_used": "'real_1'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "signal_anchor.find_digit_crop_box",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": null
+  },
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 3,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {
+    "min_score": 0.4,
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 4,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 5,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['53', '24', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 5,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['48', '19', '20', '20']",
+    "score": 0.6149,
+    "details": {
+     "scale": 0.7,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "4",
+     "template_used": "'real_1'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "signal_anchor._cnn_filter_icon_candidates",
+   "depth": 4,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2",
+    "list[8]: [\"tuple[6]: [1.0497, '52', '28', '64', '41', '12']\", \"tuple[6]: [0.8859, '51', '25', '67', '42', '16']\", \"tuple[6]: [0.8356, '52', '22', '72', '43', '20']\", \"tuple[6]: [0.8361, '51', '20', '75', '45', '24']\", \"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\"]"
+   ],
+   "kw": {
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": "list[4]: [\"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\", \"tuple[6]: [0.5775, '41', '12', '77', '50', '36']\", \"tuple[6]: [0.4562, '37', '12', '77', '54', '40']\"]"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 5,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['38', '20', '66', '49']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.839] mean=0.19"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 6,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 7,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['22', '11', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 6,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 5,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['35', '19', '67', '52']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.808] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 6,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 7,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['26', '13', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 6,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 5,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['41', '12', '77', '50']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0588,0.784] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 6,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 7,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['21', '21', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 6,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 5,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['37', '12', '77', '54']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0588,0.78] mean=0.168"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 6,
+   "in": [
+    "PIL RGB (60, 58)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 7,
+   "in": [
+    "PIL RGB (60, 58)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['26', '22', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 6,
+   "in": [
+    "PIL RGB (60, 58)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "signal_anchor.find_digit_cluster",
+   "depth": 3,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._canonicalize_polarity",
+   "depth": 4,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {},
+   "out": "ndarray(60, 140) uint8 [12,227] mean=35.2"
+  },
+  {
+   "stage": "api._signal_scanning_timeout_exceeded",
+   "depth": 2,
+   "in": [],
+   "kw": {},
+   "out": "True"
+  },
+  {
+   "stage": "api._reset_signal_consensus",
+   "depth": 2,
+   "in": [],
+   "kw": {},
+   "out": null
+  }
+ ]
+}

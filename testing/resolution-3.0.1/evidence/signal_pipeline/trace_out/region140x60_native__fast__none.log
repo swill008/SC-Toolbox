@@ -1,0 +1,49 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 7 NCC candidates failed the single-shape check — falling back to all candidates
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] _cnn_filter_icon_candidates: leftmost-only filter kept x1<=35 (tol=8), rejected 4 cands at x1=[52, 51, 52, 51]
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: NCC pick ix=(38,20,66,49) score=0.78 tw=28 (n_scales_hit=7, n_rejected_shape=7, n_cnn_validated=3, max_score=0.78, n_within_delta=1, target_W=77)
+INFO ocr.sc_ocr.signal_anchor: _expand_to_icon_extent: grew matched box (38,20,66,49) -> (38,0,77,57) via column/row scan (was 28x29, now 39x57)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 8 NCC candidates failed the single-shape check — falling back to all candidates
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] _cnn_filter_icon_candidates: leftmost-only filter kept x1<=35 (tol=8), rejected 4 cands at x1=[52, 51, 52, 51]
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (37, 12, 77, 54) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: NCC pick ix=(38,20,66,49) score=0.78 tw=28 (n_scales_hit=8, n_rejected_shape=8, n_cnn_validated=4, max_score=0.78, n_within_delta=1, target_W=77)
+INFO ocr.sc_ocr.signal_anchor: _expand_to_icon_extent: grew matched box (38,20,66,49) -> (38,0,77,57) via column/row scan (was 28x29, now 39x57)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (2 entries, need 3 within 6px) — signature panel treated as NOT present
+INFO ocr.sc_ocr.signal_anchor: find_digit_crop_box: BOTH anchors missed — returning None
+INFO ocr.sc_ocr.api: sc_ocr.signal: ANCHOR MISS — fallback heuristic mask icon_right=-1 mask_w=42 work_shape=(60, 140)
+INFO ocr.sc_ocr.api: sc_ocr.signal: _isolate_main_row trim (60, 140) -> (47, 140)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched (h=47 already large enough, no upscale needed)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='21,200' digits='21200' mean=0.80 -> expected_count=5
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=adaptive_w21 good=2 noise=4 mega=0 (expected=5, score=-163.0, scored on cleaned mask) — all=otsu_global:g1/n7/m0, percentile_60:g0/n1/m1, percentile_70:g0/n2/m1, percentile_80:g0/n3/m1, adaptive_w11:g2/n5/m0, adaptive_w21:g2/n4/m0, legacy:g2/n4/m0
+INFO ocr.sc_ocr.api: _mask_commas_in_signature_band: stage-3 orphan-comma masked 102 pixels across 16 columns (run_w_max=8)
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=5 (from CRNN count oracle)
+DEBUG ocr.sc_ocr.api: _segment_glyphs: gray.shape=(47, 140), 65 initial-projection columns
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: 7 raw spans: [(49, 79), (80, 83), (84, 90), (91, 102), (106, 114), (123, 126), (136, 140)] (gray.shape=(47, 140))
+WARNING ocr.sc_ocr.api: [DIAG] leading-1 detector SKIPPED run (start=53 end=60 run_w=7 cap=39, vert_cov=0.47, h=47, band_conc=0.32, top/mid/bot=(np.True_, np.True_, np.True_))
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: returning 7 spans (widths=[30, 3, 6, 11, 8, 3, 4], heights=[43, 9, 11, 23, 21, 25, 20])
+INFO ocr.sc_ocr.api: _trim_comma_fused_into_signature_boxes: trimmed box (x=49, y=0, w=30) from h=43 to h=21 (median=21.0, cutoff=23) — fused comma stripped
+INFO ocr.sc_ocr.api: _trim_comma_fused_into_signature_boxes: trimmed box (x=123, y=10, w=3) from h=25 to h=21 (median=21.0, cutoff=23) — fused comma stripped
+INFO ocr.sc_ocr.api: _trim_comma_fused_into_signature_boxes: trimmed 2/7 boxes
+DEBUG ocr.sc_ocr.api: blacklist template loaded: bad crop.png [canon] shape=(28, 28)
+DEBUG ocr.sc_ocr.api: blacklist template loaded: bad crop.png [inv] shape=(28, 28)
+INFO ocr.sc_ocr.api: _ensure_signature_blacklist_templates: built 2 normalized 28×28 NCC templates
+INFO ocr.sc_ocr.api: _drop_blacklisted_signature_glyphs: dropped span idx=0 box=(49, 0, 30, 21) (NCC=0.66 vs blacklist template, threshold=0.55 — likely the location-pin icon)
+INFO ocr.sc_ocr.api: _enforce_comma_signature_structure: dropped comma at idx=1, trimmed 0 pre-comma extras + 1 post-comma extras (in=6 -> out=4)
+INFO ocr.sc_ocr.api: sc_ocr.signal: dropped 1 crop(s) classified as the icon class '@' (signal-CNN identified them as location-pin shapes, not digits)
+INFO ocr.sc_ocr.api: sc_ocr.signal: SHADOW RGB CNN read '@@70' (4 glyphs, NOT consumed by gate)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB-INV CNN read '7770' (4 glyphs)
+INFO ocr.sc_ocr.api: sc_ocr.signal: skipping primary/secondary tile dump (only 3 digit-classified crops, need 4-5) — viewer will keep showing previous good scan
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='21,200' digits='21200' mean=0.80 in_range=True lexicon_known=True lexicon_hit=True crop_mode=none thresh=0.40
+INFO ocr.sc_ocr.api: sc_ocr.signal: voter consensus composed='0010' (not in lexicon) — overriding to '7770' from rgb_inv voter via lexicon match
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN gate accepted text='21,200' mean=0.80 gate=rgb-crnn-lexicon → 21200 (skipping per-glyph voters)

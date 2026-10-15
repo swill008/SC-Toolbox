@@ -1,0 +1,361 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": null,
+ "matches": null,
+ "secs": 0.55,
+ "silent": [
+  "WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(12,11,32,31) score=0.87 (skipped gray NCC)",
+  "INFO ocr.screen_reader: scan_region: legacy 3-engine read=None (Paddle unavailable)"
+ ],
+ "gate_lines": [],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(33, 78) uint8 [11,228] mean=72.3"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(33, 78, 3) uint8 [0,228] mean=53.6"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(33, 78, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['12', '11', '20', '20']",
+    "score": 0.8736,
+    "detector": "'consensus(geometry,rgb_ncc)'",
+    "details": {
+     "geometry": "dict(3)",
+     "rgb_ncc": "dict(3)",
+     "iou": 0.6786
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(33, 78, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['13', '7', '19', '21']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.709,
+     "hole_pixels": "0",
+     "notch_depth": "3",
+     "tiny_mode": "False",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(33, 78, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['12', '11', '20', '20']",
+    "score": 0.8195,
+    "details": {
+     "scale": 0.7,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "115",
+     "template_used": "'real_2'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "screen_reader.scan_region",
+   "depth": 0,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "78",
+     "h": "33"
+    }
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader.capture_region_averaged",
+   "depth": 1,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "78",
+     "h": "33"
+    }
+   ],
+   "kw": {},
+   "out": "PIL RGB (78, 33)"
+  },
+  {
+   "stage": "screen_reader.extract_number",
+   "depth": 1,
+   "in": [
+    "PIL RGB (78, 33)"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_a",
+   "depth": 2,
+   "in": [
+    "PIL RGB (78, 33)"
+   ],
+   "kw": {},
+   "out": "list[4]: ['PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)']"
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_b",
+   "depth": 3,
+   "in": [
+    "PIL RGB (78, 33)"
+   ],
+   "kw": {},
+   "out": "list[3]: ['PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)']"
+  },
+  {
+   "stage": "screen_reader._extract_paddle_signal_candidates",
+   "depth": 4,
+   "in": [
+    "PIL RGB (78, 33)"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 5,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 3,
+   "in": [
+    "list[3]: ['PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)']",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 4,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 5,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 5,
+   "in": [
+    "list[4]: ['PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)', 'PIL L (234, 99)']",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'4'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'4\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'7'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'7\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'210'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'210\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'3'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'3\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 3,
+   "in": [
+    "PIL L (234, 99)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 4,
+   "in": [
+    "PIL L (234, 99)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  }
+ ]
+}

@@ -1,0 +1,568 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": null,
+ "matches": null,
+ "secs": 0.59,
+ "silent": [
+  "WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 7 NCC candidates failed the single-shape check \u2014 falling back to all candidates",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}",
+  "INFO ocr.screen_reader: scan_region: legacy 3-engine read=None (Paddle unavailable)"
+ ],
+ "gate_lines": [],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['53', '24', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['48', '19', '20', '20']",
+    "score": 0.6149,
+    "details": {
+     "scale": 0.7,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "4",
+     "template_used": "'real_1'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "signal_anchor._cnn_filter_icon_candidates",
+   "depth": 1,
+   "in": [
+    "ndarray(60, 140) uint8 [12,227] mean=35.2",
+    "list[7]: [\"tuple[6]: [1.0497, '52', '28', '64', '41', '12']\", \"tuple[6]: [0.8859, '51', '25', '67', '42', '16']\", \"tuple[6]: [0.8356, '52', '22', '72', '43', '20']\", \"tuple[6]: [0.8361, '51', '20', '75', '45', '24']\", \"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\"]"
+   ],
+   "kw": {
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,227] mean=26.8"
+   },
+   "out": "list[3]: [\"tuple[6]: [0.7774, '38', '20', '66', '49', '28']\", \"tuple[6]: [0.6507, '35', '19', '67', '52', '32']\", \"tuple[6]: [0.5775, '41', '12', '77', '50', '36']\"]"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['38', '20', '66', '49']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.839] mean=0.19"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['22', '11', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (42, 43)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['35', '19', '67', '52']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0549,0.808] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['26', '13', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (48, 49)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.vote_on_icon_candidate",
+   "depth": 2,
+   "in": [],
+   "kw": {
+    "rgb_image": "PIL RGB (140, 60)",
+    "candidate_bbox": "tuple[4]: ['41', '12', '77', '50']",
+    "gray_cnn": null,
+    "rgb_cnn": null,
+    "gray_crop": "ndarray(28, 28) float32 [0.0588,0.784] mean=0.176"
+   },
+   "out": {
+    "accepted": "True",
+    "confidence": 0.95,
+    "votes": {
+     "geometry": "'yes'",
+     "contour": "'yes'",
+     "rgb_cnn": "'unavailable'",
+     "gray_cnn": "'unavailable'"
+    },
+    "decision_path": "'primaries_agree_yes'",
+    "details": {
+     "rgb_at_prob": null,
+     "gray_at_prob": null
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_geometry",
+   "depth": 3,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 4,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['21', '21', '12', '13']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.788,
+     "hole_pixels": "0",
+     "notch_depth": "0",
+     "tiny_mode": "True",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter._vote_contour",
+   "depth": 3,
+   "in": [
+    "PIL RGB (54, 56)"
+   ],
+   "kw": {},
+   "out": "'yes'"
+  },
+  {
+   "stage": "screen_reader.scan_region",
+   "depth": 0,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader.capture_region_averaged",
+   "depth": 1,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": "PIL RGB (140, 60)"
+  },
+  {
+   "stage": "screen_reader.extract_number",
+   "depth": 1,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_a",
+   "depth": 2,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[4]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']"
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_b",
+   "depth": 3,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[3]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']"
+  },
+  {
+   "stage": "screen_reader._extract_paddle_signal_candidates",
+   "depth": 4,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 5,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 3,
+   "in": [
+    "list[3]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'3'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 5,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'3\\n'"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 5,
+   "in": [
+    "list[4]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'4\\n4\\n1'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'4\\n4\\n1\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'7'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'7\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'120\\n4'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'120\\n4\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 3,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  }
+ ]
+}

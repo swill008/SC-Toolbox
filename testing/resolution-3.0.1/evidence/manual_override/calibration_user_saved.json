@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "calibrations": {
+    "3590,716,436,322": {
+      "saved_at": "2026-10-15T17:57:01",
+      "rows": {},
+      "image_size": [
+        907,
+        670
+      ],
+      "value_column_left": 44,
+      "$manual_overrides": {
+        "_mineral_row": {
+          "x": 14,
+          "y": 70,
+          "w": 218,
+          "h": 37
+        },
+        "mass": {
+          "x": 220,
+          "y": 117,
+          "w": 81,
+          "h": 31
+        },
+        "resistance": {
+          "x": 214,
+          "y": 161,
+          "w": 66,
+          "h": 34
+        },
+        "instability": {
+          "x": 212,
+          "y": 202,
+          "w": 95,
+          "h": 35
+        }
+      },
+      "$manual_override_mode": true
+    }
+  }
+}

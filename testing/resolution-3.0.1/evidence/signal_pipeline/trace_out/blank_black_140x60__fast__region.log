@@ -1,0 +1,4 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+INFO ocr.sc_ocr.signal_anchor: find_digit_crop_box: BOTH anchors missed — returning None
+INFO ocr.sc_ocr.api: sc_ocr.signal: SCANNING TIMEOUT (29335.1s since last icon detection > 3.0s threshold) — returning None so UI shows 'scanning' state

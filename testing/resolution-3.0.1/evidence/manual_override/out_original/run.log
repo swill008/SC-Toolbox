@@ -1,0 +1,121 @@
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match INFO label_match: loaded 5 templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\ocr\sc_templates\labels.npz (canonical h=28) [keys=['instability', 'instability_short', 'mass', 'resistance', 'resistance_short']]
+ocr.sc_ocr.label_match INFO label_match: loaded RGB templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\ocr\sc_templates\labels_rgb_sharp.npz [keys=['instability', 'mass', 'resistance']]
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+ocr.onnx_hud_reader INFO _find_label_rows: entry img.size=(907,670) region={'x': 3590, 'y': 716, 'w': 436, 'h': 322}
+ocr.sc_ocr.scan_results_match INFO scan_results_match: loaded template (native h=28) \u2192 8 scale variants from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\ocr\sc_templates\scan_results.npz
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=1.02 at (459,65), nearest RGB 92.8px away); swapping to candidate (gray=0.72, rgb=0.55, dist=0.0px) at (249,343)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=1.35 score=0.718 pos=(249,343)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.00 below 0.45 but MASS confident (0.72 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=415 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.16 below 0.45 but MASS confident (0.72 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=468 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: y_min=183 rows (image-absolute): {'mass': (249, 526), 'resistance': (249, 579), 'instability': (249, 632)}
+ocr.onnx_hud_reader INFO label-x repaired field=mass x=249 -> 0 (match was in the value column; ink label span 0..39)
+ocr.onnx_hud_reader INFO label-x repaired field=resistance x=249 -> 0 (match was in the value column; ink label span 0..209)
+ocr.onnx_hud_reader INFO _find_label_rows: EARLY-DIRECT label-only fallback (title: mass ratio=21.41 outside bounds (2.0, 7.5); labels are independently consistent h_max=38 gaps=[53, 53]) � using label_h-derived half_h=15
+ocr.onnx_hud_reader INFO _find_label_rows: RIGID POSE x=116 y=206 scale=71.9 anchors=['scan_results', 'label_mass', 'label_resistance', 'label_instability'] rejected=[] snapped=['mass']
+ocr.onnx_hud_reader INFO _find_label_rows: EARLY-DIRECT value-column X=375 (value-starts=[327, 375, 575] label-ends=[66, 107, 207] img.width=907)
+ocr.onnx_hud_reader INFO _find_label_rows: EARLY-DIRECT returning result (title y=162 h=17, used 3 label_match observations, skipping STABILIZER/TRACKER/PRIMARY)
+ocr.onnx_hud_reader INFO _emit_label_rows_overlay: pushing fields=['instability', 'mass', 'resistance']
+ocr.screen_reader INFO screen_reader: using Tesseract at C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\tesseract\tesseract.exe
+ocr.sc_ocr.api INFO sc_ocr: difficulty detected='impossible' (via gray_bright_psm11)
+ocr.sc_ocr.api INFO sc_ocr.hud: loaded HUD CRNN (alphabet='0123456789.%' blank=12 H=48 checkpoint_val_acc=0.807)
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=303\u2192485) so crops match training-sample crispness
+ocr.sc_ocr.hud_lexicon INFO hud_lexicon: loaded from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\hud_tracker\learned_lexicon.json � mass=32 resistance=29 instability=38
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=mass text='0' mean=0.89 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='0' confs=['0.89']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=mass text='0' val=0.0 � mass values are at least 2 digits (real range typically 100+); single-digit reads come from oversized row crops + fused-blob binarization, treating as misread
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=resistance text='0' mean=0.86 gate=rgb-crnn-strict val=0.0 lex_hit=True (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='0' confs=['0.86']
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=instability text='0' mean=0.88 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='0' confs=['0.88']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=instability text='0' val=0.0 � instability is always a decimal; integer reads with no '.' in source text indicate a mis-segmented fragment of a longer value (e.g. '340.17' cropped to '17')
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (343,522)->(438,484) x_left=21 (bottom-line-above-MASS)
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: CRNN loaded (model_crnn.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: CRNN v2 loaded (model_crnn_v2.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name slow-path budget exceeded (1500 ms) � bailing with 0 cand
+ocr.sc_ocr.api INFO sc_ocr: mineral_name no fuzzy hit across any pass � dropping
+ocr.sc_ocr.api INFO sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 5838ms
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=303\u2192485) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=mass text='0' mean=0.89 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='0' confs=['0.89']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=mass text='0' val=0.0 � mass values are at least 2 digits (real range typically 100+); single-digit reads come from oversized row crops + fused-blob binarization, treating as misread
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=resistance text='0' mean=0.86 gate=rgb-crnn-strict val=0.0 lex_hit=True (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='0' confs=['0.86']
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=instability text='0' mean=0.88 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='0' confs=['0.88']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=instability text='0' val=0.0 � instability is always a decimal; integer reads with no '.' in source text indicate a mis-segmented fragment of a longer value (e.g. '340.17' cropped to '17')
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (343,522)->(438,484) x_left=21 (bottom-line-above-MASS)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name slow-path budget exceeded (1500 ms) � bailing with 0 cand
+ocr.sc_ocr.api INFO sc_ocr: mineral_name no fuzzy hit across any pass � dropping
+ocr.sc_ocr.api INFO sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 3823ms
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=303\u2192485) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 303))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=mass text='0' mean=0.89 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='0' confs=['0.89']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=mass text='0' val=0.0 � mass values are at least 2 digits (real range typically 100+); single-digit reads come from oversized row crops + fused-blob binarization, treating as misread
+ocr.sc_ocr.api INFO sc_ocr: CONSISTENCY REFLEX field=mass � reads disagree on a visually-stable crop (sim=1.00): gate bypasses revoked for 10 scans (full vote required)
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=resistance text='0' mean=0.86 gate=rgb-crnn-strict val=0.0 lex_hit=True (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='0' confs=['0.86']
+ocr.sc_ocr.api INFO sc_ocr: LOCKED field=resistance value=0.0 (unanimous 3/3 frames, crop-NCC=1.00)
+ocr.sc_ocr.api INFO sc_ocr.hud: stretched + Lanczos to 48px (h=30\u219248, w=526\u2192842) so crops match training-sample crispness
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(30, 526))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB CRNN gate accepted field=instability text='0' mean=0.88 gate=rgb-crnn-strict val=0.0 lex_hit=False (skipping per-glyph CNN + secondary + vote)
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='0' confs=['0.88']
+ocr.sc_ocr.api WARNING sc_ocr: STRUCTURAL REJECT field=instability text='0' val=0.0 � instability is always a decimal; integer reads with no '.' in source text indicate a mis-segmented fragment of a longer value (e.g. '340.17' cropped to '17')
+ocr.sc_ocr.api INFO sc_ocr: CONSISTENCY REFLEX field=instability � reads disagree on a visually-stable crop (sim=1.00): gate bypasses revoked for 10 scans (full vote required)
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (343,522)->(438,484) x_left=21 (bottom-line-above-MASS)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name slow-path budget exceeded (1500 ms) � bailing with 0 cand
+ocr.sc_ocr.api INFO sc_ocr: mineral_name no fuzzy hit across any pass � dropping
+ocr.sc_ocr.api INFO sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 3342ms

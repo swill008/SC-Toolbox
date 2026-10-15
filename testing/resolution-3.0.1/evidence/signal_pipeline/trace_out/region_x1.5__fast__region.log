@@ -1,0 +1,29 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(12,11,32,31) score=0.87 (skipped gray NCC)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+INFO ocr.sc_ocr.api: sc_ocr.signal: localize_icon consensus picked icon=(12,11,20x20) score=0.87 det=?; derived digit crop_box=(35, 9, 78, 33)
+INFO ocr.sc_ocr.api: sc_ocr.signal: crop_box=(35, 9, 78, 33) manual=False gray_shape=(33, 78) work_shape_pre_isolate=(24, 43)
+INFO ocr.sc_ocr.api: sc_ocr.signal: _isolate_main_row trim (24, 43) -> (17, 43)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched + Lanczos 2x to ~32px (h=17→34) so crops match training-sample crispness
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='2,520' digits='2520' mean=0.82 -> expected_count=4
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: zeroed 1 top-window + 1 bot-window bridge rows (frac>0.55, window=8) — H=34
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: zeroed 1 top-window + 1 bot-window bridge rows (frac>0.55, window=8) — H=34
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: zeroed 0 top-window + 1 bot-window bridge rows (frac>0.55, window=8) — H=34
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=percentile_80 good=2 noise=2 mega=0 (expected=4, score=-32.0, scored on cleaned mask) — all=otsu_global:g0/n0/m1, percentile_60:g0/n0/m1, percentile_70:g0/n0/m1, percentile_80:g2/n2/m0, adaptive_w11:g1/n1/m1, adaptive_w21:g0/n1/m1, legacy:g0/n0/m1
+INFO ocr.sc_ocr.api: _mask_commas_in_signature_band: stage-3 orphan-comma masked 7 pixels across 3 columns (run_w_max=5)
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=4 (from CRNN count oracle)
+INFO ocr.sc_ocr.api: sc_ocr.signal: PROPORTIONAL segmenter accepted: 4 digit bboxes, n_digits=4, composed='1620', conf=0.772
+INFO ocr.sc_ocr.api: sc_ocr.signal: SHADOW RGB CNN read '70@0' (4 glyphs, NOT consumed by gate)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB-INV CNN read '7777' (4 glyphs)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='2,520' digits='2520' mean=0.82 in_range=True lexicon_known=True lexicon_hit=False crop_mode=none thresh=2.00
+INFO ocr.sc_ocr.api: sc_ocr.signal: JOINT gate crnn='2520' per_glyph='7770' match=False cnn_mean=0.50 voters=4 in_range=False
+INFO ocr.sc_ocr.api: sc_ocr.signal: N-way consensus voters=4 str='7770' mean_conf=0.50 path=3_of_4_agree+argmax_summed_conf+argmax_summed_conf+2_of_4_decorrelated
+INFO ocr.sc_ocr.fallback: sc_ocr.fallback: CRNN loaded (model_crnn.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+INFO ocr.sc_ocr.fallback: sc_ocr.fallback: CRNN v2 loaded (model_crnn_v2.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v1@h32 text='11520' mean=0.82 (ncand=2)
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v1@h32 text='11520' mean=0.82 (ncand=2)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN raw text='11520' digits='11520' mean=0.82
+INFO ocr.sc_ocr.fallback: sc_ocr.fallback: inverted ONNX loaded (model_cnn_inv.onnx)
+DEBUG ocr.sc_ocr.api: sc_ocr.signal: per-digit dual-polarity disagree pri=0 sec=8 at glyph (x=19-22) — deferring
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN primary text='11520' digits='11520' → 11520 mean=0.82 (cnn=no-check, skipping Tesseract)

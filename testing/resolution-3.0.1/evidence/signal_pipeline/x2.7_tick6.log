@@ -1,0 +1,19 @@
+INFO ocr.sc_ocr.signal_anchor: signal_anchor: loaded 13 icon templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\signal_test\Mining_Signals\training_data_blacklist
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: NCC found NO match this frame — using cached median position (22,21,56,55) from 3 entries
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: NCC found NO match this frame — using cached median position (22,21,56,55) from 3 entries
+INFO ocr.sc_ocr.signal_anchor: find_digit_crop_box: ICON-ONLY (digit-cluster pattern not matched) — using legacy icon-edge crop
+INFO ocr.sc_ocr.signal_anchor: signal_anchor.find_digit_crop_box: crop_box=(60,0,140,59) icon_right=56 gap=4 crop_w=80 crop_h=59 (imgW=140 icon_h=34 pad_top=34 pad_bot=8)
+INFO ocr.sc_ocr.api: sc_ocr.signal: crop_box=(60, 0, 140, 59) manual=False gray_shape=(59, 140) work_shape_pre_isolate=(59, 80)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched (h=59 already large enough, no upscale needed)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='21,200' digits='21200' mean=0.91 -> expected_count=5
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=otsu_global good=0 noise=0 mega=0 (expected=5, score=-1000.0, scored on cleaned mask) — all=otsu_global:g0/n0/m0, percentile_60:g0/n0/m0, percentile_70:g0/n0/m0, percentile_80:g0/n0/m0, adaptive_w11:g0/n0/m0, adaptive_w21:g0/n0/m0, legacy:g0/n0/m0
+INFO hud_tracker.signal_proportional_segmenter: signal_proportional_segmenter: lexicon backtrack (n_digits=5): 00000 -> 06000 (mean_conf=0.40)
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=5 (from CRNN count oracle)
+DEBUG ocr.sc_ocr.api: _segment_glyphs: gray.shape=(59, 80), 0 initial-projection columns
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(59, 80))
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='21,200' digits='21200' mean=0.91 in_range=True lexicon_known=True lexicon_hit=True crop_mode=icon_only thresh=2.00
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v2@h32 text='3' mean=0.82 (ncand=2)
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v2@h32 text='3' mean=0.82 (ncand=2)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN raw text='3' digits='3' mean=0.82
+DEBUG ocr.sc_ocr.api: sc_ocr.signal: no Tesseract variant produced 4-5 digits in range

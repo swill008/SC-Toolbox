@@ -1,0 +1,25 @@
+INFO ocr.sc_ocr.api: sc_ocr: loaded 33 user-verified signal values from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\signal_test\Mining_Signals\.mining_signals_verified.json
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(21,18,45,42) score=0.84 (skipped gray NCC)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+INFO ocr.sc_ocr.api: sc_ocr.signal: loaded region2 world model from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\signal_test\Mining_Signals\hud_tracker\world_model_region2.json
+INFO ocr.sc_ocr.api: sc_ocr.signal: localize_icon consensus picked icon=(21,18,24x24) score=0.84 det=?; derived digit crop_box=(48, 16, 112, 44)
+INFO ocr.sc_ocr.api: sc_ocr.signal: comma-anchored crop extension: x1 48 -> 40 (extended 8 px left); comma x_in_crop=21 trial_w=64 est_pitch=12.3 leading_x_4=8.7 leading_x_5=-3.6
+INFO ocr.sc_ocr.api: sc_ocr.signal: crop_box=(40, 16, 112, 44) manual=False gray_shape=(48, 112) work_shape_pre_isolate=(28, 72)
+INFO ocr.sc_ocr.api: sc_ocr.signal: _isolate_main_row trim (28, 72) -> (23, 72)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched + Lanczos 2x to ~32px (h=23→46) so crops match training-sample crispness
+INFO ocr.sc_ocr.api: sc_ocr.signal: loaded RGB CRNN (alphabet='0123456789,' blank=11 H=48)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='3,540' digits='3540' mean=0.63 -> expected_count=4
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: stage-0 zeroed 4 left + 0 right wall cols (frac>=0.85) — W=144 kept=[4:144]
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: stage-0 zeroed 8 left + 0 right wall cols (frac>=0.85) — W=144 kept=[8:144]
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: stage-0 zeroed 1 left + 0 right wall cols (frac>=0.85) — W=144 kept=[1:144]
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=percentile_80 good=3 noise=0 mega=0 (expected=4, score=-1.0, scored on cleaned mask) — all=otsu_global:g1/n0/m1, percentile_60:g1/n0/m1, percentile_70:g1/n0/m1, percentile_80:g3/n0/m0, adaptive_w11:g4/n1/m0, adaptive_w21:g1/n1/m1, legacy:g1/n0/m1
+INFO ocr.sc_ocr.api: _mask_commas_in_signature_band: stage-3 orphan-comma masked 67 pixels across 12 columns (run_w_max=8)
+INFO hud_tracker.signal_proportional_segmenter: signal_proportional_segmenter: lexicon backtrack (n_digits=4): 2020 -> 2000 (mean_conf=0.54)
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=4 (from CRNN count oracle)
+INFO ocr.sc_ocr.api: sc_ocr.signal: PROPORTIONAL segmenter accepted: 4 digit bboxes, n_digits=4, composed='2000', conf=0.736
+INFO ocr.sc_ocr.api: sc_ocr.signal: SHADOW RGB CNN read '7707' (4 glyphs, NOT consumed by gate)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB-INV CNN read '7777' (4 glyphs)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='3,540' digits='3540' mean=0.63 in_range=True lexicon_known=True lexicon_hit=True crop_mode=none thresh=0.40
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN gate accepted text='3,540' mean=0.63 gate=rgb-crnn-lexicon → 3540 (skipping per-glyph voters)

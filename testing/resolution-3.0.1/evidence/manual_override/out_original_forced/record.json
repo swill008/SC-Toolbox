@@ -1,0 +1,296 @@
+{
+ "results": [
+  {
+   "mass": null,
+   "resistance": 79.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  },
+  {
+   "mass": null,
+   "resistance": 79.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  },
+  {
+   "mass": null,
+   "resistance": 79.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  }
+ ],
+ "label_rows": [
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "_mineral_row": [
+     70,
+     107,
+     14
+    ],
+    "mass": [
+     117,
+     148,
+     220
+    ],
+    "resistance": [
+     161,
+     195,
+     214
+    ],
+    "instability": [
+     202,
+     237,
+     212
+    ]
+   }
+  },
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "_mineral_row": [
+     70,
+     107,
+     14
+    ],
+    "mass": [
+     117,
+     148,
+     220
+    ],
+    "resistance": [
+     161,
+     195,
+     214
+    ],
+    "instability": [
+     202,
+     237,
+     212
+    ]
+   }
+  },
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "_mineral_row": [
+     70,
+     107,
+     14
+    ],
+    "mass": [
+     117,
+     148,
+     220
+    ],
+    "resistance": [
+     161,
+     195,
+     214
+    ],
+    "instability": [
+     202,
+     237,
+     212
+    ]
+   }
+  }
+ ],
+ "value_crops": [
+  {
+   "i": 1,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 117,
+   "y2": 148,
+   "x_min": 226,
+   "crop_rect_xyxy": [
+    226,
+    117,
+    891,
+    148
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_01_y117-148_x226.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    665,
+    31
+   ]
+  },
+  {
+   "i": 2,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 161,
+   "y2": 195,
+   "x_min": 220,
+   "crop_rect_xyxy": [
+    220,
+    161,
+    474,
+    195
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_02_y161-195_x220.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0794991",
+   "crop_size": [
+    254,
+    34
+   ]
+  },
+  {
+   "i": 3,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 202,
+   "y2": 237,
+   "x_min": 218,
+   "crop_rect_xyxy": null
+  },
+  {
+   "i": 4,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 117,
+   "y2": 148,
+   "x_min": 226,
+   "crop_rect_xyxy": [
+    226,
+    117,
+    891,
+    148
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_04_y117-148_x226.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    665,
+    31
+   ]
+  },
+  {
+   "i": 5,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 161,
+   "y2": 195,
+   "x_min": 220,
+   "crop_rect_xyxy": [
+    220,
+    161,
+    474,
+    195
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_05_y161-195_x220.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0794991",
+   "crop_size": [
+    254,
+    34
+   ]
+  },
+  {
+   "i": 6,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 202,
+   "y2": 237,
+   "x_min": 218,
+   "crop_rect_xyxy": null
+  },
+  {
+   "i": 7,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 117,
+   "y2": 148,
+   "x_min": 226,
+   "crop_rect_xyxy": [
+    226,
+    117,
+    891,
+    148
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_07_y117-148_x226.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    665,
+    31
+   ]
+  },
+  {
+   "i": 8,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 161,
+   "y2": 195,
+   "x_min": 220,
+   "crop_rect_xyxy": [
+    220,
+    161,
+    474,
+    195
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_original_forced\\valuecrop_08_y161-195_x220.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0794991",
+   "crop_size": [
+    254,
+    34
+   ]
+  },
+  {
+   "i": 9,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 202,
+   "y2": 237,
+   "x_min": 218,
+   "crop_rect_xyxy": null
+  }
+ ]
+}

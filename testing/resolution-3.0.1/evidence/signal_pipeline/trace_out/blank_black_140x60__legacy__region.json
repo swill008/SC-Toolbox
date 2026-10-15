@@ -1,0 +1,328 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": null,
+ "matches": null,
+ "secs": 0.56,
+ "silent": [
+  "INFO ocr.screen_reader: scan_region: legacy 3-engine read=None (Paddle unavailable)"
+ ],
+ "gate_lines": [],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(60, 140) uint8 [0,0] mean=0"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(60, 140, 3) uint8 [0,0] mean=0"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,0] mean=0"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,0] mean=0"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(60, 140, 3) uint8 [0,0] mean=0"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": null
+  },
+  {
+   "stage": "screen_reader.scan_region",
+   "depth": 0,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader.capture_region_averaged",
+   "depth": 1,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "60"
+    }
+   ],
+   "kw": {},
+   "out": "PIL RGB (140, 60)"
+  },
+  {
+   "stage": "screen_reader.extract_number",
+   "depth": 1,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_a",
+   "depth": 2,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[4]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']"
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_b",
+   "depth": 3,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[3]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']"
+  },
+  {
+   "stage": "screen_reader._extract_paddle_signal_candidates",
+   "depth": 4,
+   "in": [
+    "PIL RGB (140, 60)"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 5,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 3,
+   "in": [
+    "list[4]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 5,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 5,
+   "in": [
+    "list[3]: ['PIL L (420, 180)', 'PIL L (420, 180)', 'PIL L (420, 180)']",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 3,
+   "in": [
+    "PIL L (420, 180)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 180)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  }
+ ]
+}

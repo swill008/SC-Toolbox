@@ -1,0 +1,12 @@
+INFO ocr.sc_ocr.signal_anchor: find_digit_crop_box: BOTH anchors missed — returning None
+INFO ocr.sc_ocr.api: sc_ocr.signal: ANCHOR MISS — fallback heuristic mask icon_right=-1 mask_w=42 work_shape=(59, 140)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched (h=59 already large enough, no upscale needed)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='21,200' digits='21200' mean=0.85 -> expected_count=5
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=otsu_global good=0 noise=0 mega=0 (expected=5, score=-1000.0, scored on cleaned mask) — all=otsu_global:g0/n0/m0, percentile_60:g0/n0/m0, percentile_70:g0/n0/m0, percentile_80:g0/n0/m0, adaptive_w11:g0/n0/m0, adaptive_w21:g0/n0/m0, legacy:g0/n0/m0
+INFO hud_tracker.signal_proportional_segmenter: signal_proportional_segmenter: lexicon backtrack (n_digits=5): 00000 -> 06000 (mean_conf=0.32)
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=5 (from CRNN count oracle)
+DEBUG ocr.sc_ocr.api: _segment_glyphs: gray.shape=(59, 140), 0 initial-projection columns
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: 0 raw spans: [] (gray.shape=(59, 140))
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: returning 0 spans (widths=[], heights=[])
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='21,200' digits='21200' mean=0.85 in_range=True lexicon_known=True lexicon_hit=True crop_mode=none thresh=0.40
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN gate accepted text='21,200' mean=0.85 gate=rgb-crnn-lexicon → 21200 (skipping per-glyph voters)

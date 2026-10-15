@@ -1,0 +1,21 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 7 NCC candidates failed the single-shape check — falling back to all candidates
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] _cnn_filter_icon_candidates: leftmost-only filter kept x1<=35 (tol=8), rejected 4 cands at x1=[52, 51, 52, 51]
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: NCC pick ix=(38,20,66,49) score=0.78 tw=28 (n_scales_hit=7, n_rejected_shape=7, n_cnn_validated=3, max_score=0.78, n_within_delta=1, target_W=77)
+INFO ocr.sc_ocr.signal_anchor: _expand_to_icon_extent: grew matched box (38,20,66,49) -> (38,0,77,57) via column/row scan (was 28x29, now 39x57)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_cu5s3mo6_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_cu5s3mo6', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_mau1jdzs_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_mau1jdzs', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_6q6xqe4f_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_6q6xqe4f', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_hrwjj1bl_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_hrwjj1bl', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_ytxnn8_3_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_ytxnn8_3', '--psm', '7', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_t40i11q3_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_t40i11q3', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG pytesseract: ['C:\\Users\\<USER>\\SC_Toolbox\\current\\tools\\Mining_Signals\\tesseract\\tesseract.exe', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_6910q2ng_input.PNG', 'C:\\Users\\<USER>\\AppData\\Local\\Temp\\tess_6910q2ng', '--psm', '6', '-c', 'tessedit_char_whitelist=0123456789', 'txt']
+DEBUG ocr.screen_reader: OCR A=None B=None C=None
+DEBUG ocr.screen_reader: screen_reader: no digits found by any engine
+INFO ocr.screen_reader: scan_region: legacy 3-engine read=None (Paddle unavailable)

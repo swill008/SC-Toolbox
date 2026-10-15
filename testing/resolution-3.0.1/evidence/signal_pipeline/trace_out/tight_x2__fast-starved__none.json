@@ -1,0 +1,1188 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": 18120,
+ "matches": "list[0]: []",
+ "secs": 0.46,
+ "silent": [
+  "WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(21,18,45,42) score=0.84 (skipped gray NCC)"
+ ],
+ "gate_lines": [
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: localize_icon consensus picked icon=(21,18,24x24) score=0.84 det=?; derived digit crop_box=(48, 16, 112, 44)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: comma-anchored crop extension: x1 48 -> 40 (extended 8 px left); comma x_in_crop=21 trial_w=64 est_pitch=12.3 leading_x_4=8.7 leading_x_5=-3.6",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: crop_box=(40, 16, 112, 44) manual=False gray_shape=(48, 112) work_shape_pre_isolate=(28, 72)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: _isolate_main_row trim (28, 72) -> (23, 72)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: stretched + Lanczos 2x to ~32px (h=23\u219246) so crops match training-sample crispness",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='3,530' digits='3530' mean=0.76 -> expected_count=4",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=4 (from CRNN count oracle)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: PROPORTIONAL segmenter accepted: 4 digit bboxes, n_digits=4, composed='2000', conf=0.736",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: SHADOW RGB CNN read '7707' (4 glyphs, NOT consumed by gate)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: RGB-INV CNN read '7777' (4 glyphs)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='3,530' digits='3530' mean=0.76 in_range=True lexicon_known=True lexicon_hit=False crop_mode=none thresh=2.00",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: JOINT gate crnn='3530' per_glyph='7077' match=False cnn_mean=0.71 voters=4 in_range=False",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: N-way consensus voters=4 str='7077' mean_conf=0.71 path=3_of_4_agree+2_of_4_same_tier+argmax_summed_conf+2_of_4_same_tier",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN raw text='111520' digits='111520' mean=0.91",
+  "DEBUG ocr.sc_ocr.api: sc_ocr.signal: per-digit dual-polarity disagree pri=0 sec=2 at glyph (x=0-16) \u2014 deferring",
+  "DEBUG ocr.sc_ocr.api: sc_ocr.signal: dual-polarity disagree pri=0 sec=2 at glyph (x=0-16) \u2014 deferring",
+  "DEBUG ocr.sc_ocr.api: sc_ocr.signal: chose='18120' via=tess/2x/psm7 (tess='18120' cnn=None)",
+  "INFO ocr.sc_ocr.api: sc_ocr.signal: vote 18120 via 2x/psm7 (2/4 majority) \u2192 display 18120"
+ ],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(48, 112) uint8 [10,227] mean=66.7"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['21', '18', '24', '24']",
+    "score": 0.8421,
+    "detector": "'consensus(geometry,rgb_ncc)'",
+    "details": {
+     "geometry": "dict(3)",
+     "rgb_ncc": "dict(3)",
+     "iou": 0.63
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['21', '11', '26', '28']",
+    "confidence": 0.6667,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.702,
+     "hole_pixels": "0",
+     "notch_depth": "2",
+     "tiny_mode": "False",
+     "score": "4"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['21', '18', '24', '24']",
+    "score": 0.8458,
+    "details": {
+     "scale": 0.85,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "283",
+     "template_used": "'real_2'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "api._signal_recognize_pil",
+   "depth": 0,
+   "in": [
+    "PIL RGB (112, 48)"
+   ],
+   "kw": {
+    "region": null
+   },
+   "out": "18120"
+  },
+  {
+   "stage": "frame_context.max_channel",
+   "depth": 1,
+   "in": [
+    "PIL RGB (112, 48)"
+   ],
+   "kw": {},
+   "out": "ndarray(48, 112) uint8 [10,227] mean=66.7"
+  },
+  {
+   "stage": "api._load_region2_world_model_for_api",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": {
+    "source_dir": "'C:\\\\Users\\\\_user\\\\AppData\\\\Roaming\\\\ShipBit\\\\WingmanAI\\\\custom_skills\\\\SC_Toolbox_Beta_V1.2\\\\tools\\\\Mining_Signals\\\\training_data_panels\\\\user_20260418_154408\\...",
+    "reference": "'pill'",
+    "captures_total": "62",
+    "captures_used": "51",
+    "captures_skipped_no_pill": "list[4]: [\"'cap_20260418_160432_487.boxes.json'\", \"'cap_20260418_160445_195.boxes.json'\", \"'cap_20260425_094906_439.boxes.json'\", \"'cap_20260425_094955_777.boxes.json'\"]",
+    "captures_skipped_bad_pill": "list[3]: ['dict(2)', 'dict(2)', 'dict(2)']",
+    "captures_skipped_outliers": "list[4]: ['dict(2)', 'dict(2)', 'dict(2)', 'dict(2)']",
+    "feature_capture_counts": {
+     "pill": "51",
+     "icon": "49",
+     "value": "51"
+    },
+    "features": {
+     "pill": "dict(5)",
+     "icon": "dict(5)",
+     "value": "dict(5)"
+    },
+    "worst_std_per_feature": {
+     "icon": "dict(2)",
+     "value": "dict(2)"
+    },
+    "variance_verdict": {
+     "icon": "'problem'",
+     "value": "'workable'"
+    },
+    "per_capture": "list[51]: ['dict(4)', 'dict(4)', 'dict(4)', 'dict(4)', 'dict(4)', 'dict(4)']"
+   }
+  },
+  {
+   "stage": "api._find_pill_for_signal",
+   "depth": 1,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._find_pill_for_signal",
+   "depth": 1,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['21', '18', '24', '24']",
+    "score": 0.8421,
+    "detector": "'consensus(geometry,rgb_ncc)'",
+    "details": {
+     "geometry": "dict(3)",
+     "rgb_ncc": "dict(3)",
+     "iou": 0.63
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['21', '11', '26', '28']",
+    "confidence": 0.6667,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.702,
+     "hole_pixels": "0",
+     "notch_depth": "2",
+     "tiny_mode": "False",
+     "score": "4"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 112, 3) uint8 [0,227] mean=49.7"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['21', '18', '24', '24']",
+    "score": 0.8458,
+    "details": {
+     "scale": 0.85,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "283",
+     "template_used": "'real_2'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "api._signal_mark_icon_seen",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "comma_finder.find_comma_voted",
+   "depth": 1,
+   "in": [
+    "ndarray(28, 64, 3) uint8 [4,195] mean=59"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['20', '8', '2', '3']",
+    "x_center": "21",
+    "confidence": 0.7667,
+    "polarity_used": "'bright_on_dark'",
+    "details": {
+     "checks": "dict(6)",
+     "numbers": "dict(10)",
+     "n_checks_passed": "4",
+     "n_checks_total": "6"
+    },
+    "voted": "True",
+    "agreed": "True",
+    "primary": {
+     "bbox": "tuple[4]",
+     "x_center": "21",
+     "confidence": 0.6667,
+     "polarity_used": "'bright_on_dark'",
+     "details": "dict(4)"
+    },
+    "inverted": {
+     "bbox": "tuple[4]",
+     "x_center": "21",
+     "confidence": 0.6667,
+     "polarity_used": "'inv:dark_on_light'",
+     "details": "dict(4)"
+    }
+   }
+  },
+  {
+   "stage": "xlg._find_main_row_bounds",
+   "depth": 1,
+   "in": [
+    "ndarray(28, 72) uint8 [18,208] mean=72.1"
+   ],
+   "kw": {},
+   "out": "tuple[2]: ['0', '23']"
+  },
+  {
+   "stage": "xlg._find_main_row_bounds",
+   "depth": 1,
+   "in": [
+    "ndarray(28, 64) uint8 [18,195] mean=69.8"
+   ],
+   "kw": {},
+   "out": "tuple[2]: ['0', '21']"
+  },
+  {
+   "stage": "api._classify_signal_via_crnn_rgb",
+   "depth": 1,
+   "in": [
+    "ndarray(21, 64, 3) uint8 [4,195] mean=70.1"
+   ],
+   "kw": {
+    "beam_width": "8",
+    "lexicon": "set[32]"
+   },
+   "out": "tuple[2]: [\"'3,530'\", 0.7584]"
+  },
+  {
+   "stage": "api._canonicalize_polarity",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 146) uint8 [4,195] mean=80.2"
+   ],
+   "kw": {},
+   "out": "ndarray(48, 146) uint8 [4,195] mean=80.2"
+  },
+  {
+   "stage": "api._canonicalize_polarity",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 146) uint8 [18,177] mean=70.4"
+   ],
+   "kw": {},
+   "out": "ndarray(48, 146) uint8 [18,177] mean=70.4"
+  },
+  {
+   "stage": "api._canonicalize_polarity",
+   "depth": 2,
+   "in": [
+    "ndarray(48, 146) uint8 [6,169] mean=59.6"
+   ],
+   "kw": {},
+   "out": "ndarray(48, 146) uint8 [6,169] mean=59.6"
+  },
+  {
+   "stage": "ONNX model_signal_crnn_rgb.onnx",
+   "depth": 2,
+   "declared": {
+    "image": "(['batch', 3, 48, 'width'], 'tensor(float)')"
+   },
+   "in": {
+    "image": "ndarray(1, 3, 48, 146) float32 [0.0157,0.765] mean=0.275"
+   },
+   "problems": [],
+   "out": "ndarray(35, 1, 12) float32 [-12.8,16.9] mean=-3.21"
+  },
+  {
+   "stage": "api._canonicalize_polarity",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=85.3"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=85.3"
+  },
+  {
+   "stage": "api._adaptive_binarize_multi",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=85.3"
+   ],
+   "kw": {
+    "expected_count": "4"
+   },
+   "out": "ndarray(46, 144) uint8 [0,255] mean=50.4"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=93.7"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=86.9"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=102"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=88.3"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=76.2"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=74.7"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=50.4"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=50.4"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=50.2"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=50.2"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=63"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=63"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=51.1"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=51.1"
+  },
+  {
+   "stage": "api._strip_pill_outline_bridges",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=50.4"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=50.4"
+  },
+  {
+   "stage": "api._mask_commas_in_signature_band",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=50.4"
+   ],
+   "kw": {},
+   "out": "ndarray(46, 144) uint8 [0,255] mean=47.9"
+  },
+  {
+   "stage": "proportional_segmenter",
+   "depth": 1,
+   "in": [
+    "PIL RGB (144, 46)"
+   ],
+   "kw": {
+    "expected_digits": "4",
+    "classifier": "<fn _classify_crops_signal>",
+    "classifier_topk": "<fn _classify_crops_signal_topk>",
+    "lexicon": "set[32]"
+   },
+   "out": {
+    "digits": "list[5]: ['dict(4)', 'dict(2)', 'dict(4)', 'dict(4)', 'dict(4)']",
+    "n_digits": "4",
+    "comma_position": "1",
+    "confidence": 0.7362,
+    "gray_canon_used": "ndarray(46, 144) uint8 [0,255] mean=84.4",
+    "details": {
+     "digit_width_px": 19.7045,
+     "comma_width_px": 7.8818,
+     "crop_w": "144",
+     "crop_h": "46",
+     "comma_extent": "tuple[2]",
+     "ink_extent": "tuple[2]",
+     "hypotheses": "list[1]",
+     "winner_n_digits": "4",
+     "winner_used_blob_centers": "False",
+     "string_composed": "'2000'",
+     "evaluated_with_classifier": "True",
+     "comma_anchor_used": "True"
+    }
+   }
+  },
+  {
+   "stage": "comma_finder.find_comma_voted",
+   "depth": 2,
+   "in": [
+    "ndarray(46, 144, 3) uint8 [0,210] mean=65.7"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['0', '37', '3', '6']",
+    "x_center": "1",
+    "confidence": 0.9333,
+    "polarity_used": "'inv:dark_on_light'",
+    "details": {
+     "checks": "dict(6)",
+     "numbers": "dict(10)",
+     "n_checks_passed": "5",
+     "n_checks_total": "6"
+    },
+    "voted": "True",
+    "agreed": "True",
+    "primary": {
+     "bbox": "tuple[4]",
+     "x_center": "3",
+     "confidence": 0.6667,
+     "polarity_used": "'bright_on_dark'",
+     "details": "dict(4)"
+    },
+    "inverted": {
+     "bbox": "tuple[4]",
+     "x_center": "1",
+     "confidence": 0.8333,
+     "polarity_used": "'inv:dark_on_light'",
+     "details": "dict(4)"
+    }
+   }
+  },
+  {
+   "stage": "api._classify_crops_signal_topk",
+   "depth": 2,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.18,1] mean=0.526', 'ndarray(28, 28) float32 [0.141,1] mean=0.55', 'ndarray(28, 28) float32 [0.149,1] mean=0.597', 'ndarray(28, 28) float32 [0.129,1] mean=0.601']"
+   ],
+   "kw": {
+    "k": "4"
+   },
+   "out": "list[4]: [\"list[4]: ['tuple[2]', 'tuple[2]', 'tuple[2]', 'tuple[2]']\", \"list[4]: ['tuple[2]', 'tuple[2]', 'tuple[2]', 'tuple[2]']\", \"list[4]: ['tuple[2]', 'tuple[2]', 'tuple[2]', 'tuple[2]']\", \"list[4]: ['tuple[2]', 'tuple[2]', 'tuple[2]', 'tuple[2]']\"]"
+  },
+  {
+   "stage": "ONNX model_signal_cnn.onnx",
+   "depth": 3,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 1, 28, 28) float32 [0,1] mean=0.53"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-18.9,12.9] mean=-2.28"
+  },
+  {
+   "stage": "api._apply_eight_vs_zero_rule",
+   "depth": 3,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.18,1] mean=0.526', 'ndarray(28, 28) float32 [0.141,1] mean=0.55', 'ndarray(28, 28) float32 [0.149,1] mean=0.597', 'ndarray(28, 28) float32 [0.129,1] mean=0.601']",
+    "list[4]: ['tuple[2]: [\"\\'2\\'\", 0.3197]', 'tuple[2]: [\"\\'0\\'\", 0.6824]', 'tuple[2]: [\"\\'2\\'\", 0.7757]', 'tuple[2]: [\"\\'0\\'\", 0.9999]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'2\\'\", 0.3197]', 'tuple[2]: [\"\\'0\\'\", 0.6824]', 'tuple[2]: [\"\\'2\\'\", 0.7757]', 'tuple[2]: [\"\\'0\\'\", 0.9999]']"
+  },
+  {
+   "stage": "comma_finder.find_comma_voted",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144, 3) uint8 [0,210] mean=65.7"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['0', '37', '3', '6']",
+    "x_center": "1",
+    "confidence": 0.9333,
+    "polarity_used": "'inv:dark_on_light'",
+    "details": {
+     "checks": "dict(6)",
+     "numbers": "dict(10)",
+     "n_checks_passed": "5",
+     "n_checks_total": "6"
+    },
+    "voted": "True",
+    "agreed": "True",
+    "primary": {
+     "bbox": "tuple[4]",
+     "x_center": "3",
+     "confidence": 0.6667,
+     "polarity_used": "'bright_on_dark'",
+     "details": "dict(4)"
+    },
+    "inverted": {
+     "bbox": "tuple[4]",
+     "x_center": "1",
+     "confidence": 0.8333,
+     "polarity_used": "'inv:dark_on_light'",
+     "details": "dict(4)"
+    }
+   }
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24) uint8 [36,255] mean=134"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28) uint8 [48,255] mean=199"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24) uint8 [32,255] mean=141"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28) uint8 [37,255] mean=202"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24) uint8 [32,255] mean=153"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28) uint8 [39,255] mean=208"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24) uint8 [25,255] mean=154"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28) uint8 [33,255] mean=208"
+  },
+  {
+   "stage": "api._classify_crops_signal",
+   "depth": 1,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.188,1] mean=0.781', 'ndarray(28, 28) float32 [0.145,1] mean=0.792', 'ndarray(28, 28) float32 [0.153,1] mean=0.814', 'ndarray(28, 28) float32 [0.129,1] mean=0.816']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+  },
+  {
+   "stage": "ONNX model_signal_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 1, 28, 28) float32 [0.129,1] mean=0.801"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-10.3,4.64] mean=-0.849"
+  },
+  {
+   "stage": "ONNX model_signal_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 1, 28, 28) float32 [0,0.871] mean=0.199"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-14.4,6.75] mean=-1.69"
+  },
+  {
+   "stage": "api._apply_eight_vs_zero_rule",
+   "depth": 2,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.188,1] mean=0.781', 'ndarray(28, 28) float32 [0.145,1] mean=0.792', 'ndarray(28, 28) float32 [0.153,1] mean=0.814', 'ndarray(28, 28) float32 [0.129,1] mean=0.816']",
+    "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+  },
+  {
+   "stage": "api._classify_crops_signal_inv",
+   "depth": 1,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.188,1] mean=0.781', 'ndarray(28, 28) float32 [0.145,1] mean=0.792', 'ndarray(28, 28) float32 [0.153,1] mean=0.814', 'ndarray(28, 28) float32 [0.129,1] mean=0.816']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+  },
+  {
+   "stage": "ONNX model_signal_inv_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 1, 28, 28) float32 [0,0.871] mean=0.199"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-27.4,9.93] mean=-3.29"
+  },
+  {
+   "stage": "ONNX model_signal_inv_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 1, 28, 28) float32 [0.129,1] mean=0.801"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-9.49,6.66] mean=-1.04"
+  },
+  {
+   "stage": "api._apply_eight_vs_zero_rule",
+   "depth": 2,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0.188,1] mean=0.781', 'ndarray(28, 28) float32 [0.145,1] mean=0.792', 'ndarray(28, 28) float32 [0.153,1] mean=0.814', 'ndarray(28, 28) float32 [0.129,1] mean=0.816']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+  },
+  {
+   "stage": "api._apply_eight_vs_zero_rule",
+   "depth": 1,
+   "in": [
+    "list[4]: ['ndarray(28, 28) float32 [0,0.812] mean=0.219', 'ndarray(28, 28) float32 [0,0.855] mean=0.208', 'ndarray(28, 28) float32 [0,0.847] mean=0.186', 'ndarray(28, 28) float32 [0,0.871] mean=0.184']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+  },
+  {
+   "stage": "api._strip_non_digit_signature_secondary",
+   "depth": 1,
+   "in": [
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']",
+    "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+  },
+  {
+   "stage": "api._apply_zero_six_eight_secondary_tiebreak",
+   "depth": 1,
+   "in": [
+    "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24, 3) uint8 [0,255] mean=98"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28, 3) uint8 [1,255] mean=182"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24, 3) uint8 [17,255] mean=124"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28, 3) uint8 [19,255] mean=194"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24, 3) uint8 [8,255] mean=134"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28, 3) uint8 [18,255] mean=199"
+  },
+  {
+   "stage": "api._aspect_pad_resize_28",
+   "depth": 1,
+   "in": [
+    "ndarray(50, 24, 3) uint8 [6,255] mean=133"
+   ],
+   "kw": {
+    "bg": "255"
+   },
+   "out": "ndarray(28, 28, 3) uint8 [6,255] mean=198"
+  },
+  {
+   "stage": "api._classify_crops_signal_rgb",
+   "depth": 1,
+   "in": [
+    "list[4]: ['ndarray(28, 28, 3) uint8 [1,255] mean=182', 'ndarray(28, 28, 3) uint8 [19,255] mean=194', 'ndarray(28, 28, 3) uint8 [18,255] mean=199', 'ndarray(28, 28, 3) uint8 [6,255] mean=198']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.8988]', 'tuple[2]: [\"\\'7\\'\", 0.929]', 'tuple[2]: [\"\\'0\\'\", 0.8995]', 'tuple[2]: [\"\\'7\\'\", 0.7152]']"
+  },
+  {
+   "stage": "ONNX model_signal_rgb_cnn_v2.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 3, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 3, 28, 28) float32 [0.00392,1] mean=0.758"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-8.56,6.96] mean=-1.37"
+  },
+  {
+   "stage": "ONNX model_signal_rgb_cnn_v2.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 3, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 3, 28, 28) float32 [0,0.996] mean=0.242"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-25,11.4] mean=-4.34"
+  },
+  {
+   "stage": "api._dump_glyphs",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "'signal_rgb'",
+    "list[4]: ['ndarray(28, 28, 3) uint8 [1,255] mean=182', 'ndarray(28, 28, 3) uint8 [19,255] mean=194', 'ndarray(28, 28, 3) uint8 [18,255] mean=199', 'ndarray(28, 28, 3) uint8 [6,255] mean=198']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.8988]', 'tuple[2]: [\"\\'7\\'\", 0.929]', 'tuple[2]: [\"\\'0\\'\", 0.8995]', 'tuple[2]: [\"\\'7\\'\", 0.7152]']"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._classify_crops_signal_rgb_inv",
+   "depth": 1,
+   "in": [
+    "list[4]: ['ndarray(28, 28, 3) uint8 [1,255] mean=182', 'ndarray(28, 28, 3) uint8 [19,255] mean=194', 'ndarray(28, 28, 3) uint8 [18,255] mean=199', 'ndarray(28, 28, 3) uint8 [6,255] mean=198']"
+   ],
+   "kw": {},
+   "out": "list[4]: ['tuple[2]: [\"\\'7\\'\", 1.0]', 'tuple[2]: [\"\\'7\\'\", 0.9986]', 'tuple[2]: [\"\\'7\\'\", 0.9991]', 'tuple[2]: [\"\\'7\\'\", 0.9957]']"
+  },
+  {
+   "stage": "ONNX model_signal_rgb_inv_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 3, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 3, 28, 28) float32 [0,0.996] mean=0.242"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-10.9,8.88] mean=-1.51"
+  },
+  {
+   "stage": "ONNX model_signal_rgb_inv_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 3, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(4, 3, 28, 28) float32 [0.00392,1] mean=0.758"
+   },
+   "problems": [],
+   "out": "ndarray(4, 11) float32 [-34.1,31.5] mean=-3.69"
+  },
+  {
+   "stage": "api._dump_glyphs",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "'signal_rgb_inv'",
+    "list[4]: ['ndarray(28, 28, 3) uint8 [1,255] mean=182', 'ndarray(28, 28, 3) uint8 [19,255] mean=194', 'ndarray(28, 28, 3) uint8 [18,255] mean=199', 'ndarray(28, 28, 3) uint8 [6,255] mean=198']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 1.0]', 'tuple[2]: [\"\\'7\\'\", 0.9986]', 'tuple[2]: [\"\\'7\\'\", 0.9991]', 'tuple[2]: [\"\\'7\\'\", 0.9957]']"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._dump_value_crop",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "PIL L (144, 46)"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._dump_glyphs",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "'primary'",
+    "list[4]: ['ndarray(28, 28) float32 [0.188,1] mean=0.781', 'ndarray(28, 28) float32 [0.145,1] mean=0.792', 'ndarray(28, 28) float32 [0.153,1] mean=0.814', 'ndarray(28, 28) float32 [0.129,1] mean=0.816']",
+    "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._dump_glyphs",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "'secondary'",
+    "list[4]: ['ndarray(28, 28) float32 [0,0.812] mean=0.219', 'ndarray(28, 28) float32 [0,0.855] mean=0.208', 'ndarray(28, 28) float32 [0,0.847] mean=0.186', 'ndarray(28, 28) float32 [0,0.871] mean=0.184']",
+    "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "signal_anchor.last_crop_mode",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": "'none'"
+  },
+  {
+   "stage": "api._vote_on_digit_string",
+   "depth": 1,
+   "in": [],
+   "kw": {
+    "primary_results": "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']",
+    "secondary_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']",
+    "rgb_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.8988]', 'tuple[2]: [\"\\'7\\'\", 0.929]', 'tuple[2]: [\"\\'0\\'\", 0.8995]', 'tuple[2]: [\"\\'7\\'\", 0.7152]']",
+    "rgb_inv_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 1.0]', 'tuple[2]: [\"\\'7\\'\", 0.9986]', 'tuple[2]: [\"\\'7\\'\", 0.9991]', 'tuple[2]: [\"\\'7\\'\", 0.9957]']",
+    "lexicon": "set[32]"
+   },
+   "out": {
+    "string": "'7077'",
+    "mean_confidence": 0.7134,
+    "per_position": "list[4]: ['dict(5)', 'dict(5)', 'dict(5)', 'dict(5)']",
+    "consensus_path": "'3_of_4_agree+2_of_4_same_tier+argmax_summed_conf+2_of_4_same_tier'",
+    "available_voters": "4"
+   }
+  },
+  {
+   "stage": "api._vote_on_digit_string",
+   "depth": 1,
+   "in": [],
+   "kw": {
+    "primary_results": "list[4]: ['tuple[2]: [\"\\'0\\'\", 0.7556]', 'tuple[2]: [\"\\'0\\'\", 0.9021]', 'tuple[2]: [\"\\'2\\'\", 0.3507]', 'tuple[2]: [\"\\'2\\'\", 0.7504]']",
+    "secondary_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.5503]', 'tuple[2]: [\"\\'0\\'\", 0.9623]', 'tuple[2]: [\"\\'4\\'\", 0.9509]', 'tuple[2]: [\"\\'9\\'\", 0.7162]']",
+    "rgb_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 0.8988]', 'tuple[2]: [\"\\'7\\'\", 0.929]', 'tuple[2]: [\"\\'0\\'\", 0.8995]', 'tuple[2]: [\"\\'7\\'\", 0.7152]']",
+    "rgb_inv_results": "list[4]: ['tuple[2]: [\"\\'7\\'\", 1.0]', 'tuple[2]: [\"\\'7\\'\", 0.9986]', 'tuple[2]: [\"\\'7\\'\", 0.9991]', 'tuple[2]: [\"\\'7\\'\", 0.9957]']",
+    "lexicon": "set[32]"
+   },
+   "out": {
+    "string": "'7077'",
+    "mean_confidence": 0.7134,
+    "per_position": "list[4]: ['dict(5)', 'dict(5)', 'dict(5)', 'dict(5)']",
+    "consensus_path": "'3_of_4_agree+2_of_4_same_tier+argmax_summed_conf+2_of_4_same_tier'",
+    "available_voters": "4"
+   }
+  },
+  {
+   "stage": "api._crnn_recognize",
+   "depth": 1,
+   "in": [
+    "PIL L (144, 46)"
+   ],
+   "kw": {
+    "digit_only": "True"
+   },
+   "out": "tuple[2]: [\"'111520'\", 'list[6]: [0.9948, 0.9375, 0.6323, 0.9557, 0.9554, 0.9972]']"
+  },
+  {
+   "stage": "ONNX model_crnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 32, 'width'], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 32, 100) float32 [0,0.996] mean=0.335"
+   },
+   "problems": [],
+   "out": "ndarray(25, 1, 69) float32 [-19.7,13.4] mean=-6.49"
+  },
+  {
+   "stage": "ONNX model_crnn_v2.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 32, 'width'], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 32, 100) float32 [0,0.996] mean=0.335"
+   },
+   "problems": [],
+   "out": "ndarray(25, 1, 69) float32 [-17.6,25.1] mean=-3.84"
+  },
+  {
+   "stage": "api._crnn_recognize",
+   "depth": 1,
+   "in": [
+    "PIL L (144, 46)"
+   ],
+   "kw": {
+    "digit_only": "True"
+   },
+   "out": "tuple[2]: [\"'111520'\", 'list[6]: [0.9948, 0.9375, 0.6323, 0.9557, 0.9554, 0.9972]']"
+  },
+  {
+   "stage": "ONNX model_crnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 32, 'width'], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 32, 100) float32 [0,0.996] mean=0.335"
+   },
+   "problems": [],
+   "out": "ndarray(25, 1, 69) float32 [-19.7,13.4] mean=-6.49"
+  },
+  {
+   "stage": "ONNX model_crnn_v2.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 32, 'width'], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 32, 100) float32 [0,0.996] mean=0.335"
+   },
+   "problems": [],
+   "out": "ndarray(25, 1, 69) float32 [-17.6,25.1] mean=-3.84"
+  },
+  {
+   "stage": "api._signal_cnn_per_digit",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=85.3"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "ONNX model_signal_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 28, 28) float32 [0.259,1] mean=0.601"
+   },
+   "problems": [],
+   "out": "ndarray(1, 11) float32 [-16.4,7.38] mean=-4.65"
+  },
+  {
+   "stage": "ONNX model_cnn_inv.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 28, 28) float32 [0,0.741] mean=0.399"
+   },
+   "problems": [],
+   "out": "ndarray(1, 12) float32 [-4.33,2.91] mean=0.00363"
+  },
+  {
+   "stage": "api._dump_value_crop",
+   "depth": 1,
+   "in": [
+    "'signature'",
+    "PIL L (144, 46)"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "api._dump_signature_winner",
+   "depth": 1,
+   "in": [],
+   "kw": {
+    "raw_text": "'111520'",
+    "digits": "'111520'",
+    "mean_conf": 0.9122,
+    "validated_value": null,
+    "rejection_reason": "'not 4-5 digits (6)'",
+    "per_digit_classifications": null
+   },
+   "out": null
+  },
+  {
+   "stage": "xlg._tesseract_char_boxes",
+   "depth": 1,
+   "in": [
+    "PIL L (288, 92)"
+   ],
+   "kw": {
+    "whitelist": "'0123456789.'",
+    "psm": "'7'"
+   },
+   "out": "list[5]: ['tuple[5]: [\"\\'1\\'\", \\'0\\', \\'0\\', \\'32\\', \\'89\\']', 'tuple[5]: [\"\\'8\\'\", \\'52\\', \\'9\\', \\'207\\', \\'77\\']', 'tuple[5]: [\"\\'1\\'\", \\'84\\', \\'0\\', \\'108\\', \\'89\\']', 'tuple[5]: [\"\\'2\\'\", \\'138\\', \\'0\\', \\'169\\', \\'89\\']', 'tuple[5]: [\"\\'0\\'\", \\'168\\', \\'0\\', \\'207\\', \\'89\\']']"
+  },
+  {
+   "stage": "xlg._tesseract_char_boxes",
+   "depth": 1,
+   "in": [
+    "PIL L (432, 138)"
+   ],
+   "kw": {
+    "whitelist": "'0123456789.'",
+    "psm": "'7'"
+   },
+   "out": "list[6]: ['tuple[5]: [\"\\'.\\'\", \\'0\\', \\'0\\', \\'48\\', \\'133\\']', 'tuple[5]: [\"\\'1\\'\", \\'57\\', \\'0\\', \\'127\\', \\'133\\']', 'tuple[5]: [\"\\'8\\'\", \\'78\\', \\'13\\', \\'310\\', \\'116\\']', 'tuple[5]: [\"\\'1\\'\", \\'126\\', \\'0\\', \\'161\\', \\'133\\']', 'tuple[5]: [\"\\'2\\'\", \\'207\\', \\'0\\', \\'253\\', \\'133\\']', 'tuple[5]: [\"\\'0\\'\", \\'253\\', \\'0\\', \\'310\\', \\'133\\']']"
+  },
+  {
+   "stage": "xlg._tesseract_char_boxes",
+   "depth": 1,
+   "in": [
+    "PIL L (288, 92)"
+   ],
+   "kw": {
+    "whitelist": "'0123456789.'",
+    "psm": "'8'"
+   },
+   "out": "list[4]: ['tuple[5]: [\"\\'1\\'\", \\'0\\', \\'0\\', \\'32\\', \\'89\\']', 'tuple[5]: [\"\\'8\\'\", \\'52\\', \\'9\\', \\'207\\', \\'77\\']', 'tuple[5]: [\"\\'2\\'\", \\'145\\', \\'0\\', \\'184\\', \\'89\\']', 'tuple[5]: [\"\\'0\\'\", \\'184\\', \\'0\\', \\'207\\', \\'89\\']']"
+  },
+  {
+   "stage": "xlg._tesseract_char_boxes",
+   "depth": 1,
+   "in": [
+    "PIL L (432, 138)"
+   ],
+   "kw": {
+    "whitelist": "'0123456789.'",
+    "psm": "'8'"
+   },
+   "out": "list[4]: ['tuple[5]: [\"\\'1\\'\", \\'0\\', \\'0\\', \\'48\\', \\'133\\']', 'tuple[5]: [\"\\'8\\'\", \\'78\\', \\'13\\', \\'310\\', \\'116\\']', 'tuple[5]: [\"\\'2\\'\", \\'207\\', \\'0\\', \\'276\\', \\'133\\']', 'tuple[5]: [\"\\'0\\'\", \\'276\\', \\'0\\', \\'310\\', \\'133\\']']"
+  },
+  {
+   "stage": "api._signal_cnn_at_tess_boxes",
+   "depth": 1,
+   "in": [
+    "ndarray(46, 144) uint8 [0,255] mean=85.3",
+    "list[5]: ['tuple[5]: [\"\\'1\\'\", \\'0\\', \\'0\\', \\'32\\', \\'89\\']', 'tuple[5]: [\"\\'8\\'\", \\'52\\', \\'9\\', \\'207\\', \\'77\\']', 'tuple[5]: [\"\\'1\\'\", \\'84\\', \\'0\\', \\'108\\', \\'89\\']', 'tuple[5]: [\"\\'2\\'\", \\'138\\', \\'0\\', \\'169\\', \\'89\\']', 'tuple[5]: [\"\\'0\\'\", \\'168\\', \\'0\\', \\'207\\', \\'89\\']']",
+    "2"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "ONNX model_signal_cnn.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 28, 28) float32 [0.259,1] mean=0.601"
+   },
+   "problems": [],
+   "out": "ndarray(1, 11) float32 [-16.4,7.38] mean=-4.65"
+  },
+  {
+   "stage": "ONNX model_cnn_inv.onnx",
+   "depth": 2,
+   "declared": {
+    "input": "(['batch', 1, 28, 28], 'tensor(float)')"
+   },
+   "in": {
+    "input": "ndarray(1, 1, 28, 28) float32 [0,0.741] mean=0.399"
+   },
+   "problems": [],
+   "out": "ndarray(1, 12) float32 [-4.33,2.91] mean=0.00363"
+  },
+  {
+   "stage": "SignalMatcher.match_all",
+   "depth": 0,
+   "in": [
+    "18120"
+   ],
+   "kw": {
+    "tolerance": "10"
+   },
+   "out": "list[0]: []"
+  }
+ ]
+}

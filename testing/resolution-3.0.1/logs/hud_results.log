@@ -1,0 +1,165 @@
+2026-10-15 13:10:39.304 [DEBUG   ] ocr.sc_ocr.calibration (PID 24212 | Thread-6 (_run)) calibration.py:182 _load_all: calibration: re-loaded mtime_ns=1792087021896964700 regions=1 keys=['3590,716,436,322']
+2026-10-15 13:10:40.882 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.353 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:10:41.957 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1608ms
+2026-10-15 13:10:44.817 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.190 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:10:46.140 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 2279ms
+2026-10-15 13:10:48.412 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.190 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:10:49.729 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1866ms
+2026-10-15 13:10:52.820 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.190 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:10:54.138 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=4.5 in 2271ms
+2026-10-15 13:10:57.328 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.190 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:10:58.634 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 2278ms
+2026-10-15 13:11:00.338 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.238 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:11:01.818 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1953ms
+2026-10-15 13:11:04.397 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.190 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:11:05.694 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1817ms
+2026-10-15 13:12:24.701 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1475ms
+2026-10-15 13:12:26.110 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 1360ms
+2026-10-15 13:12:29.981 [INFO    ] ocr.onnx_hud_reader (PID 24212 | cal_live_refresh) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:12:42.677 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:526 observe_calibration_sample: calibration sample REJECT — gap 1.000 between resistance and instability below min 1.0 (likely a false-match collision)
+2026-10-15 13:12:46.303 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 4555ms
+2026-10-15 13:13:17.230 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=1.235 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:13:18.372 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 2606ms
+2026-10-15 13:13:28.316 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 4049ms
+2026-10-15 13:13:38.490 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:13:41.476 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 3677ms
+2026-10-15 13:13:54.202 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:526 observe_calibration_sample: calibration sample REJECT — gap 0.943 between resistance and instability below min 1.0 (likely a false-match collision)
+2026-10-15 13:13:56.810 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 3483ms
+2026-10-15 13:14:04.072 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:526 observe_calibration_sample: calibration sample REJECT — gap 0.987 between mass and resistance below min 1.0 (likely a false-match collision)
+2026-10-15 13:14:04.073 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:04.384 [INFO    ] ocr.onnx_hud_reader (PID 24212 | cal_live_refresh) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:06.270 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=None in 2936ms
+2026-10-15 13:14:07.088 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:526 observe_calibration_sample: calibration sample REJECT — gap 0.987 between mass and resistance below min 1.0 (likely a false-match collision)
+2026-10-15 13:14:07.088 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:09.345 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=None in 3009ms
+2026-10-15 13:14:10.582 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:526 observe_calibration_sample: calibration sample REJECT — gap 0.987 between mass and resistance below min 1.0 (likely a false-match collision)
+2026-10-15 13:14:10.583 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:13.221 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=Iron mass=None resistance=10.0 instability=0.01111 in 3385ms
+2026-10-15 13:14:14.058 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:16.522 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3196ms
+2026-10-15 13:14:17.745 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:20.277 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=None in 3447ms
+2026-10-15 13:14:21.691 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:24.379 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3540ms
+2026-10-15 13:14:25.712 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:28.794 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3950ms
+2026-10-15 13:14:30.231 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:33.082 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3733ms
+2026-10-15 13:14:34.223 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:36.784 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3433ms
+2026-10-15 13:14:37.730 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:40.215 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=None in 3362ms
+2026-10-15 13:14:41.256 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:43.795 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=0.01111 in 3426ms
+2026-10-15 13:14:44.701 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:47.784 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=Iron mass=None resistance=77.0 instability=0.01111 in 3929ms
+2026-10-15 13:14:48.778 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:51.242 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=None in 3359ms
+2026-10-15 13:14:52.263 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:54.813 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=None in 3440ms
+2026-10-15 13:14:56.429 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:14:59.018 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=0.01111 in 3645ms
+2026-10-15 13:15:00.285 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:03.363 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=0.01111 in 3958ms
+2026-10-15 13:15:04.857 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:07.964 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=0.01111 in 4058ms
+2026-10-15 13:15:09.418 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:10.373 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=10.0 instability=0.01111 in 1951ms
+2026-10-15 13:15:11.950 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:14.989 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 4065ms
+2026-10-15 13:15:16.531 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:19.434 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 4023ms
+2026-10-15 13:15:21.025 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:24.395 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 4462ms
+2026-10-15 13:15:25.906 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:28.774 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 3852ms
+2026-10-15 13:15:29.788 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:32.694 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 3780ms
+2026-10-15 13:15:33.882 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:34.866 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=None in 1933ms
+2026-10-15 13:15:36.213 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:39.498 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 4541ms
+2026-10-15 13:15:40.786 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:43.615 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=70.0 instability=0.01111 in 3673ms
+2026-10-15 13:15:44.809 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:47.971 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 4022ms
+2026-10-15 13:15:49.337 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:50.770 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 2305ms
+2026-10-15 13:15:51.841 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:54.342 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=None in 3360ms
+2026-10-15 13:15:55.376 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:15:58.613 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 4138ms
+2026-10-15 13:15:59.907 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:02.791 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 3781ms
+2026-10-15 13:16:03.965 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:06.422 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=None in 3393ms
+2026-10-15 13:16:07.384 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:10.044 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=None in 3527ms
+2026-10-15 13:16:11.666 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:14.720 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 4185ms
+2026-10-15 13:16:16.121 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:19.069 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 4023ms
+2026-10-15 13:16:20.653 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:23.659 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=30.0 instability=0.01111 in 4139ms
+2026-10-15 13:16:25.038 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:28.997 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=0.01111 in 4978ms
+2026-10-15 13:16:31.010 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:32.441 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=None in 2832ms
+2026-10-15 13:16:34.221 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:37.528 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=0.01111 in 4850ms
+2026-10-15 13:16:38.867 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:41.505 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=None in 3458ms
+2026-10-15 13:16:42.769 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:45.109 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=None in 3050ms
+2026-10-15 13:16:46.519 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:49.554 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=0.01111 in 3972ms
+2026-10-15 13:16:50.955 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:53.907 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=0.01111 in 3848ms
+2026-10-15 13:16:54.984 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:16:57.796 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=7.7778 in 3735ms
+2026-10-15 13:16:59.051 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:01.677 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=None in 3615ms
+2026-10-15 13:17:08.110 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=12.0 instability=None in 4070ms
+2026-10-15 13:17:09.747 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:12.140 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=12.0 instability=None in 3572ms
+2026-10-15 13:17:13.657 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:16.069 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=12.0 instability=None in 3473ms
+2026-10-15 13:17:17.456 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:20.214 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=12.0 instability=7.7777 in 3595ms
+2026-10-15 13:17:21.466 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:24.224 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=12.0 instability=7.7777 in 3602ms
+2026-10-15 13:17:28.188 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=21.471 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:17:28.188 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=resistance ratio=24.588 outside bounds (3.0, 9.0) — likely a false-match label position
+2026-10-15 13:17:28.188 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=instability ratio=27.706 outside bounds (4.0, 11.0) — likely a false-match label position
+2026-10-15 13:17:31.722 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 4109ms
+2026-10-15 13:17:33.408 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=21.235 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:17:33.408 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=resistance ratio=25.824 outside bounds (3.0, 9.0) — likely a false-match label position
+2026-10-15 13:17:33.409 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:35.807 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=0.0 instability=None in 3688ms
+2026-10-15 13:17:37.349 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=21.176 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:17:37.349 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=resistance ratio=25.765 outside bounds (3.0, 9.0) — likely a false-match label position
+2026-10-15 13:17:37.350 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:40.557 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=5.5 in 4435ms
+2026-10-15 13:17:41.491 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:17:44.472 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=5.5 in 3843ms
+2026-10-15 13:18:11.200 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=21.235 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:18:11.200 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_1) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=resistance ratio=25.824 outside bounds (3.0, 9.0) — likely a false-match label position
+2026-10-15 13:18:11.201 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:18:14.691 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=1.011114 in 4550ms
+2026-10-15 13:18:16.726 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=mass ratio=21.235 outside bounds (2.0, 7.5) — likely a false-match label position
+2026-10-15 13:18:16.727 [DEBUG   ] ocr.sc_ocr.hud_panel_tracker (PID 24212 | mining_scan_0) hud_panel_tracker.py:483 observe_calibration_sample: calibration sample REJECT field=resistance ratio=25.824 outside bounds (3.0, 9.0) — likely a false-match label position
+2026-10-15 13:18:16.729 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:18:19.754 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=77.0 instability=1.011114 in 4606ms
+2026-10-15 13:18:21.407 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:18:24.615 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=1.011114 in 4462ms
+2026-10-15 13:18:26.146 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_0) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:18:29.190 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=1.011114 in 4041ms
+2026-10-15 13:18:30.399 [INFO    ] ocr.onnx_hud_reader (PID 24212 | mining_scan_1) onnx_hud_reader.py:4127 _find_label_rows_impl_body: hud: manual override mode active — bypassing auto-detect
+2026-10-15 13:18:33.130 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=1.011114 in 3486ms
+2026-10-15 13:20:14.130 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=None resistance=27.0 instability=1.011114 in 3440ms
+2026-10-15 13:21:42.643 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=None instability=None in 5274ms
+2026-10-15 13:21:48.403 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=None instability=None in 5529ms
+2026-10-15 13:21:53.423 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=5.0 instability=None in 4538ms
+2026-10-15 13:22:01.269 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=None instability=None in 4371ms
+2026-10-15 13:22:05.372 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_1) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=3.0 instability=3.3113313 in 3470ms
+2026-10-15 13:22:19.690 [INFO    ] ocr.sc_ocr.api (PID 24212 | mining_scan_0) api.py:18845 scan_hud_onnx: sc_ocr: mineral=None mass=8883.0 resistance=None instability=None in 2778ms

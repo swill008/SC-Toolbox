@@ -1,0 +1,2147 @@
+{
+ "case": "loose10_legacy",
+ "src": "1420,230,1861,610",
+ "scale": 1.0,
+ "mode": "legacy",
+ "input": {
+  "img": "RGB",
+  "size": [
+   441,
+   380
+  ],
+  "ext": "((0, 255), (6, 255), (0, 250))"
+ },
+ "results": [
+  {
+   "gate": {
+    "bypass": false,
+    "anchor": {
+     "dict": {
+      "title_x": "138",
+      "title_y": "46",
+      "title_w": "95",
+      "title_h": "17",
+      "score": "0.7983705401420593"
+     }
+    }
+   },
+   "would_dispatch": true,
+   "result_keys": [
+    "mass",
+    "resistance",
+    "instability",
+    "panel_visible"
+   ],
+   "ui_consumes": {
+    "mass": 336.0,
+    "resistance": 36.0,
+    "instability": 7.37146,
+    "mineral_name": null,
+    "panel_visible": true
+   }
+  },
+  {
+   "gate": {
+    "bypass": false,
+    "anchor": {
+     "dict": {
+      "title_x": "138",
+      "title_y": "46",
+      "title_w": "95",
+      "title_h": "17",
+      "score": "0.7983705401420593"
+     }
+    }
+   },
+   "would_dispatch": true,
+   "result_keys": [
+    "mass",
+    "resistance",
+    "instability",
+    "panel_visible"
+   ],
+   "ui_consumes": {
+    "mass": 336.0,
+    "resistance": 36.0,
+    "instability": 7.37146,
+    "mineral_name": null,
+    "panel_visible": true
+   }
+  },
+  {
+   "gate": {
+    "bypass": false,
+    "anchor": {
+     "dict": {
+      "title_x": "138",
+      "title_y": "46",
+      "title_w": "95",
+      "title_h": "17",
+      "score": "0.7983705401420593"
+     }
+    }
+   },
+   "would_dispatch": true,
+   "result_keys": [
+    "mass",
+    "resistance",
+    "instability",
+    "panel_visible"
+   ],
+   "ui_consumes": {
+    "mass": 336.0,
+    "resistance": 36.0,
+    "instability": 7.37146,
+    "mineral_name": null,
+    "panel_visible": true
+   }
+  },
+  {
+   "gate": {
+    "bypass": false,
+    "anchor": {
+     "dict": {
+      "title_x": "138",
+      "title_y": "46",
+      "title_w": "95",
+      "title_h": "17",
+      "score": "0.7983705401420593"
+     }
+    }
+   },
+   "would_dispatch": true,
+   "result_keys": [
+    "mass",
+    "resistance",
+    "instability",
+    "panel_visible"
+   ],
+   "ui_consumes": {
+    "mass": 336.0,
+    "resistance": 36.0,
+    "instability": 7.37146,
+    "mineral_name": null,
+    "panel_visible": true
+   }
+  }
+ ],
+ "captures": 8,
+ "functions": {
+  "calibration._file_mtime_ns": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [],
+     "out": "None"
+    },
+    {
+     "in": [],
+     "out": "None"
+    }
+   ],
+   "ms": 0.3
+  },
+  "calibration._load_all": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": {
+      "dict": {
+       "version": "1",
+       "calibrations": {
+        "dict": []
+       }
+      }
+     }
+    },
+    {
+     "in": [],
+     "out": {
+      "dict": {
+       "version": "1",
+       "calibrations": {
+        "dict": []
+       }
+      }
+     }
+    }
+   ],
+   "ms": 0.3
+  },
+  "calibration._region_key": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": "'3924,706,462,398'"
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": "'3924,706,462,398'"
+    }
+   ],
+   "ms": 0.0
+  },
+  "calibration.load": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": "None"
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": "None"
+    }
+   ],
+   "ms": 0.4
+  },
+  "engine_mode.get_engine_mode": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "'legacy'"
+    },
+    {
+     "in": [],
+     "out": "'legacy'"
+    }
+   ],
+   "ms": 0.0
+  },
+  "hud_panel_tracker.get_learned_offsets": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [],
+     "out": "None"
+    },
+    {
+     "in": [],
+     "out": "None"
+    }
+   ],
+   "ms": 0.0
+  },
+  "hud_panel_tracker.get_learned_row_mults": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [],
+     "out": "None"
+    },
+    {
+     "in": [],
+     "out": "None"
+    }
+   ],
+   "ms": 0.0
+  },
+  "icon_rgb_ncc._ncc_one_channel": {
+   "calls": 108,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286
+       ],
+       "dt": "float32",
+       "min": 0.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        17,
+        39
+       ],
+       "dt": "float32",
+       "min": 50.0,
+       "max": 153.0
+      }
+     ],
+     "out": {
+      "nd": [
+       364,
+       248
+      ],
+      "dt": "float32",
+      "min": -0.629,
+      "max": 0.791
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286
+       ],
+       "dt": "float32",
+       "min": 6.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        17,
+        39
+       ],
+       "dt": "float32",
+       "min": 70.0,
+       "max": 187.0
+      }
+     ],
+     "out": {
+      "nd": [
+       364,
+       248
+      ],
+      "dt": "float32",
+      "min": -0.531,
+      "max": 0.754
+     }
+    }
+   ],
+   "ms": 325.3
+  },
+  "label_match._canonicalize": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        159,
+        441
+       ],
+       "dt": "uint8",
+       "min": 10.0,
+       "max": 255.0
+      }
+     ],
+     "out": {
+      "nd": [
+       159,
+       441
+      ],
+      "dt": "float32",
+      "min": -0.866,
+      "max": 3.927
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        159,
+        441
+       ],
+       "dt": "uint8",
+       "min": 10.0,
+       "max": 255.0
+      }
+     ],
+     "out": {
+      "nd": [
+       159,
+       441
+      ],
+      "dt": "float32",
+      "min": -0.866,
+      "max": 3.927
+     }
+    }
+   ],
+   "ms": 5.2
+  },
+  "label_match._load_rgb_label_template": {
+   "calls": 8,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      "'mass'"
+     ],
+     "out": {
+      "nd": [
+       28,
+       65,
+       3
+      ],
+      "dt": "float32",
+      "min": 49.706,
+      "max": 190.667
+     }
+    },
+    {
+     "in": [
+      "'resistance'"
+     ],
+     "out": {
+      "nd": [
+       28,
+       171,
+       3
+      ],
+      "dt": "float32",
+      "min": 52.647,
+      "max": 191.333
+     }
+    }
+   ],
+   "ms": 0.5
+  },
+  "label_match._load_rgb_mass_template": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": {
+      "nd": [
+       28,
+       65,
+       3
+      ],
+      "dt": "float32",
+      "min": 49.706,
+      "max": 190.667
+     }
+    },
+    {
+     "in": [],
+     "out": {
+      "nd": [
+       28,
+       65,
+       3
+      ],
+      "dt": "float32",
+      "min": 49.706,
+      "max": 190.667
+     }
+    }
+   ],
+   "ms": 0.6
+  },
+  "label_match._load_templates": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": {
+      "dict": {
+       "mass": {
+        "nd": [
+         28,
+         65
+        ],
+        "dt": "float32",
+        "min": -1.108,
+        "max": 1.861
+       },
+       "resistance": {
+        "nd": [
+         28,
+         171
+        ],
+        "dt": "float32",
+        "min": -1.388,
+        "max": 2.09
+       },
+       "resistance_short": {
+        "nd": [
+         28,
+         102
+        ],
+        "dt": "float32",
+        "min": -1.291,
+        "max": 2.062
+       },
+       "instability": {
+        "nd": [
+         28,
+         159
+        ],
+        "dt": "float32",
+        "min": -1.184,
+        "max": 2.072
+       },
+       "instability_short": {
+        "nd": [
+         28,
+         73
+        ],
+        "dt": "float32",
+        "min": -1.122,
+        "max": 2.053
+       }
+      }
+     }
+    },
+    {
+     "in": [],
+     "out": {
+      "dict": {
+       "mass": {
+        "nd": [
+         28,
+         65
+        ],
+        "dt": "float32",
+        "min": -1.108,
+        "max": 1.861
+       },
+       "resistance": {
+        "nd": [
+         28,
+         171
+        ],
+        "dt": "float32",
+        "min": -1.388,
+        "max": 2.09
+       },
+       "resistance_short": {
+        "nd": [
+         28,
+         102
+        ],
+        "dt": "float32",
+        "min": -1.291,
+        "max": 2.062
+       },
+       "instability": {
+        "nd": [
+         28,
+         159
+        ],
+        "dt": "float32",
+        "min": -1.184,
+        "max": 2.072
+       },
+       "instability_short": {
+        "nd": [
+         28,
+         73
+        ],
+        "dt": "float32",
+        "min": -1.122,
+        "max": 2.053
+       }
+      }
+     }
+    }
+   ],
+   "ms": 0.8
+  },
+  "label_match._ncc_search": {
+   "calls": 104,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        159,
+        441
+       ],
+       "dt": "float32",
+       "min": -0.866,
+       "max": 3.927
+      },
+      {
+       "nd": [
+        17,
+        95
+       ],
+       "dt": "float32",
+       "min": -2.113,
+       "max": 2.353
+      }
+     ],
+     "out": {
+      "tuple": 3,
+      "first": "0.7983705401420593"
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        159,
+        441
+       ],
+       "dt": "float32",
+       "min": -0.866,
+       "max": 3.927
+      },
+      {
+       "nd": [
+        21,
+        118
+       ],
+       "dt": "float32",
+       "min": -2.043,
+       "max": 2.46
+      }
+     ],
+     "out": {
+      "tuple": 3,
+      "first": "0.7692391872406006"
+     }
+    }
+   ],
+   "ms": 97.0
+  },
+  "label_match._normalize_search_centers": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [
+      "None"
+     ],
+     "out": "None"
+    },
+    {
+     "in": [
+      "None"
+     ],
+     "out": "None"
+    }
+   ],
+   "ms": 0.0
+  },
+  "label_match._resize_rgb_template": {
+   "calls": 36,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        28,
+        65,
+        3
+       ],
+       "dt": "float32",
+       "min": 49.706,
+       "max": 190.667
+      },
+      "0.6"
+     ],
+     "out": {
+      "nd": [
+       17,
+       39,
+       3
+      ],
+      "dt": "float32",
+      "min": 50.0,
+      "max": 187.0
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        28,
+        65,
+        3
+       ],
+       "dt": "float32",
+       "min": 49.706,
+       "max": 190.667
+      },
+      "0.75"
+     ],
+     "out": {
+      "nd": [
+       21,
+       49,
+       3
+      ],
+      "dt": "float32",
+      "min": 50.0,
+      "max": 187.0
+     }
+    }
+   ],
+   "ms": 2.6
+  },
+  "label_match._resize_template": {
+   "calls": 88,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        28,
+        158
+       ],
+       "dt": "float32",
+       "min": -1.951,
+       "max": 2.501
+      },
+      "0.6"
+     ],
+     "out": {
+      "nd": [
+       17,
+       95
+      ],
+      "dt": "float32",
+      "min": -2.113,
+      "max": 2.353
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        28,
+        158
+       ],
+       "dt": "float32",
+       "min": -1.951,
+       "max": 2.501
+      },
+      "0.75"
+     ],
+     "out": {
+      "nd": [
+       21,
+       118
+      ],
+      "dt": "float32",
+      "min": -2.043,
+      "max": 2.46
+     }
+    }
+   ],
+   "ms": 6.7
+  },
+  "label_match._rgb_mass_top_k": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286,
+        3
+       ],
+       "dt": "float32",
+       "min": 0.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        28,
+        65,
+        3
+       ],
+       "dt": "float32",
+       "min": 49.706,
+       "max": 190.667
+      },
+      "8"
+     ],
+     "out": {
+      "list": 8,
+      "first": {
+       "dict": [
+        "x",
+        "y",
+        "score",
+        "scale",
+        "w",
+        "h"
+       ]
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286,
+        3
+       ],
+       "dt": "float32",
+       "min": 0.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        28,
+        65,
+        3
+       ],
+       "dt": "float32",
+       "min": 49.706,
+       "max": 190.667
+      },
+      "8"
+     ],
+     "out": {
+      "list": 8,
+      "first": {
+       "dict": [
+        "x",
+        "y",
+        "score",
+        "scale",
+        "w",
+        "h"
+       ]
+      }
+     }
+    }
+   ],
+   "ms": 326.8
+  },
+  "label_match._rgb_row_search": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286,
+        3
+       ],
+       "dt": "float32",
+       "min": 0.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        28,
+        171,
+        3
+       ],
+       "dt": "float32",
+       "min": 52.647,
+       "max": 191.333
+      },
+      "1.35",
+      "315"
+     ],
+     "out": {
+      "tuple": 3,
+      "first": "0.07168690860271454"
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        286,
+        3
+       ],
+       "dt": "float32",
+       "min": 0.0,
+       "max": 255.0
+      },
+      {
+       "nd": [
+        28,
+        171,
+        3
+       ],
+       "dt": "float32",
+       "min": 52.647,
+       "max": 191.333
+      },
+      "1.35",
+      "315"
+     ],
+     "out": {
+      "tuple": 3,
+      "first": "0.07168690860271454"
+     }
+    }
+   ],
+   "ms": 11.1
+  },
+  "label_match.find_label_positions": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": {
+        "dict": [
+         "x",
+         "y",
+         "w",
+         "h",
+         "score",
+         "scale",
+         "polarity",
+         "agreement"
+        ]
+       },
+       "resistance": {
+        "dict": [
+         "x",
+         "y",
+         "w",
+         "h",
+         "score",
+         "scale",
+         "synthesized"
+        ]
+       }
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": {
+        "dict": [
+         "x",
+         "y",
+         "w",
+         "h",
+         "score",
+         "scale",
+         "polarity",
+         "agreement"
+        ]
+       },
+       "resistance": {
+        "dict": [
+         "x",
+         "y",
+         "w",
+         "h",
+         "score",
+         "scale",
+         "synthesized"
+        ]
+       }
+      }
+     }
+    }
+   ],
+   "ms": 424.9
+  },
+  "onnx_hud_reader._build_text_mask": {
+   "calls": 8,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "30"
+     ],
+     "out": {
+      "nd": [
+       380,
+       441
+      ],
+      "dt": "bool",
+      "min": 0.0,
+      "max": 1.0
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "30"
+     ],
+     "out": {
+      "nd": [
+       380,
+       441
+      ],
+      "dt": "bool",
+      "min": 0.0,
+      "max": 1.0
+     }
+    }
+   ],
+   "ms": 3.5
+  },
+  "onnx_hud_reader._find_mineral_row": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "tuple": 2,
+      "first": "82"
+     }
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "tuple": 2,
+      "first": "82"
+     }
+    }
+   ],
+   "ms": 3.0
+  },
+  "onnx_hud_reader._find_value_crop": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      },
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "104",
+      "114"
+     ],
+     "out": {
+      "img": "RGB",
+      "size": [
+       346,
+       10
+      ],
+      "ext": "((8, 255), (9, 255), (0, 245))"
+     }
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      },
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "122",
+      "136"
+     ],
+     "out": {
+      "img": "RGB",
+      "size": [
+       414,
+       14
+      ],
+      "ext": "((0, 255), (8, 246), (0, 200))"
+     }
+    }
+   ],
+   "ms": 10.6
+  },
+  "onnx_hud_reader._legacy_read_field": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        346,
+        10
+       ],
+       "ext": "((8, 255), (9, 255), (0, 245))"
+      },
+      "'mass'"
+     ],
+     "out": "336.0"
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        414,
+        14
+       ],
+       "ext": "((0, 255), (8, 246), (0, 200))"
+      },
+      "'resistance'"
+     ],
+     "out": "36.0"
+    }
+   ],
+   "ms": 4733.8
+  },
+  "onnx_hud_reader._legacy_scan_hud": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": "336.0",
+       "resistance": "36.0",
+       "instability": "7.37146",
+       "panel_visible": "True"
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": "336.0",
+       "resistance": "36.0",
+       "instability": "7.37146",
+       "panel_visible": "True"
+      }
+     }
+    }
+   ],
+   "ms": 4757.9
+  },
+  "onnx_hud_reader._otsu": {
+   "calls": 24,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        10,
+        441
+       ],
+       "dt": "uint8",
+       "min": 14.0,
+       "max": 255.0
+      }
+     ],
+     "out": "99"
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        10,
+        441
+       ],
+       "dt": "uint8",
+       "min": 14.0,
+       "max": 255.0
+      }
+     ],
+     "out": "99"
+    }
+   ],
+   "ms": 6.7
+  },
+  "onnx_hud_reader._text_row_spans_below": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "91"
+     ],
+     "out": {
+      "list": 3,
+      "first": {
+       "tuple": 2,
+       "first": null
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "nd": [
+        380,
+        441
+       ],
+       "dt": "uint8",
+       "min": 7.0,
+       "max": 253.0
+      },
+      "91"
+     ],
+     "out": {
+      "list": 3,
+      "first": {
+       "tuple": 2,
+       "first": null
+      }
+     }
+    }
+   ],
+   "ms": 2.1
+  },
+  "onnx_hud_reader.scan_hud_onnx": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": "336.0",
+       "resistance": "36.0",
+       "instability": "7.37146",
+       "panel_visible": "True"
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "dict": {
+       "mass": "336.0",
+       "resistance": "36.0",
+       "instability": "7.37146",
+       "panel_visible": "True"
+      }
+     }
+    }
+   ],
+   "ms": 4758.2
+  },
+  "paddle_client._get_embed_python": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 12,
+   "samples": [
+    {
+     "in": [],
+     "out": "None"
+    },
+    {
+     "in": [],
+     "out": "None"
+    }
+   ],
+   "ms": 0.7
+  },
+  "paddle_client.is_available": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "False"
+    },
+    {
+     "in": [],
+     "out": "False"
+    }
+   ],
+   "ms": 0.8
+  },
+  "scan_results_match._load_template": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": {
+      "list": 8,
+      "first": {
+       "tuple": 3,
+       "first": null
+      }
+     }
+    },
+    {
+     "in": [],
+     "out": {
+      "list": 8,
+      "first": {
+       "tuple": 3,
+       "first": null
+      }
+     }
+    }
+   ],
+   "ms": 1.6
+  },
+  "scan_results_match._row_consensus_title": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      },
+      {
+       "list": 8,
+       "first": {
+        "tuple": 5,
+        "first": null
+       }
+      },
+      "0",
+      "0"
+     ],
+     "out": "None"
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      },
+      {
+       "list": 8,
+       "first": {
+        "tuple": 5,
+        "first": null
+       }
+      },
+      "0",
+      "0"
+     ],
+     "out": "None"
+    }
+   ],
+   "ms": 427.0
+  },
+  "scan_results_match._smooth_anchor": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "title_x": "138",
+        "title_y": "46",
+        "title_w": "95",
+        "title_h": "17",
+        "score": "0.7983705401420593"
+       }
+      },
+      "29108.980301"
+     ],
+     "out": {
+      "dict": {
+       "title_x": "138",
+       "title_y": "46",
+       "title_w": "95",
+       "title_h": "17",
+       "score": "0.7983705401420593"
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "title_x": "138",
+        "title_y": "46",
+        "title_w": "95",
+        "title_h": "17",
+        "score": "0.7983705401420593"
+       }
+      },
+      "29110.278687"
+     ],
+     "out": {
+      "dict": {
+       "title_x": "138",
+       "title_y": "46",
+       "title_w": "95",
+       "title_h": "17",
+       "score": "0.7983705401420593"
+      }
+     }
+    }
+   ],
+   "ms": 0.0
+  },
+  "scan_results_match.find_scan_results_anchor": {
+   "calls": 4,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "dict": {
+       "title_x": "138",
+       "title_y": "46",
+       "title_w": "95",
+       "title_h": "17",
+       "score": "0.7983705401420593"
+      }
+     }
+    },
+    {
+     "in": [
+      {
+       "img": "RGB",
+       "size": [
+        441,
+        380
+       ],
+       "ext": "((0, 255), (6, 255), (0, 250))"
+      }
+     ],
+     "out": {
+      "dict": {
+       "title_x": "138",
+       "title_y": "46",
+       "title_w": "95",
+       "title_h": "17",
+       "score": "0.7983705401420593"
+      }
+     }
+    }
+   ],
+   "ms": 466.1
+  },
+  "screen_reader._check_mss": {
+   "calls": 1,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "True"
+    }
+   ],
+   "ms": 0.0
+  },
+  "screen_reader._check_tesseract": {
+   "calls": 1,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "True"
+    }
+   ],
+   "ms": 21.2
+  },
+  "screen_reader._find_tesseract": {
+   "calls": 1,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\E--Users-<USER>-Documents-GitH"
+    }
+   ],
+   "ms": 0.0
+  },
+  "screen_reader._try_ocr": {
+   "calls": 36,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "img": "L",
+       "size": [
+        1038,
+        30
+       ],
+       "ext": "(13, 255)"
+      },
+      "'--psm 7 -c tessedit_char_whitelist=0123456789.%'"
+     ],
+     "out": "'.336'"
+    },
+    {
+     "in": [
+      {
+       "img": "L",
+       "size": [
+        1038,
+        30
+       ],
+       "ext": "(0, 242)"
+      },
+      "'--psm 7 -c tessedit_char_whitelist=0123456789.%'"
+     ],
+     "out": "'. .336'"
+    }
+   ],
+   "ms": 4723.5
+  },
+  "screen_reader.capture_region[FAKE]": {
+   "calls": 8,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "img": "RGB",
+      "size": [
+       441,
+       380
+      ],
+      "ext": "((0, 255), (6, 255), (0, 250))"
+     }
+    },
+    {
+     "in": [
+      {
+       "dict": {
+        "x": "3924",
+        "y": "706",
+        "w": "462",
+        "h": "398"
+       }
+      }
+     ],
+     "out": {
+      "img": "RGB",
+      "size": [
+       441,
+       380
+      ],
+      "ext": "((0, 255), (6, 255), (0, 250))"
+     }
+    }
+   ],
+   "ms": 0.5
+  },
+  "screen_reader.tesseract_status": {
+   "calls": 1,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [],
+     "out": "'Ready'"
+    }
+   ],
+   "ms": 21.2
+  },
+  "validate.validate_instability": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 4,
+   "samples": [
+    {
+     "in": [
+      "'7 . 37146'"
+     ],
+     "out": "7.37146"
+    },
+    {
+     "in": [
+      "'. 37146'"
+     ],
+     "out": "37146.0"
+    }
+   ],
+   "ms": 0.1
+  },
+  "validate.validate_mass": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      "'.336'"
+     ],
+     "out": "336.0"
+    },
+    {
+     "in": [
+      "'. .336'"
+     ],
+     "out": "336.0"
+    }
+   ],
+   "ms": 0.1
+  },
+  "validate.validate_pct": {
+   "calls": 12,
+   "exc": {},
+   "empty_in": 0,
+   "flat_in": 0,
+   "ret_none": 0,
+   "samples": [
+    {
+     "in": [
+      "'.36%'"
+     ],
+     "out": "36.0"
+    },
+    {
+     "in": [
+      "'.36%'"
+     ],
+     "out": "36.0"
+    }
+   ],
+   "ms": 0.1
+  }
+ },
+ "ort": {},
+ "tesseract": {
+  "calls": 72,
+  "callers": {
+   "ocr/screen_reader.py:340 _try_ocr <- ocr/onnx_hud_reader.py:5061 _legacy_read_field": 36
+  },
+  "samples": [
+   {
+    "fn": "run_and_get_output",
+    "caller": "ocr/screen_reader.py:340 _try_ocr <- ocr/onnx_hud_reader.py:5061 _legacy_read_field",
+    "in": {
+     "img": "L",
+     "size": [
+      1038,
+      30
+     ],
+     "ext": "(13, 255)"
+    },
+    "cfg": "None",
+    "out": "'.336\\n'"
+   },
+   {
+    "fn": "image_to_string",
+    "caller": "ocr/screen_reader.py:340 _try_ocr <- ocr/onnx_hud_reader.py:5061 _legacy_read_field",
+    "in": {
+     "img": "L",
+     "size": [
+      1038,
+      30
+     ],
+     "ext": "(13, 255)"
+    },
+    "cfg": "--psm 7 -c tessedit_char_whitelist=0123456789.%",
+    "out": "'.336\\n'"
+   },
+   {
+    "fn": "run_and_get_output",
+    "caller": "ocr/screen_reader.py:340 _try_ocr <- ocr/onnx_hud_reader.py:5061 _legacy_read_field",
+    "in": {
+     "img": "L",
+     "size": [
+      1038,
+      30
+     ],
+     "ext": "(0, 242)"
+    },
+    "cfg": "None",
+    "out": "'. .336\\n'"
+   },
+   {
+    "fn": "image_to_string",
+    "caller": "ocr/screen_reader.py:340 _try_ocr <- ocr/onnx_hud_reader.py:5061 _legacy_read_field",
+    "in": {
+     "img": "L",
+     "size": [
+      1038,
+      30
+     ],
+     "ext": "(0, 242)"
+    },
+    "cfg": "--psm 7 -c tessedit_char_whitelist=0123456789.%",
+    "out": "'. .336\\n'"
+   }
+  ],
+  "exc": {}
+ },
+ "subprocesses": [
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', ",
+  "['C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\<session>\\\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\\\scratchpad\\\\hud_test\\\\app\\\\tools\\\\Mining_Signals\\\\tesseract\\\\tesseract.exe', "
+ ],
+ "edges": [
+  [
+   "label_match._resize_template",
+   "label_match._ncc_search",
+   104
+  ],
+  [
+   "label_match._load_templates",
+   "label_match._resize_template",
+   80
+  ],
+  [
+   "label_match._canonicalize",
+   "label_match._ncc_search",
+   32
+  ],
+  [
+   "label_match._load_rgb_mass_template",
+   "label_match._resize_rgb_template",
+   16
+  ],
+  [
+   "screen_reader.capture_region[FAKE]",
+   "onnx_hud_reader._find_value_crop",
+   12
+  ],
+  [
+   "onnx_hud_reader._find_value_crop",
+   "onnx_hud_reader._legacy_read_field",
+   12
+  ],
+  [
+   "screen_reader.capture_region[FAKE]",
+   "scan_results_match.find_scan_results_anchor",
+   4
+  ],
+  [
+   "screen_reader.capture_region[FAKE]",
+   "scan_results_match._row_consensus_title",
+   4
+  ],
+  [
+   "screen_reader.capture_region[FAKE]",
+   "label_match.find_label_positions",
+   4
+  ],
+  [
+   "label_match._load_rgb_mass_template",
+   "label_match._rgb_mass_top_k",
+   4
+  ],
+  [
+   "label_match._load_rgb_label_template",
+   "label_match._rgb_row_search",
+   4
+  ],
+  [
+   "label_match._load_rgb_label_template",
+   "label_match._resize_rgb_template",
+   4
+  ],
+  [
+   "screen_reader.capture_region[FAKE]",
+   "onnx_hud_reader._find_mineral_row",
+   4
+  ]
+ ],
+ "handled_exceptions": [
+  [
+   "ocr/sc_ocr/calibration.py:125",
+   "_file_mtime_ns",
+   "FileNotFoundError: [WinError 2] The system cannot find the file specified: 'C:\\\\Users\\\\<USER>\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\E--Users-Staci",
+   4
+  ],
+  [
+   "ocr/sc_ocr/label_match.py:1077",
+   "find_label_positions",
+   "UnboundLocalError: cannot access local variable '_rgb_full_target' where it is not associated with a value",
+   4
+  ],
+  [
+   "import ocr.font_variants",
+   "",
+   "ModuleNotFoundError(\"No module named 'ocr.synth_data'\")",
+   1
+  ]
+ ],
+ "log_warn_err": [
+  [
+   "WARNING",
+   "ocr.sc_ocr.label_match",
+   "label_match.py:926",
+   "label_match: MASS top-1 DISAGREES with RGB (gray=1.10 at (157,45), nearest RGB 68.6px away); swapping to candidate (gray=0.76, rgb=0.47, dist=0.0px) at (146,280)"
+  ],
+  [
+   "WARNING",
+   "ocr.sc_ocr.label_match",
+   "label_match.py:926",
+   "label_match: MASS top-1 DISAGREES with RGB (gray=1.10 at (157,45), nearest RGB 68.6px away); swapping to candidate (gray=0.76, rgb=0.47, dist=0.0px) at (146,280)"
+  ],
+  [
+   "WARNING",
+   "ocr.sc_ocr.label_match",
+   "label_match.py:926",
+   "label_match: MASS top-1 DISAGREES with RGB (gray=1.10 at (157,45), nearest RGB 68.6px away); swapping to candidate (gray=0.76, rgb=0.47, dist=0.0px) at (146,280)"
+  ],
+  [
+   "WARNING",
+   "ocr.sc_ocr.label_match",
+   "label_match.py:926",
+   "label_match: MASS top-1 DISAGREES with RGB (gray=1.10 at (157,45), nearest RGB 68.6px away); swapping to candidate (gray=0.76, rgb=0.47, dist=0.0px) at (146,280)"
+  ]
+ ],
+ "log_engine": [
+  [
+   "INFO",
+   "ocr.onnx_hud_reader",
+   "onnx_hud_reader.py:5183",
+   "legacy HUD scan: mass=336.0 resistance=36.0 instability=7.37146 panel_visible=True in 1183ms"
+  ],
+  [
+   "INFO",
+   "ocr.onnx_hud_reader",
+   "onnx_hud_reader.py:5183",
+   "legacy HUD scan: mass=336.0 resistance=36.0 instability=7.37146 panel_visible=True in 1178ms"
+  ],
+  [
+   "INFO",
+   "ocr.onnx_hud_reader",
+   "onnx_hud_reader.py:5183",
+   "legacy HUD scan: mass=336.0 resistance=36.0 instability=7.37146 panel_visible=True in 1193ms"
+  ],
+  [
+   "INFO",
+   "ocr.onnx_hud_reader",
+   "onnx_hud_reader.py:5183",
+   "legacy HUD scan: mass=336.0 resistance=36.0 instability=7.37146 panel_visible=True in 1204ms"
+  ]
+ ]
+}

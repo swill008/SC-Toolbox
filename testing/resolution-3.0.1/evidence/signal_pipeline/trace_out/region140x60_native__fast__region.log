@@ -1,0 +1,25 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+INFO ocr.sc_ocr.signal_anchor: signal_anchor: loaded 13 icon templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\signal_test\Mining_Signals\training_data_blacklist
+WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 7 NCC candidates failed the single-shape check — falling back to all candidates
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] _cnn_filter_icon_candidates: leftmost-only filter kept x1<=35 (tol=8), rejected 4 cands at x1=[52, 51, 52, 51]
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: NCC pick ix=(38,20,66,49) score=0.78 tw=28 (n_scales_hit=7, n_rejected_shape=7, n_cnn_validated=3, max_score=0.78, n_within_delta=1, target_W=77)
+INFO ocr.sc_ocr.signal_anchor: _expand_to_icon_extent: grew matched box (38,20,66,49) -> (38,0,77,57) via column/row scan (was 28x29, now 39x57)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (1 entry, need 3 within 6px) — signature panel treated as NOT present
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+DEBUG hud_tracker.anchors.icon_voter: localize_icon: primaries disagree (IoU=0.39, geom=(53, 24, 12, 13), rgb_ncc=(48, 19, 20, 20))
+WARNING ocr.sc_ocr.signal_anchor: signal_anchor.find_icon: ALL 8 NCC candidates failed the single-shape check — falling back to all candidates
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] _cnn_filter_icon_candidates: leftmost-only filter kept x1<=35 (tol=8), rejected 4 cands at x1=[52, 51, 52, 51]
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (38, 20, 66, 49) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (35, 19, 67, 52) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (41, 12, 77, 50) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+INFO ocr.sc_ocr.signal_anchor: [VOTE] cand (37, 12, 77, 54) ACCEPTED via primaries_agree_yes votes={'geometry': 'yes', 'contour': 'yes', 'rgb_cnn': 'unavailable', 'gray_cnn': 'unavailable'}
+WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: NCC pick ix=(38,20,66,49) score=0.78 tw=28 (n_scales_hit=8, n_rejected_shape=8, n_cnn_validated=4, max_score=0.78, n_within_delta=1, target_W=77)
+INFO ocr.sc_ocr.signal_anchor: _expand_to_icon_extent: grew matched box (38,20,66,49) -> (38,0,77,57) via column/row scan (was 28x29, now 39x57)
+INFO ocr.sc_ocr.signal_anchor: _smooth_anchor_with_cache: icon emission suppressed — cache not stable yet (2 entries, need 3 within 6px) — signature panel treated as NOT present
+INFO ocr.sc_ocr.signal_anchor: find_digit_crop_box: BOTH anchors missed — returning None
+INFO ocr.sc_ocr.api: sc_ocr.signal: SCANNING TIMEOUT (29334.2s since last icon detection > 3.0s threshold) — returning None so UI shows 'scanning' state

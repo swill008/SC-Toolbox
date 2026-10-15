@@ -1,0 +1,338 @@
+{
+ "results": [
+  {
+   "mass": null,
+   "resistance": 0.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  },
+  {
+   "mass": null,
+   "resistance": 0.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  },
+  {
+   "mass": null,
+   "resistance": 0.0,
+   "instability": null,
+   "mineral_name": null,
+   "panel_visible": true
+  }
+ ],
+ "label_rows": [
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "mass": [
+     492,
+     522,
+     375
+    ],
+    "resistance": [
+     583,
+     613,
+     375
+    ],
+    "instability": [
+     636,
+     666,
+     375
+    ],
+    "_mineral_row": [
+     343,
+     522,
+     375
+    ]
+   }
+  },
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "mass": [
+     492,
+     522,
+     375
+    ],
+    "resistance": [
+     583,
+     613,
+     375
+    ],
+    "instability": [
+     636,
+     666,
+     375
+    ],
+    "_mineral_row": [
+     343,
+     522,
+     375
+    ]
+   }
+  },
+  {
+   "img_size": [
+    907,
+    670
+   ],
+   "rows": {
+    "mass": [
+     492,
+     522,
+     375
+    ],
+    "resistance": [
+     583,
+     613,
+     375
+    ],
+    "instability": [
+     636,
+     666,
+     375
+    ],
+    "_mineral_row": [
+     343,
+     522,
+     375
+    ]
+   }
+  }
+ ],
+ "value_crops": [
+  {
+   "i": 1,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 492,
+   "y2": 522,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    492,
+    684,
+    522
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_01_y492-522_x381.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    303,
+    30
+   ]
+  },
+  {
+   "i": 2,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 583,
+   "y2": 613,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    583,
+    907,
+    613
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_02_y583-613_x381.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  },
+  {
+   "i": 3,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 636,
+   "y2": 666,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    636,
+    907,
+    666
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_03_y636-666_x381.png"
+  },
+  {
+   "ocr_field": "instability",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  },
+  {
+   "i": 4,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 492,
+   "y2": 522,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    492,
+    684,
+    522
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_04_y492-522_x381.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    303,
+    30
+   ]
+  },
+  {
+   "i": 5,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 583,
+   "y2": 613,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    583,
+    907,
+    613
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_05_y583-613_x381.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  },
+  {
+   "i": 6,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 636,
+   "y2": 666,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    636,
+    907,
+    666
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_06_y636-666_x381.png"
+  },
+  {
+   "ocr_field": "instability",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  },
+  {
+   "i": 7,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 492,
+   "y2": 522,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    492,
+    684,
+    522
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_07_y492-522_x381.png"
+  },
+  {
+   "ocr_field": "mass",
+   "text": "0",
+   "crop_size": [
+    303,
+    30
+   ]
+  },
+  {
+   "i": 8,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 583,
+   "y2": 613,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    583,
+    907,
+    613
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_08_y583-613_x381.png"
+  },
+  {
+   "ocr_field": "resistance",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  },
+  {
+   "i": 9,
+   "img_size": [
+    907,
+    670
+   ],
+   "y1": 636,
+   "y2": 666,
+   "x_min": 381,
+   "crop_rect_xyxy": [
+    381,
+    636,
+    907,
+    666
+   ],
+   "png": "C:\\Users\\<USER>\\AppData\\Local\\Temp\\claude\\<session>\\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\\scratchpad\\override_test\\out_corrected_unforced\\valuecrop_09_y636-666_x381.png"
+  },
+  {
+   "ocr_field": "instability",
+   "text": "0",
+   "crop_size": [
+    526,
+    30
+   ]
+  }
+ ]
+}

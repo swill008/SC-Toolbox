@@ -1,0 +1,26 @@
+INFO ocr.sc_ocr.api: sc_ocr: lexicon dropped 1 non-0/5 entry (transient pollution): [8276]
+INFO ocr.sc_ocr.api: sc_ocr: lexicon expanded by 1 user-verified values (chart=173 + verified=33 -> union=174)
+INFO ocr.sc_ocr.api: sc_ocr.signal: world_model_region2 picked pill=(15,2,111x56); derived digit crop_box=(62, 17, 120, 48)
+INFO ocr.sc_ocr.api: sc_ocr.signal: crop_box=(62, 17, 120, 48) manual=False gray_shape=(60, 140) work_shape_pre_isolate=(31, 58)
+INFO ocr.sc_ocr.api: sc_ocr.signal: stretched (h=31 already large enough, no upscale needed)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN COUNT ORACLE text='11,25' digits='1125' mean=0.88 -> expected_count=4
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: _adaptive_binarize_multi: chose recipe=otsu_global good=0 noise=0 mega=1 (expected=4, score=-1050.0, scored on cleaned mask) — all=otsu_global:g0/n0/m1, percentile_60:g0/n0/m1, percentile_70:g0/n0/m1, percentile_80:g0/n0/m1, adaptive_w11:g0/n0/m1, adaptive_w21:g0/n0/m1, legacy:g0/n8/m0
+INFO ocr.sc_ocr.api: _strip_pill_outline_bridges: span-recovery peeled 7 edge row(s) until projection had a gap
+INFO ocr.sc_ocr.api: sc_ocr.signal: proportional segmenter forced to expected_digits=4 (from CRNN count oracle)
+DEBUG ocr.sc_ocr.api: _segment_glyphs: gray.shape=(31, 58), 58 initial-projection columns
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: 1 raw spans: [(0, 58)] (gray.shape=(31, 58))
+WARNING ocr.sc_ocr.api: [DIAG] leading-1 detector SKIPPED run (start=1 end=27 run_w=26 cap=26, vert_cov=0.77, h=31, band_conc=0.40, top/mid/bot=(np.True_, np.True_, np.True_))
+WARNING ocr.sc_ocr.api: [DIAG] _segment_glyphs: returning 1 spans (widths=[58], heights=[27])
+INFO ocr.sc_ocr.api: _drop_blacklisted_signature_glyphs: dropped span idx=0 box=(0, 0, 58, 27) (NCC=0.56 vs blacklist template, threshold=0.55 — likely the location-pin icon)
+INFO ocr.sc_ocr.api: sc_ocr.signal: RGB CRNN text='11,25' digits='1125' mean=0.88 in_range=True lexicon_known=True lexicon_hit=False crop_mode=none thresh=2.00
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v2@h32 text='28' mean=0.53 (ncand=2)
+DEBUG ocr.sc_ocr.api: sc_ocr: crnn-ensemble winner=v2@h32 text='28' mean=0.53 (ncand=2)
+INFO ocr.sc_ocr.api: sc_ocr.signal: CRNN raw text='28' digits='28' mean=0.53
+DEBUG ocr.sc_ocr.api: sc_ocr.signal: per-digit dual-polarity disagree pri=9 sec=1 at glyph (x=0-14) — deferring
+DEBUG ocr.sc_ocr.api: sc_ocr.signal: no Tesseract variant produced 4-5 digits in range

@@ -1,0 +1,303 @@
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match INFO label_match: loaded 5 templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\ocr\sc_templates\labels.npz (canonical h=28) [keys=['instability', 'instability_short', 'mass', 'resistance', 'resistance_short']]
+ocr.sc_ocr.label_match INFO label_match: loaded RGB templates from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\ocr\sc_templates\labels_rgb_sharp.npz [keys=['instability', 'mass', 'resistance']]
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+harness INFO FORCED manual override first (simulated fix)
+ocr.screen_reader INFO screen_reader: using Tesseract at C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\tesseract\tesseract.exe
+ocr.sc_ocr.api INFO sc_ocr: difficulty detected='impossible' (via gray_bright_psm11)
+ocr.sc_ocr.api INFO sc_ocr.hud: loaded HUD CRNN (alphabet='0123456789.%' blank=12 H=48 checkpoint_val_acc=0.807)
+ocr.sc_ocr.hud_lexicon INFO hud_lexicon: loaded from C:\Users\<USER>\AppData\Local\Temp\claude\<session>\e6ffac1d-dea7-4d2f-91c4-627d8acbd040\scratchpad\override_test\ms_copy\hud_tracker\learned_lexicon.json � mass=33 resistance=30 instability=39
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: ONNX loaded (model_hud_cnn.onnx, classes='0123456789.%')
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: inverted ONNX loaded (model_cnn_inv.onnx)
+ocr.sc_ocr.api INFO sc_ocr.hud: field=mass CRNN read='0' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: CRNN loaded (model_crnn.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+ocr.sc_ocr.fallback INFO sc_ocr.fallback: CRNN v2 loaded (model_crnn_v2.onnx, classes='0123456789.-% ()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', H=32)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=mass read='114565' mean=1.00 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=mass (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=5, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=mass from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=5
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 5 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 2 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=5 noise=0 mega=0 (expected=5, score=-0.0, scored on cleaned mask) � all=otsu_global:g5/n0/m0, percentile_60:g5/n0/m0, percentile_70:g5/n0/m0, percentile_80:g5/n0/m0, adaptive_w11:g5/n0/m0, adaptive_w21:g5/n0/m0, legacy:g5/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (111, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.83, h=48, band_conc=0.30, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (19, 24) rejected (gap=0 run_w=5 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 29, 28], heights=[40, 41, 41, 41, 41])
+ocr.sc_ocr.api INFO sc_ocr.hud: HUD-RGB ONNX loaded (model_hud_rgb_cnn.onnx, classes='0123456789.%')
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=mass voters=3 str='34565' path=2_of_3_same_tier+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=0.91
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='34565' confs=['0.54', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=resistance CRNN read='0' mean=0.78 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=resistance read='164' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=resistance (CRNN unavailable or _hudr_pass=False) seg=3 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=3, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=resistance from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=3
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=3 noise=0 mega=0 (expected=3, score=-0.0, scored on cleaned mask) � all=otsu_global:g3/n0/m0, percentile_60:g3/n0/m0, percentile_70:g3/n0/m0, percentile_80:g3/n0/m0, adaptive_w11:g3/n0/m0, adaptive_w21:g3/n0/m0, legacy:g3/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 48), (52, 81), (86, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=48 run_w=26 cap=40, vert_cov=0.81, h=48, band_conc=0.38, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[27, 29, 47], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=resistance voters=3 str='64' path=2_of_3_same_tier+2_of_3_same_tier+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='64' confs=['1.00', '1.00']
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=instability CRNN read='0' mean=0.90 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=instability read='112589' mean=0.99 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=instability (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 1 instability-dot \u2192 expected_count=6, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=instability from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=6
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=6 noise=0 mega=0 (expected=6, score=-0.0, scored on cleaned mask) � all=otsu_global:g6/n0/m0, percentile_60:g6/n0/m0, percentile_70:g5/n1/m0, percentile_80:g5/n1/m0, adaptive_w11:g6/n0/m0, adaptive_w21:g6/n0/m0, legacy:g6/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 80), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.83, h=48, band_conc=0.33, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=11 vert_cov=0.23 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 28, 28, 9, 29, 28], heights=[40, 40, 40, 11, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: PROPORTIONAL split SKIPPED (field=instability, 6 boxes, expected=7): widest span 1.04x median � no fusion evidence, trusting segmenter count over CRNN
+ocr.sc_ocr.api INFO sc_ocr.instability: box-size dot detector overrode CNN at idx=3 (was='.' conf=1.00, box w=9 h=11, median_w=28.0 median_h=40.0)
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=instability voters=3 str='12589' path=all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='12589' confs=['1.00', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api INFO sc_ocr: proactive-decimal-recover field=instability raw='12589' orig_val=12589.0 -> 125.89
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (160,208)->(162,208) x_left=39 (bottom-line-above-MASS)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name CRNN sim=0.94 raw='TTARANITE (RAW)' \u2192 'Taranite'
+ocr.sc_ocr.frozen_panel INFO FrozenPanelReference: FROZE values={'mass': 34565.0, 'resistance': 64.0, 'instability': 125.89, 'mineral_name': 'Taranite'} cal_v=0
+ocr.sc_ocr.api INFO sc_ocr: mineral=Taranite mass=34565.0 resistance=64.0 instability=125.89 in 1947ms
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+harness INFO FORCED manual override first (simulated fix)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=mass CRNN read='0' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=mass read='114565' mean=1.00 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=mass (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=5, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=mass from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=5
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 5 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 2 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=5 noise=0 mega=0 (expected=5, score=-0.0, scored on cleaned mask) � all=otsu_global:g5/n0/m0, percentile_60:g5/n0/m0, percentile_70:g5/n0/m0, percentile_80:g5/n0/m0, adaptive_w11:g5/n0/m0, adaptive_w21:g5/n0/m0, legacy:g5/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (111, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.83, h=48, band_conc=0.30, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (19, 24) rejected (gap=0 run_w=5 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 29, 28], heights=[40, 41, 41, 41, 41])
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=mass voters=3 str='34565' path=2_of_3_same_tier+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=0.91
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='34565' confs=['0.54', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=resistance CRNN read='0' mean=0.78 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=resistance read='164' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=resistance (CRNN unavailable or _hudr_pass=False) seg=3 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=3, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=resistance from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=3
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=3 noise=0 mega=0 (expected=3, score=-0.0, scored on cleaned mask) � all=otsu_global:g3/n0/m0, percentile_60:g3/n0/m0, percentile_70:g3/n0/m0, percentile_80:g3/n0/m0, adaptive_w11:g3/n0/m0, adaptive_w21:g3/n0/m0, legacy:g3/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 48), (52, 81), (86, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=48 run_w=26 cap=40, vert_cov=0.81, h=48, band_conc=0.38, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[27, 29, 47], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=resistance voters=3 str='64' path=2_of_3_same_tier+2_of_3_same_tier+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='64' confs=['1.00', '1.00']
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=instability CRNN read='0' mean=0.90 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=instability read='112589' mean=0.99 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=instability (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 1 instability-dot \u2192 expected_count=6, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=instability from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=6
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=6 noise=0 mega=0 (expected=6, score=-0.0, scored on cleaned mask) � all=otsu_global:g6/n0/m0, percentile_60:g6/n0/m0, percentile_70:g5/n1/m0, percentile_80:g5/n1/m0, adaptive_w11:g6/n0/m0, adaptive_w21:g6/n0/m0, legacy:g6/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 80), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.83, h=48, band_conc=0.33, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=11 vert_cov=0.23 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 28, 28, 9, 29, 28], heights=[40, 40, 40, 11, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: PROPORTIONAL split SKIPPED (field=instability, 6 boxes, expected=7): widest span 1.04x median � no fusion evidence, trusting segmenter count over CRNN
+ocr.sc_ocr.api INFO sc_ocr.instability: box-size dot detector overrode CNN at idx=3 (was='.' conf=1.00, box w=9 h=11, median_w=28.0 median_h=40.0)
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=instability voters=3 str='12589' path=all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='12589' confs=['1.00', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api INFO sc_ocr: proactive-decimal-recover field=instability raw='12589' orig_val=12589.0 -> 125.89
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (160,208)->(162,208) x_left=39 (bottom-line-above-MASS)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name CRNN sim=0.94 raw='TTARANITE (RAW)' \u2192 'Taranite'
+ocr.sc_ocr.api INFO sc_ocr: mineral=Taranite mass=34565.0 resistance=64.0 instability=125.89 in 990ms
+ocr.sc_ocr.api INFO sc_ocr: mineral_name_color picked y=(94, 127) hue=30.3 conf=0.63
+ocr.sc_ocr.label_match WARNING label_match: MASS top-1 DISAGREES with RGB (gray=0.99 at (459,248), nearest RGB 92.8px away); swapping to candidate (gray=0.70, rgb=0.47, dist=0.0px) at (259,56)
+ocr.sc_ocr.label_match INFO label_match: MASS won at polarity=pos scale=0.75 score=0.705 pos=(259,56)
+ocr.sc_ocr.label_match INFO label_match: resistance NCC=0.27 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=95 (skew-degraded wide template, position is layout-guaranteed)
+ocr.sc_ocr.label_match INFO label_match: instability NCC=0.17 below 0.45 but MASS confident (0.70 >= 0.65) � synthesizing position from rigid 3-row geometry at expected_cy=124 (skew-degraded wide template, position is layout-guaranteed)
+harness INFO FORCED manual override first (simulated fix)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=mass CRNN read='0' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=mass read='114565' mean=1.00 OVERRIDDEN � per-glyph primary+secondary agree on '.4565' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (112, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.85, h=48, band_conc=0.31, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (18, 24) rejected (gap=0 run_w=6 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 28, 28], heights=[41, 41, 40, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=mass (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=5, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=mass from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=5
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 5 top-window + 3 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 4 top-window + 2 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=5 noise=0 mega=0 (expected=5, score=-0.0, scored on cleaned mask) � all=otsu_global:g5/n0/m0, percentile_60:g5/n0/m0, percentile_70:g5/n0/m0, percentile_80:g5/n0/m0, adaptive_w11:g5/n0/m0, adaptive_w21:g5/n0/m0, legacy:g5/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 5 raw spans: [(18, 36), (44, 74), (79, 107), (111, 140), (144, 172)] (gray.shape=(48, 176))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (24, 35) (run_w=11 cap=40, vert_cov=0.83, h=48, band_conc=0.30, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: pass2 gap-cut at idx=0 (gap=8, median_gap=5, threshold=8) � dropped 1 leading spans
+ocr.sc_ocr.api INFO _segment_glyphs: leading-1 detector restoring dropped span (24, 35) (no overlap with surviving spans)
+ocr.sc_ocr.api WARNING [DIAG] rescue-missed-1: candidate run (19, 24) rejected (gap=0 run_w=5 cap=40 vert_cov=0.19 leftmost=24)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 5 spans (widths=[11, 30, 28, 29, 28], heights=[40, 41, 41, 41, 41])
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=mass voters=3 str='34565' path=2_of_3_same_tier+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=0.91
+ocr.sc_ocr.api INFO sc_ocr raw mass: text='34565' confs=['0.54', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api INFO sc_ocr: LOCKED field=mass value=34565.0 (unanimous 3/3 frames, crop-NCC=1.00)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=resistance CRNN read='0' mean=0.78 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=resistance read='164' mean=0.91 OVERRIDDEN � per-glyph primary+secondary agree on '64' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 49), (52, 81), (87, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=47 run_w=25 cap=40, vert_cov=0.81, h=48, band_conc=0.41, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[28, 29, 46], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=resistance (CRNN unavailable or _hudr_pass=False) seg=3 visible + 0 width-fused + 0 instability-dot \u2192 expected_count=3, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=resistance from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=3
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=3 noise=0 mega=0 (expected=3, score=-0.0, scored on cleaned mask) � all=otsu_global:g3/n0/m0, percentile_60:g3/n0/m0, percentile_70:g3/n0/m0, percentile_80:g3/n0/m0, adaptive_w11:g3/n0/m0, adaptive_w21:g3/n0/m0, legacy:g3/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 3 raw spans: [(21, 48), (52, 81), (86, 133)] (gray.shape=(48, 137))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector SKIPPED run (start=22 end=48 run_w=26 cap=40, vert_cov=0.81, h=48, band_conc=0.38, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 3 spans (widths=[27, 29, 47], heights=[39, 39, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=resistance voters=3 str='64' path=2_of_3_same_tier+2_of_3_same_tier+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw resistance: text='64' confs=['1.00', '1.00']
+ocr.sc_ocr.api INFO sc_ocr: LOCKED field=resistance value=64.0 (unanimous 3/3 frames, crop-NCC=1.00)
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: field=instability CRNN read='0' mean=0.90 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: LEGACY CRNN gate field=instability read='112589' mean=0.99 OVERRIDDEN � per-glyph primary+secondary agree on '125.89' � deferring to per-glyph CNN
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 79), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.81, h=48, band_conc=0.34, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=10 vert_cov=0.21 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 27, 28, 9, 29, 28], heights=[39, 39, 39, 10, 39, 39])
+ocr.sc_ocr.api INFO sc_ocr.hud: STANDALONE SEGMENTER COUNT field=instability (CRNN unavailable or _hudr_pass=False) seg=5 visible + 0 width-fused + 1 instability-dot \u2192 expected_count=6, COUNT ORACLE will steer binarizer recipe selection
+ocr.sc_ocr.api INFO sc_ocr.hud: COUNT ORACLE field=instability from segmenter (via COUNT-MISMATCH, WIDTH-FUSION, or STANDALONE WIDTH-FUSION above) -> expected_count=6
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 5 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 1 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 1 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _strip_pill_outline_bridges: zeroed 0 top-window + 4 bot-window bridge rows (frac>0.55, window=12) � H=48
+ocr.sc_ocr.api INFO _adaptive_binarize_multi: chose recipe=otsu_global good=6 noise=0 mega=0 (expected=6, score=-0.0, scored on cleaned mask) � all=otsu_global:g6/n0/m0, percentile_60:g6/n0/m0, percentile_70:g5/n1/m0, percentile_80:g5/n1/m0, adaptive_w11:g6/n0/m0, adaptive_w21:g6/n0/m0, legacy:g6/n0/m0
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: 6 raw spans: [(23, 40), (52, 80), (83, 111), (116, 125), (132, 161), (165, 193)] (gray.shape=(48, 197))
+ocr.sc_ocr.api WARNING [DIAG] leading-1 detector LOCKED span (29, 39) (run_w=10 cap=40, vert_cov=0.83, h=48, band_conc=0.33, top/mid/bot=(np.True_, np.True_, np.True_))
+ocr.sc_ocr.api INFO _segment_glyphs: instability-dot pre-scan detected span=(116, 125) idx=3 (w=9 h=11 vert_cov=0.23 median_w=28 row_h=48) � skipping pass2 gap-cut and pass3 leading-narrow drop to preserve leading digit + dot
+ocr.sc_ocr.api WARNING [DIAG] _segment_glyphs: returning 6 spans (widths=[17, 28, 28, 9, 29, 28], heights=[40, 40, 40, 11, 40, 40])
+ocr.sc_ocr.api INFO sc_ocr.hud: PROPORTIONAL split SKIPPED (field=instability, 6 boxes, expected=7): widest span 1.04x median � no fusion evidence, trusting segmenter count over CRNN
+ocr.sc_ocr.api INFO sc_ocr.instability: box-size dot detector overrode CNN at idx=3 (was='.' conf=1.00, box w=9 h=11, median_w=28.0 median_h=40.0)
+ocr.sc_ocr.api INFO sc_ocr.hud: N-way consensus field=instability voters=3 str='12589' path=all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree+all_3_agree mean_conf=1.00
+ocr.sc_ocr.api INFO sc_ocr raw instability: text='12589' confs=['1.00', '1.00', '1.00', '1.00', '1.00']
+ocr.sc_ocr.api INFO sc_ocr: proactive-decimal-recover field=instability raw='12589' orig_val=12589.0 -> 125.89
+ocr.sc_ocr.api INFO sc_ocr: LOCKED field=instability value=125.89 (unanimous 3/3 frames, crop-NCC=1.00)
+ocr.sc_ocr.api INFO sc_ocr: mineral band refined (160,208)->(162,208) x_left=39 (bottom-line-above-MASS)
+ocr.sc_ocr.api INFO sc_ocr: mineral_name CRNN sim=0.94 raw='TTARANITE (RAW)' \u2192 'Taranite'
+ocr.sc_ocr.api INFO sc_ocr: mineral=Taranite mass=34565.0 resistance=64.0 instability=125.89 in 1050ms

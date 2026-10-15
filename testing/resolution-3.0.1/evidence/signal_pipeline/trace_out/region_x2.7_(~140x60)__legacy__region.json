@@ -1,0 +1,372 @@
+{
+ "ui_gate_sig_present": false,
+ "ui_gate": null,
+ "value": 1820,
+ "matches": "list[0]: []",
+ "secs": 0.56,
+ "silent": [
+  "WARNING ocr.sc_ocr.signal_anchor: [ANCHOR-DIAG] signal_anchor.find_icon: using localize_icon consensus bbox=(22,21,56,55) score=0.88 (skipped gray NCC)",
+  "INFO ocr.screen_reader: scan_region: legacy 3-engine read=1820 (Paddle unavailable)"
+ ],
+ "gate_lines": [],
+ "events": [
+  {
+   "stage": "signal_anchor.find_icon",
+   "depth": 0,
+   "in": [
+    "ndarray(59, 140) uint8 [11,228] mean=72.3"
+   ],
+   "kw": {
+    "min_score": 0.55,
+    "rgb_image": "ndarray(59, 140, 3) uint8 [0,228] mean=53.6"
+   },
+   "out": null
+  },
+  {
+   "stage": "icon_voter.localize_icon",
+   "depth": 1,
+   "in": [
+    "ndarray(59, 140, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {},
+   "out": {
+    "bbox": "tuple[4]: ['22', '21', '34', '34']",
+    "score": 0.8803,
+    "detector": "'consensus(geometry,rgb_ncc)'",
+    "details": {
+     "geometry": "dict(3)",
+     "rgb_ncc": "dict(3)",
+     "iou": 0.6051
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_by_geometry",
+   "depth": 2,
+   "in": [
+    "ndarray(59, 140, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['23', '12', '35', '37']",
+    "confidence": 0.8333,
+    "details": {
+     "teardrop_bbox": "tuple[4]",
+     "oval_bbox": "tuple[4]",
+     "checks": "dict(6)",
+     "warm_fraction": 0.712,
+     "hole_pixels": "0",
+     "notch_depth": "4",
+     "tiny_mode": "False",
+     "score": "5"
+    }
+   }
+  },
+  {
+   "stage": "icon_voter.find_icon_rgb_ncc",
+   "depth": 2,
+   "in": [
+    "ndarray(59, 140, 3) uint8 [0,228] mean=53.6"
+   ],
+   "kw": {
+    "hud_bbox": null
+   },
+   "out": {
+    "bbox": "tuple[4]: ['22', '21', '34', '34']",
+    "score": 0.829,
+    "details": {
+     "scale": 1.2,
+     "per_channel_scores": "tuple[3]",
+     "n_candidates_above_thresh": "480",
+     "template_used": "'real_2'",
+     "weights": "tuple[3]"
+    }
+   }
+  },
+  {
+   "stage": "screen_reader.scan_region",
+   "depth": 0,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "59"
+    }
+   ],
+   "kw": {},
+   "out": "1820"
+  },
+  {
+   "stage": "screen_reader.capture_region_averaged",
+   "depth": 1,
+   "in": [
+    {
+     "x": "0",
+     "y": "0",
+     "w": "140",
+     "h": "59"
+    }
+   ],
+   "kw": {},
+   "out": "PIL RGB (140, 59)"
+  },
+  {
+   "stage": "screen_reader.extract_number",
+   "depth": 1,
+   "in": [
+    "PIL RGB (140, 59)"
+   ],
+   "kw": {},
+   "out": "1820"
+  },
+  {
+   "stage": "screen_reader._extract_paddle_signal_candidates",
+   "depth": 2,
+   "in": [
+    "PIL RGB (140, 59)"
+   ],
+   "kw": {},
+   "out": "list[0]: []"
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 3,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_b",
+   "depth": 4,
+   "in": [
+    "PIL RGB (140, 59)"
+   ],
+   "kw": {},
+   "out": "list[3]: ['PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)']"
+  },
+  {
+   "stage": "screen_reader._preprocess_engine_a",
+   "depth": 5,
+   "in": [
+    "PIL RGB (140, 59)"
+   ],
+   "kw": {},
+   "out": "list[4]: ['PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)']"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 3,
+   "in": [
+    "list[3]: ['PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)']",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[1]: ['2180']"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 5,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._ocr_engine",
+   "depth": 5,
+   "in": [
+    "list[4]: ['PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)', 'PIL L (420, 177)']",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "list[1]: ['1820']"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'2'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'2\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'2180'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 7 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'2180\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 6,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "'8\\n1820'"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 7,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "'8\\n1820\\n'"
+  },
+  {
+   "stage": "screen_reader._try_ocr",
+   "depth": 3,
+   "in": [
+    "PIL L (420, 177)",
+    "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   ],
+   "kw": {},
+   "out": "''"
+  },
+  {
+   "stage": "TESS.image_to_string",
+   "depth": 4,
+   "in": [
+    "PIL L (420, 177)"
+   ],
+   "kw": {
+    "config": "'--psm 6 -c tessedit_char_whitelist=0123456789'"
+   },
+   "out": "''"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[1]: ['1820']"
+   ],
+   "kw": {},
+   "out": "1820"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[1]: ['2180']"
+   ],
+   "kw": {},
+   "out": "2180"
+  },
+  {
+   "stage": "screen_reader._best_candidate",
+   "depth": 2,
+   "in": [
+    "list[0]: []"
+   ],
+   "kw": {},
+   "out": null
+  },
+  {
+   "stage": "paddle_client.is_available",
+   "depth": 1,
+   "in": [],
+   "kw": {},
+   "out": "False"
+  },
+  {
+   "stage": "SignalMatcher.match_all",
+   "depth": 0,
+   "in": [
+    "1820"
+   ],
+   "kw": {
+    "tolerance": "10"
+   },
+   "out": "list[0]: []"
+  }
+ ]
+}
